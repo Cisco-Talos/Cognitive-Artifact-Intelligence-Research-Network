@@ -1,0 +1,245 @@
+# Dead-end cluster hashes — confirmed non-AI noise
+# One full SHA256 per line. Lines starting with # are comments.
+# See CLUSTER_LOG.md for investigation notes per cluster.
+#
+# cairn cluster-summary reads this file and suppresses any cluster
+# where at least one member SHA256 appears here.
+# Use --include-dead-ends to bypass suppression.
+
+# --- Pulsar RAT (Win32:Pulsar-A, Fody-packed) ---
+# Client.exe samples; MAL_BackNet_Nov18_1 YARA; cluster 57 as of 2026-07-03 run
+# T1 fires because Fody-merged assemblies include AI library string tables
+b1f8339f15a49e7e68b579467d57450fc9ed67c08be4753afe2dc77d01d45ecd
+d56f983fa27cd2234d16c16380add8bd5a54fee713b540c100075226fe911784
+21f107cf8fba5f1082984a77eb2c00d00c627f0eb036b4bf13b4b6711af90a9f
+3f9086c402bec2bfdd4ce3f4702a648ffcab57171fe26670ea3582cf4355de7e
+d3705fda72de50e34832919d429c07f01612ea144ea347119e2b33c07a1134cb
+c1c0da15f05bac3f93c1b6c610890c4c332dee6812952b74451e94295de5f824
+31061315288339facc3558912bdecd9443cd03b21b764741c8fa80abae141a13
+44f0599e3fa69de85fcbe161c2641a4948b23d5e49e2dfcafe1c33d355906804
+8b6728f1b7ddf53c5cad96c2d29a3931f18ca0a2b651a5dddc8da301338a8b07
+b72be9abf8b8b1e5820ca52e2fb563acec4bec251352230f2125df7b4895b133
+
+# --- Win32/Expiro file infector ---
+# Infects legitimate Windows binaries; clusters 60/85 as of 2026-07-03 run
+# T1 fires because infected host binary contained AI-adjacent strings
+a30e343f58401efa5dcb29f1de50a460e61f53fae4e892b2783389b03d1ba39f
+4fdeb4006bd22350f9a605d6f06f96b35f97ff62c407e16e5cbf9eacc2934f73
+91d21bd6b7d2d4676899cbc7bd5359d8a11ed6daa8f7e78aca3ddd9264db2b08
+c97fa728a00c13bd9333f913f1096b6b535924c0f801283929852f4b22b14b07
+12d66c8443a6ef127cc0a8e10949bd73a360430e96517d15545f653d4dcc1f53
+987f4a4a475aa8c17ef55ef33bbf21eb8d5bbc8ed9145bf5a07d648629a733ee
+b1eefe3f4a257aa75d0f391a6b437d222cb654ab3433b0ae5b69953cf6a34384
+bedda381ea549395021a0b907b404899798a23627fd12c4ba8784f9f749e92db
+cc78a32d522724f59404449ad95834fcddb46d809197355309d3971fcbe881be
+4b69e6fe9c1ada025761e333015cb6186da39c28efbd67b30b04d07fe9a6acdd
+6dff155064762c10cb1587d53648d1a567dad7b298c6f272dfa65cbc42feb24b
+751892400025bf58c43d3ba874ef06694ff8b2822690e4186367f320f84bc5f3
+8d14086fcd04f54a8ea4616892fa2a1415c7c136c49b1d3f95578af852d7bc6f
+b0d7afe4314464b490504182fc33d6e34d21e7cd95b638dc5836e0a08ef77744
+b3ad17af98ab46fce908955f53b0176b9b092cca645fc1e84e7f8596e21a682e
+
+# --- Chrome ggml-cpu-*.dll — legitimate Gemini Nano on-device inference DLLs ---
+# Google ships ggml-cpu-<arch>.dll as Chrome's built-in AI compute backends (Chrome 120+)
+# Submitted to VT as Chrome-bin/146.0.7680.2/ggml-cpu-*.dll; flagged by AV heuristics
+# No malicious behavior; false positive on legitimate browser components
+7c1e893f48e357ee4b382cd438dc3084981be3bb1bf5af47f182c8be483baeda
+5bb85f07cb7e3c49e0cb7543ce8344a0d86ec30a22b8b6cc37ddf816bc405571
+
+# --- Implosions.exe cluster — MSIL/RedLine + Zusy/Themida ---
+# 68 samples spanning 2023-01 to 2026-07; two sub-families sharing the same filename
+# MSIL/RedLine: .NET credential stealer; tags: assembly, calls-wmi, payload
+# Zusy/Themida: Themida-packed spreader; tags: spreader, themida, long-sleeps
+# Both match llmgate-hunt filter via WMI behavioral strings in sandbox output; no AI integration
+d34be5ffbf85b3c0f88c192b7fb61d4b5ec3f8fb826d77673b6de26cdbdd4187
+ec2e3d0f031defd09a5ee233c551d4957c8957105e8d773616ff3240351bcc20
+
+# --- Cluster 112 — petik researcher path + Cyzt/Snojan + MSIL dictionary-word stealers ---
+# petik = known researcher collection path (/home/petik/ss/malware/YYYY-MM-DD_hash_family1_family2)
+# Three sub-families: GravityRAT/CS/Sliver (petik), Cyzt/Snojan UPX-packed, MSIL Softest/Baileys/Dromedary stealers
+# T1-Local_Model_Runtime FPs: $vllm/$gguf as 4-char substrings in encoded payload data
+# No AI integration in any sub-family
+9538f87fef6bcfb63eff27abff2ce16ec10bb23e91f629ecad91819d4fcecb30
+2cc8d1344c0a812bb7947763ac3377d3777f1246d8216d65432367488d0845eb
+5a11801a7a2c05bf2060a82e7a7a53200fe896a78d03a7738b68f9897f5576a6
+
+# --- Cluster 171 — XMRig coinminer + MSIL/Barys stealers + Win32/Neshta file infector ---
+# Three sub-families co-clustered; 44 samples, 2025-07-30 to 2026-07-02
+# XMRig: Coinminer.Win64.MALXMR; UPX/corrupt/overlay/64bits tags
+# MSIL/Barys/Reline: HEUR:Trojan-PSW.MSIL.Reline.gen; assembly/payload tags
+# Neshta: PE_NESHTA.A file infector; spreader/overlay; T1-LLM_API_Endpoint/T1-AI_Brand_PE_Resource
+#   fire because Neshta infected a host binary that contacted api.openai.com (chatgpt_ac strings)
+# Spreader (Gen:Variant.Application.jaik): T1-Prompt_Residue fires on "you are sure it is not
+#   malicious" from infected host binary #LOCALIZATION strings — same Expiro/Neshta FP pattern
+# No AI integration in any sub-family
+48fb7ae771c12ac900b3ce5712c516c28fbba36a8b782d5e1f55be6c74ce3726
+f39611e37cb77d9341131034128b7d8871069fc9d5a9c7ab2d0f42055ada5cf3
+1118b419fe6a45c14ff305156284d3d903d751ef9a4afd00c2d30333b24a6746
+
+# --- Cluster 114 — petik (aspxspy/xmrig + coinminer/glassworm) + scratch/zoo collection + Mal/SillyFDC-K USB spreader ---
+# Three sub-groups; 52 samples, 2025-06-24 to 2026-03-24
+# petik paths (aspxspy_black-basta_poison-ivy_xmrig + coinminer_glassworm_poet-rat_sliver_snatch): researcher collection
+# /scratch/zoo/ paths: automated zoo collection, no rule hits
+# SillyFDC .mp3 PEs: VB-compiled USB spreader (Mal/SillyFDC-K, Generic VB.b); PE disguised as .mp3;
+#   imphash 6d5d84d2f024a2d1 shared across group; T1-Prompt_Residue FP from Windows Security Center
+#   localization strings ("unless you are sure it is not malicious.\n.#LOCALIZATION") bundled in payload
+# No AI integration in any sub-group
+0d38a79bc0bc422dcbd4a63305b23a800a3bc62fff2e4174775e53bfde3763e7
+0066ef9b33ebdffbb5626763fd8d8178a3572a3296561a20b7a204ba5d018aa0
+967a01486237066bc20f8ba24eae9e30d74f80fb074b74fa32956eedbb754e19
+
+# --- Cluster 147 (2026-07-03 run) — petik coinminer/glassworm/poet-rat collection ---
+# 31 samples Oct 2025 – Jan 2026; all petik researcher collection path
+# Labels: coinminer_ezcob_glassworm_poet-rat_sliver_snatch; no rule hits; no AI integration
+# Note: cluster_id 147 has different compositions across runs — earlier runs (2026-07-01)
+# contained HONESTCUE ConsoleApplication1.exe samples; the graph reflects the 2026-07-03 run only
+0006169831076148b7031a83c7f1cb777112001b11b4a7662d673d85bd3595d7
+
+# --- Cluster 195 — XMRig/MALXMR cryptominer (UPX/corrupt/overlay/64bits) ---
+# 23 samples; two bursts Jul 2025 + May–Jun 2026; all submitted without filenames (SHA256 name)
+# TrendMicro: Coinminer.Win64.MALXMR.SMCGR24; imphash e4290fa6afc89d56616f across all samples
+# Identical VS2019 v16.2.3 build 27905 compiler fingerprint — same XMRig build
+# Malwarebytes "AI.DDS" label = Malwarebytes AI detection engine name, not AI in malware
+# No AI integration
+099230e39f7e57c7d824968c863c1c8e0ffdb2b36906c0171f25f4dfd2feb254
+
+# --- Cluster 180 — XMRig/MALXMR same build as cluster 195, C:\Windows drop paths ---
+# 13 samples; three bursts Sep 2025 + May–Jun 2026; C:\Windows\<random>.exe drop paths
+# Same imphash e4290fa6afc89d56616f as cluster 195 — identical XMRig build, different submitter
+# TrendMicro: Coinminer.Win64.MALXMR.SMCGR24; no AI integration
+0ca90a5ba87662fa20bf63ba431a75d8e8f849bc265b43b7afd3405d0cb9ad0c
+
+# --- Cluster 55 — Win32/Floxif file infector (mozglue.dll) ---
+# 15 samples Jun–Jul 2026; all named mozglue.dll (legitimate Firefox component)
+# TrendMicro: PE_FLOXIF.D; Malwarebytes: Floxif.Virus.FileInfector.DDS
+# MEW-packed; imphash 1eed9f0fdc455efcbebd; detect-debug-environment + idle tags
+# Same infected-legitimate-binary FP pattern as Expiro/Neshta — no AI integration
+12eab130ef54a662041ae3e342a3a4a7c6b198beb740f73e43626c5abb2f8157
+
+# --- Cluster 15 — Banbra banking trojan / file infector (Firewall.exe) ---
+# 10 samples Mar–Jun 2026; all named Firewall.exe; ASPack-packed
+# TACHYON: Banker/W32.Banbra.Gen; BitDefender: Gen:Heur.Mint.Autorunner.1
+# Shared imphash 01392ca861cf87b8d28a; 56–65 detections across group
+# Tags: peexe, spreader, overlay, aspack; no rule hits; no AI integration
+3ea690332870cbebd08323a64237d9628ce2fe7c8278e5de969e1c51a6f04164
+
+# --- Cluster 119 — Bladabindi RAT variants + Gamehack tools + Disco stealer ---
+# 14 samples Aug 2022 – Jul 2026; mixed sub-families with no AI integration
+# Sub-group A: CrucifiedT.exe / U6 Sigil Macro.exe / RoxenSpoofer.exe — imphash dcaf48c1f10b0efa0a44;
+#   Zillya: Backdoor.Bladabindi.Win32.34070; CrowdStrike: malware/grayware 60–70%; 5–14 detections
+# Sub-group B: Themida-packed HackTool; Antiy-AVL: HackTool/Win64.Gamehack; 41 detections
+# Sub-group C: /1/x/y/hash.file paths (automated zoo); HEUR:Trojan-PSW.Multi.Disco.gen; 35 detections
+# All sub-groups: no rule hits; no AI integration
+82fb024835ecdbadd872c3663843658029995dc41a1305836f3c737518f363fd
+2aa0c7f3a2521dbe8eca75842b59b84792a9849edf0bd7c854e99442adebae00
+0004c103c7fd797c28fd587b72d236df5bf9c6b3cc0ffbf90d0a34a122373a8a
+
+# --- Mozilla llamafile distribution binaries + ggml-cpu DLLs — T2-Local_Inference_Deploy FP ---
+# All samples fire T2-Local_Inference_Deploy via $llamafile matching "llamafile" in name/path/exports
+# Sub-group A: Mozilla llamafile release binaries (whisperfile, diffusionfile, llamafile-vulkan-arm)
+#   Submitted from "home/mala/releases/0.10.x/llamafile-0.10.x/bin/" paths — legitimate Mozilla project
+#   8–11 detections (AV heuristics on unknown ELF-in-PE / large binaries); no AI-malware integration
+# Sub-group B: ggml-cpu-*.dll — GGML CPU backend DLLs from Chrome (Google) and other distributions
+#   Export "ggml_cpu_has_llamafile" function (CPU capability detection) triggers $llamafile string
+#   Chrome DLLs (7c1e893f, 5bb85f07) already in dead_end_hashes.txt above; new variants below
+# Root cause: $llamafile in T2-Local_Inference_Deploy fires on all distributions of the llamafile
+#   project itself and on ggml backends that export llamafile CPU detection functions.
+#   Genuine detection signal for malware deploying llamafile would require additional context
+#   (e.g., persistence + llamafile co-occurrence, or dropped under suspicious name without release path)
+b6fb21f01cb5e8bf377efdcc784e5a54af93c31db4e48934b9a25d4bf2dcaa76
+00ed52f1a1d5e95eb8e29ae52e6e6f2bc9cb18ab04a2c17cd91d66c2c3f86cb6
+34aef7712b882a78a2c34d2e7820f81325ba455c57a20a4b7fc2776ba10d7067
+09f85b77c3b5b0cfd7d6ff752cac12c1793821c42737d2d2c81dc4ff04141086
+0fe32a1e6184ec9ce8921150ddf595c2099717acc53ab6f1bd79973d17dc9e28
+010758c144122dbf88fe0765b4ffcb64c29d19af505d34134f70457c74fecf77
+f965bfffbc73c87015e4052ce206bd1222f475a4495aeb6689a4c5f8b1178b25
+390fc3c6c638dff5b392301732ca033de8545c7dd74baab416f401800d7d1f78
+40bb273f0046c0a636e9d6a6845d1dd37f721e02c93759346afa266f2f65f895
+2063aa0b9ed84430e2b24df6f3415f1f05e0554676527e1058a7b2574e6899e9
+3eed25a090639cf25297f9d4868dd31338ba4a16b91df1621405260686edd603
+a785a256366cde9fee0c934e0371089cf3901189b12c3a8500bc98711130eb6b
+b2894b08553ecf54bd824a604d5a91482c475db0901e89edd8cdca3008e1a448
+09ac2936a82a4a49196643c9e9e6864c6d191d99e88f519740b0f6207b312642
+74bb25f783cf59faad5a18966ac5985c05b1c15499c0ab144ef0cd427b548bf3
+
+# --- SearchHelper.exe / Shareit.exe — T2-Local_Inference_Persistence vllm FP cluster ---
+# 9 samples; SearchHelper.exe (7) + Shareit.exe (2); Jul 2025, 49–64 detections
+# Root cause: T2-Local_Inference_Persistence previously used bare $vllm = "vllm" (4-char string)
+#   which matched "vllm" as a substring in encoded/obfuscated payload data within packed stealers
+#   ($Startup persistence hit was from legitimate "ShareIt Service" background process, not LLM)
+# Fix: vllm string anchored to "vllm." and "import vllm" forms in T2-Local_Inference_Persistence
+# AV: Trojan.GenericKD.*, packed stealers; no AI integration whatsoever
+29b94d4870b32561fc94ad84c071e13a02aa05131e2aff57a01ce3371d8bbdef
+dad89a38b65b2f3089f72a38c76c9afebf2d954360855d8fac1994b0d49e73bd
+5772c59514826e76ad11de92dcdb96cfa10a5f94322604148c09eaa5998c2a2c
+638295d77bff64231e9872090f70c9c69f40d105e606e120975503c961b9f67a
+cfaed5c18031f87b9bf9b4caafe99469028d8f0fa21e78c89ea897c1df65121f
+54364b299910586c5258ea81648b98906946e2f030f1b896a64997f766eab02f
+9b2fb52e58dd8c7a9f5ebb89f6b8f16b593316136b5b095ae3a7909317f3e384
+0261e21066b4c8b3290ca2566b34cfc6f5c8f45a6835fd79b91f5126a03fdd11
+7683d7ad4f17991a7d6f4e823e11db3772944c92badd6ac30cce3cd7d2d8abe0
+
+# --- SystemDriverUpdate.exe — T1-Local_Model_Runtime safetensors FP (fake AMD driver) ---
+# 2 samples; 36–38 detections; fake AMD driver cover story
+# safetensors match appears in embedded string pool (secondary artifact), not actual model loading
+# Behaviours: nexusrules.officeapps.live.com DNS only; no LLM runtime activity
+# provider_references: Hugging Face (from string pool, not actual download)
+6a80ca21198f585c6d92ce649b9e1d751848b211683794fb9f74bbad256a2b7d
+4a24f8c7328474b9e89d99655bd44abacfe6cacf8a26ac00afd994a39f6810b6
+
+# --- gugak.exe — T1-Local_Model_Runtime ollama FP (EDR recon tool) ---
+# 1 sample; 38 detections; HackTool.AOPO / edrrecon type tool
+# ollama match comes from the tool listing AI framework process names to detect during EDR recon
+# Not deploying or using ollama — detecting it as a target
+# Behaviours: no network activity; spawns self + conhost
+8c7558e4aa8fc722c995abb51604928e341a9010469c485f4032c3fe2f6832f3
+
+# --- terminal64.exe — MetaTrader 5 trading platform with AI integration (T2-Local_Inference_Deploy FP) ---
+# 10 samples; all named terminal64.exe (legitimate MetaTrader 5 binary name); first seen 2026-07-15
+# T2-Local_Inference_Deploy fires on embedded string: "OPENAI_HOSTOPENAI_API_KEYOllamaopenaihttp://localhost:11434"
+# MetaTrader 5 added AI/LLM integration in recent builds — this is legitimate trading platform functionality
+# 2 heuristic detections (Gridinsoft + Trapmine) — FPs on complex legitimate binary
+# No malicious behavior; no actual local inference deployment by the binary itself
+389a4a91c1e2af506eb6f8924917eb4ef77018d0825fdf9a72a69ba66a4e9671
+0058f699fb8bdf66c844d0d27802fc93b70ef814f74f3681fe2668072883ee00
+43a68604ffb28f58ff4e95e30fc623a3e8e6778a579b3791dce8188293b90a51
+a1fc4e8fced556d398819195897ae3a63083bbfef944e95be49af059e8903652
+8214124de12b5426267e9993934f6920f3db7de5d402c8b879fb8d56960e42ea
+bc1b5707b5687acd0f121ddb0815a1419fa27c63101bd47c2567fcfc28976371
+100ce7ce542fcd30884024d370fc1af9633a85c81390d5aa06cc2c80c21fb374
+2afb0c00e6e6f1ab0ba58dcc9600478a6671a1cda0c75a1e0ad534f5a6ce4e03
+14a8aa47c30401f049611da2a6cdc63ed759879981ab0214c8156c5b58397993
+13df1c58c3adbfb69fceb8fc3aa561eac1b53f0ff6e3e09ad2c4ff7660892129
+
+# --- FerrisScope (dzcorp/FerrisScope) — legitimate Kubernetes IDE with AI agent (T2-Local_Inference_Deploy FP) ---
+# Open-source Tauri/Rust Kubernetes IDE (Apache 2.0, github.com/dzcorp/FerrisScope)
+# Built-in AI agent with 6+ provider routing (OpenAI, DeepSeek, Mistral, Ollama, Groq, Together AI)
+# ferrisscope.dpkg-new = dpkg package manager temp file suffix during Linux installation
+# credentials.enc = Rust dependency encrypted credential store (headless/keychain-less fallback)
+# ferrisscope::startup = Tauri app autostart persistence module (legitimate feature)
+# Fires 6 CAIRN rules — highest rule count of any legitimate FP; all rules fire on AI agent feature strings
+# Main binary (ferris-scope, 0 det) + dpkg install artifacts (2–3 heuristic det: Kingsoft, Rising, huorong)
+# No malicious behavior; no AV family attribution; confirmed legitimate project via GitHub + parent pivot
+5d47fb15808b368b21c6d55cb4a8534cf7e5e6e90f89dea8ed44e78b45763d0e
+8c328a713a9ac46bbcaa83c1ac8d4c05af14f99c1bf7a61fe03b5e68a9a5c9af
+2c2518e49048c6f946e97731ea9711bfb6cea63e922841579966fbfee3af3d94
+
+# --- locally-uncensored.exe — "Locally Uncensored" AGPL-3.0 AI desktop app (T2-Local_Inference_Deploy FP) ---
+# Legitimate open-source multi-backend AI assistant (github.com/PurpleDoubleD/locally-uncensored)
+# Tauri/Rust desktop app; AGPL-3.0; CompanyName: PurpleDoubleD; v2.5.7; 906 GitHub stars
+# Supports 12 AI backends: Ollama, LM Studio, vLLM, ComfyUI (Stable Diffusion), etc.
+# "tasklist /FI ollama.exe" = checking if ollama is running (legitimate backend detection)
+# openrouter.ai + api.groq.com + civitai.com + cloudflared = legitimate AI + tunnel features
+# Submitted from D:\AIModels\Locally Uncensored\ — developer path; deleted from VT after 3 days
+# 3 heuristic detections (SentinelOne, Trapmine, huorong stealer) = FPs on Tauri+AI binary
+# No malicious behavior
+f9fb2ebde2364b90c1a26b3e89dddce9451bd39ba5bfea57e48dc2b5cb9a9ed6
+
+# --- GameHubShowcase.dll + BB.exe (Disco stealer) — T1-Local_Model_Runtime $gguf FP ---
+# GameHubShowcase.dll: trojanized .NET game hub that downloads Disco stealer (BB.exe)
+# Delivery: GameHubLauncher (2).rar → GameHubShowcase.dll (13 det)
+# Stage 2: BB.exe = HEUR:Trojan-PSW.Win32.Disco.pefng (Kaspersky); 58 det; GoFile.io exfil; ip-api.com
+# T1-Local_Model_Runtime fires on $gguf: game file extension reference in DLL string pool, not GGUF model loading
+# No AI integration in this campaign; gaming credential stealer (gamehub_keys.json)
+20b466253ce32a2627ef5fcc21f87997f8712300ae7f0dbd97588322e21fc693
+67ad27cf62e39526cd97a4da58c29f2870f625fbc152a19020f667cafb9b37d0

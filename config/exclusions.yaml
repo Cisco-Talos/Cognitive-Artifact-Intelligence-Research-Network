@@ -1,0 +1,980 @@
+# CAIRN Corpus Exclusion List
+#
+# Hashes listed here are silently skipped on pull/pivot and removed by `cairn prune`.
+# Add an entry whenever a thread closes as reclassified-legitimate or dead-end with
+# no analytical value — prevents the same FP from re-entering on future pulls.
+#
+# The investigation record lives in docs/families/<FAMILY>.md or SOA.md progression
+# notes, not here. This file is a blocklist, not an archive.
+#
+# Format:
+#   <sha256>:
+#     reason: <one-line reason>
+#     reclassified_as: <optional — what it actually is>
+#     date: <YYYY-MM-DD>
+#     analyst: <initials or name>
+
+exclusions:
+  # XZOpcClaw.exe — IVY (ShenZhen) / 小智桌面 commercial AI aggregator suite
+  # Reclassified 2026-06-12: cert pivot (thumbprint 50AA3B77) confirmed legitimate product
+  # portfolio; 9 Barys detections are heuristic FP on commercial Chinese desktop software.
+  59257eb172e7985370693b53d99ba101cec4c85e294eed2cf7860cf7f2b0b3a0:
+    reason: Legitimate commercial software — IVY (ShenZhen) 小智桌面 / Claw桌面版 v4.1.0.6
+    reclassified_as: Legitimate Chinese commercial AI aggregator (valid DigiCert cert 50AA3B77)
+    date: "2026-06-12"
+    analyst: Ryan
+
+  # ImTip.exe — github.com/aardio/ImTip open-source AI input assistant
+  # Reclassified 2026-06-12: behaviours refresh confirmed aardio open-source project;
+  # 43 detections entirely generic aardio framework flags (trojan.aauto/misc);
+  # triggered T3-PROMPTSTEAL FP via router.huggingface.co in sandbox memory patterns.
+  77f4e241ce006b74331a2fd77e32a92e03571abedc44ee35c0a19a4418abb795:
+    reason: Legitimate open-source software — github.com/aardio/ImTip v8.7.0.0
+    reclassified_as: Open-source aardio AI input method / desktop assistant
+    date: "2026-06-12"
+    analyst: Ryan
+
+  # kva-launcher.exe cluster — KVA Project Minecraft launcher (6 variants)
+  # Closed 2026-06-12: "OpenAI" provider_reference was FP from C2PA cert chain
+  # (OpenAI Media Service / OpenAI TSA Root CA embedded as PE signature data).
+  # Both sandboxes clean (Zenbox 99% confidence); no contacted domains or API endpoints.
+  99f1b510d179e53d6a19e3b99fd3cf62ae4dfcadf5776a6bacffa5ff12adfd35:
+    reason: Legitimate Minecraft launcher — KVA Project v0.1.1; OpenAI ref was C2PA cert chain FP
+    reclassified_as: Legitimate game launcher with C2PA-stamped DALL-E assets
+    date: "2026-06-12"
+    analyst: Ryan
+  c12f7cafcea955f91995de6ee660029a78d1a9808c1f5aef8a568c674ceebd11:
+    reason: Legitimate Minecraft launcher — KVA Project v0.1.1; OpenAI ref was C2PA cert chain FP
+    reclassified_as: Legitimate game launcher with C2PA-stamped DALL-E assets
+    date: "2026-06-12"
+    analyst: Ryan
+  c43ead23e1777cb85ede625b2f87fd457347cbdc95a8239bc28b1772a0a4fa44:
+    reason: Legitimate Minecraft launcher — KVA Project v0.1.1; OpenAI ref was C2PA cert chain FP
+    reclassified_as: Legitimate game launcher with C2PA-stamped DALL-E assets
+    date: "2026-06-12"
+    analyst: Ryan
+  17d3d9be7a3c6aff3ee9d39a4202f829fbdb5b54e914522a4b66d9b9a7bfb9ca:
+    reason: Legitimate Minecraft launcher — KVA Project v0.1.1; OpenAI ref was C2PA cert chain FP
+    reclassified_as: Legitimate game launcher with C2PA-stamped DALL-E assets
+    date: "2026-06-12"
+    analyst: Ryan
+  a4feb272cbc77b0f5b7bc64347decff2e7c92bf6e54a30a9f59b18613b98e19b:
+    reason: Legitimate Minecraft launcher — KVA Project v0.1.1; OpenAI ref was C2PA cert chain FP
+    reclassified_as: Legitimate game launcher with C2PA-stamped DALL-E assets
+    date: "2026-06-12"
+    analyst: Ryan
+  6dfafcd46605301c32c865bd9fb1ed089ddc6f84cd53240dd19532393b6da4da:
+    reason: Legitimate Minecraft launcher — KVA Project v0.1.1; OpenAI ref was C2PA cert chain FP
+    reclassified_as: Legitimate game launcher with C2PA-stamped DALL-E assets
+    date: "2026-06-12"
+    analyst: Ryan
+
+  # wx_video_download.exe cluster — Chinese WeChat video downloader lure (4 variants)
+  # Closed 2026-06-12: OpenAI ref (api.openai.com audio/m) is the Whisper transcription
+  # endpoint in an Electron-based WeChat video tool, not LLM chat/completions.
+  # Adjacent Chromium/V8 strings confirm Electron binary; sandboxes clean.
+  7d0936769cd4ed6d9a5f40f03b74c25f5143fa90a2cdac7a98d50282c86b9f4e:
+    reason: Legitimate Electron WeChat video downloader; OpenAI ref is Whisper endpoint, not LLM chat
+    reclassified_as: Electron-based WeChat video downloader with Whisper transcription feature
+    date: "2026-06-12"
+    analyst: Ryan
+  bc9252ec85e8fcc1e08e7ee61f7db14e1af5e74da95d0a7e5e534d32c1d0e5b4:
+    reason: Legitimate Electron WeChat video downloader; OpenAI ref is Whisper endpoint, not LLM chat
+    reclassified_as: Electron-based WeChat video downloader with Whisper transcription feature
+    date: "2026-06-12"
+    analyst: Ryan
+  6c5a092cd4bcce278eb87bf5030eeb47e123be1cd03ac9613bc037387124aef3:
+    reason: Legitimate Electron WeChat video downloader; OpenAI ref is Whisper endpoint, not LLM chat
+    reclassified_as: Electron-based WeChat video downloader with Whisper transcription feature
+    date: "2026-06-12"
+    analyst: Ryan
+  ff1f4b104e09f0b6e2a5f8c99d174bb36a5a32ad1f3ef9a0c3c785b8c0deaa7f:
+    reason: Legitimate Electron WeChat video downloader; OpenAI ref is Whisper endpoint, not LLM chat
+    reclassified_as: Electron-based WeChat video downloader with Whisper transcription feature
+    date: "2026-06-12"
+    analyst: Ryan
+
+  # Locally Uncensored (PurpleDoubleD) — 6 variants, v2.4.9–v2.5.3
+  # Reclassified 2026-06-17: legitimate Tauri/EdgeWebView2 bring-your-own-AI desktop app.
+  # Sandbox confirms: downloads OllamaSetup.exe + LM Studio installer, references ComfyUI
+  # (127.0.0.1:8188), Civitai, HuggingFace, Anthropic — broad provider surface explains
+  # Rising/Huorong Spyware.Stealer FP. Supabase backend (gewbdlmziumhseftxgrr.supabase.co)
+  # is standard Tauri app settings sync. No credential exfil, no C2, no malicious payload.
+  3d851271b93732d4037f7ef4a49d30b9d00136b457a429ec65653ca4d27beece:
+    reason: Legitimate Tauri bring-your-own-AI app (PurpleDoubleD / Locally Uncensored v2.4.9)
+    reclassified_as: Tauri desktop AI orchestrator; stealer FP from broad LLM provider surface
+    date: "2026-06-17"
+    analyst: Ryan
+  5818cdc442e5814ff8d2f8e107e3e889fe2b834d56417457ed498166156a2aaf:
+    reason: Legitimate Tauri bring-your-own-AI app (PurpleDoubleD / Locally Uncensored v2.5.3 installer)
+    reclassified_as: Tauri desktop AI orchestrator installer
+    date: "2026-06-17"
+    analyst: Ryan
+  d33c774269c2da48ac17649b77da3c751d909e57f3ffd4e95db0f74fd7912d87:
+    reason: Legitimate Tauri bring-your-own-AI app (PurpleDoubleD / Locally Uncensored v2.5.0 installed)
+    reclassified_as: Tauri desktop AI orchestrator; stealer FP from broad LLM provider surface
+    date: "2026-06-17"
+    analyst: Ryan
+  afdba242b02ec31a03b5972c4b1631d78c27e8e2257e34bf2ba2a6341d5bb1b7:
+    reason: Legitimate Tauri bring-your-own-AI app (PurpleDoubleD / Locally Uncensored v2.5.2 installer)
+    reclassified_as: Tauri desktop AI orchestrator installer
+    date: "2026-06-17"
+    analyst: Ryan
+  4c23abd2208179c1e6f24f75da1efabc779ed7e32dabdd1840b2767d5f342a30:
+    reason: Legitimate Tauri bring-your-own-AI app (PurpleDoubleD / Locally Uncensored v2.5.0 installer)
+    reclassified_as: Tauri desktop AI orchestrator installer
+    date: "2026-06-17"
+    analyst: Ryan
+  ffd811e4fe072d8b204a165ccb9910ef11720a97dc054bb3cbfa789537a5d424:
+    reason: Legitimate Tauri bring-your-own-AI app (PurpleDoubleD / Locally Uncensored v2.5.1)
+    reclassified_as: Tauri desktop AI orchestrator; stealer FP from broad LLM provider surface
+    date: "2026-06-17"
+    analyst: Ryan
+
+  # KiteCyber clientagent.exe cluster — 70 variants, 2026-06-18
+  # Legitimate commercial endpoint security product (KiteCyber kcsensor).
+  # Real OpenAI+Anthropic API calls are built-in security features, not malware.
+  # Repeatedly surfaces on provider-api-integration. All 70 hashes excluded.
+  11f0c621043944097a2967da3639d4ac12a9eee426a7dcf8455f179f33161670:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor with built-in LLM API calls
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  e457a17193a7a971c98ee45e9b200634486fbc65e09cc9c6db66c5f5d30d1e47:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  566fe8481fcd3eabf4f35bf0dafa5ae0aa1d632f09dc740c9a8001b36363be56:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  00b4015f1310e41d51624790f821d4ed22e2a14f1351edfaeed9e5d995000078:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  d9c49a1c096c67ef92a296a21e2f9c71fba8b788b8fee6837e6e1e1f122b2663:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  07423424e58ef42e36be17cfe0f6ed2bf760ebb15d6a640440b3edeedc9d2e07:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  a56f0cd5a196820b349253d5f06f8d47b65a3f3f50a8fc89e6bf3662cda4a8d3:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  4693e296cebc7b107f888624aff683fa72c1e6b067074e58553a8d2555690de2:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  b35806630e2f873be001dd53f06959868d0c85dd09e3ccaa03afb8d771145e78:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  71b453b16db28fb863179e183a3eaf20d9811ea37b4c5778db3d233e3b02870f:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  2cacdebec7f13aed6323a7e1b9fcefa41ecd0e6317007e1e586bcb1ee842a19c:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  25934823de805addf32475a880b6bda5da03f8ab60ae364af37858d2fdc8c44e:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  e1b4d1319f01075d790b668988ba58d37a480cea06e53661a7c3739de48474f4:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  dc3b3bdbadb55fa56e4af749c1f6216f9457593456538e735c963d61942b7a66:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  cf02adc3865f3d05809ed69cd862e1d913142e11cb0c4290d127aab6e7b59070:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  f8311f41fd5f18dec28c8b1b9d6c3cc3ce4bb823595223505e9290dcf1bcbe68:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  1e3d8d526d447d8361e0684b98d1edc49ab116fd78fb8ee4f071ac4b25ad92cf:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  ac72befd24691dae8d874a44722df33a3f3f25bf5c331f17ce6b4f5256c67e6c:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  be3f5c392eb87e0309d865d9c390b51ecf03628702a52c98c0c93030c4d9235c:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  d445ccb7f706ad37b78be9df9145012a5e12f0599725e17b748a45abbdc1f172:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  5aee768f57b8a9d2e1365268e549b60284131b426c1a77845a3c267f21add0fd:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  d2ae344ac81b27020f07c19df82c47adf7d725253fdf879b585acfcc4d41ff78:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  427dbd89fa93e327ab2f891bbc9721264aeb9bfb5298026917d86210cf72d2b1:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  3f2837c06829fee15855a09dab2bc094369ab7b6d8290f9337cdcd9f466834d6:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  39ae09e06521537042bbbbe6a714b3d775d05d921598f05830253ad34179a828:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  6630c530ae844b0b672658c95bc61516e37ab0f4fdab52815ba3a43109129086:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  8ab2fe6ecc28b74b839d16c832b9a198c923907a152d43b48c0bac1de87b659c:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  24bc219875bd6e6cabd4ef6ab640799e81963e93c74b2b64f793c8cb70186f02:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  343dfee5e207a546de33fbf4746350639a5c38f1f293a6e1de2da2272b30b5b8:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  85b36a1b740d9f000bce0c1e998eefb28fc8924327e2a9b9b9c331a52ddb4e8f:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  f1aafbe45d27e8d63e25b4fc3aa5e0aae9ff1a542750ad92e5dc04052c0c6ad7:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  69f4b01eb1446721c8e68267c21a30b6a1e3dc60c9f66204051136bdbb4cba58:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  d290310324581df1d24ca0e18ed32873470ebe76e8c6aad7c145ff46ff8ae3df:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  4d75293a473e1e4c65733c5e43be7e591316e329202add74788f51aa41f77ca5:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  fc8152120295a709e390281615d926cc2f41020ffc14c4777bc2c1b4a7880a09:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  2baf0502080a54284fb5e62a86f53befab02cabdeea4e7f7d34405470f12a3c5:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  cbaf69c6130c2746969e18fdb33590c09b29dab9270ba18e330bb824b249cf6d:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  27923155b4056e8e0f4384d7c8f93804b764cb3159395fab6d2546591950ad60:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  e1c6f46b0a2fd4f0bf63d37a65251983a228bcd456ee4443ba7959903b4ef965:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  a0164845686cb0ce1842cc324477e8583b9594313f15374e282a9c4d169229cc:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  9201ab4f0423fcf0df092daecaaeebd35ca6d1bf61b19974ca7efc4a1492204e:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  a3953ceccf1ec4a31eefad64ab33996f2d06ef2992e19c6e83197c8ab12661a2:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  f482485c868199808c0456255b8c1dc2c2bc3d2a5a110c56cca58a7015194d69:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  e195cf357e83d3e48a55b08dd29166be857b0d76de24a882174006c34e152f05:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  8663372dacd4b620fa93a300fd6e3679bff6da351c5634a58f9bdda194141cc6:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  1d6278fadd74a2285f24cbc3f130bf97a1509403197329d434a4b63187988b00:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  0ab1b84ce04ab3245d4b99c7149ee2c58a6b74f2053e8b12d39e79e6e95b2b9f:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  c54729ca40bc12c95f701b34fbc648b4ce15301a253f9804be59259b30b547ac:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  41ec49386a0e4643099870f15acab61961114d5b3cae3180ac439840be68d084:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  0577fdb33c4329a5e04ca3f64fd873b874bb443aaea170be3f9ac6efd2423870:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  7338be8383defc428e3ed9bf1b01776e9091e9e44c7d4b30c1eac3f0a29423db:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  9d94deda7e8407ef49c1a62713afdb44f877d6631d9d787b43072c0c43151450:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  80cd99ef0c958ae139d133e71f6047862c84f776fe6f6804ec3c4f1221ce13b2:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  2e6f0f3cf10b6b64ea2ad16a253b20f2976d6f2da1c765e5a8149aa77438d4cf:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  255716e23720e14c001425cc9007f804d23e57e16a1b119e5290b75e6b63330b:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  d8b393af82fc15454bbbf05fdf21a257e5b092c03b0a479e1e5e32d7592bcf06:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  3216e9562295b12ccf3f5d0479e2fd3fd6015c99324856b6e1c8d3de4aa59a45:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  e244fdd5ab036a51d7d6846b3dbfa5af49fd1a65f0877f47088840bea0e08657:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  842c167c4d98746f2ccc6f70f100b3435416ad5ddf4b662a2d4d5f85525b8644:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  275aafe03eb3f48156124c47771a77ee7148ec1b5e6d60046c64e2780fc313f8:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  d0752626b50dccf669ec83ed7931614c9b8428d1595a1f9b60512f07ec2783f4:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  34d1ebc702b0cb4dba271d8e12c9950bce8c3b3f8c90d650b0264a898ecd08c6:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  e10f9fbbcddc33e7bd1ec0dad16ff98fd45f9fe90fa583c0edf07cfd5097ef57:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  dedc2f6b3289bd59758952dee606101b6b1177b90df5a4e7e4c04df9769487d0:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  a84d8269bca8ca176930aa6a8c93f3a2695778d23cc4afaa79eca4bcd07c1395:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  743e54fd2893743ede0555de7e4be2873d2e7207e007d236c65fd8fc3225b398:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  44e9273297d8833445987bff9f5036dc22f30d6e8a6406dc97fe47cbc5644990:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  55b0fffdc8331b784eaa5e4f65d6897e846d5307ad71bc6c191d2fb5e6f51f48:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  c593dd5c723523659a499a85ac8aa3d556995fca86756e3f61eb12d688dd63fa:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  3ae08888820caebb06c9eac42607cea0c57e70135c6433f74ae2453b3d7f82c9:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+  61a79860b6e46431afd5e8ea2b0000d9fa7a8e09e48b7f47c341392937357a51:
+    reason: Legitimate commercial EDR — KiteCyber kcsensor
+    reclassified_as: KiteCyber endpoint security agent (clientagent.exe)
+    date: "2026-06-18"
+    analyst: Ryan
+
+  # NumLockLock.exe cluster — inasoft.org Japanese keyboard utility (34 variants), 2026-06-18
+  # 'claude' and 'gemini' provider refs are binary noise in a large overlay section.
+  # HackTool:Win64/AmsiETWPatch detection is real but unrelated to AI tradecraft.
+  # Repeatedly surfaces on broad-discovery and ai-analysis-evasion.
+  1f3677eb9b8537bda36e5dc6b7a5826f92ffd1e2d45a977129ab38d88e7c23cd:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  e03747c7aa941f913e94362dfaf9448e93e1488298f03f32ddc2b62f70000894:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  2eeaf3d0fcd64695f9b75e3d436cf059ad8ffdeb943c45545c4dd8a1fe78ca15:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  ac88e4a8989a6617d1dc6e22bf9b3e15966354e5fbbf0860363bfe1cbbf8786f:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  2a1481309c75dc5264da1fe0132aca0edca62b3934dfec7774d2f711f8c40090:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  bd8d68166caba1bbf2a67aad193c0a571218d3883e4058662240704bf9960ed8:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  6cd8501ba7ee9295d96240413dec1cd950c0b3e041551465c4e5259a1f68964e:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  ceebb3111f99934dee6dedeabde03282c0da58f571b278be81d3f5ebba9aa23a:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  c1df544d2ee77483c03148938cb0dde8d16b13a0eb6d7bea52fa802c866b452d:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  5beb018b486493ae13f8fe00f81c185d6abdeb324c7a817da7e0e84a2c94d0b1:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  fecdc1a5b44463558448ab7b3c51e0167fce0c16cd40609f8e07a8918a4b4348:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  d3b0feb9cee6e57385025560ed210aed86bd0bb8f58191c91279754ddc900cc3:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  170549c3fb0c16fc1ae9b1986f95da533e2ded8e3d9d9f3f455b9458cd7c08eb:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  a7736cbabec74f03dd5bc1727113bd0548f985f2843e4238e965bfef4fc79107:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  4817d9547b15f130337e7bb37307b81b181b3076788f747d5c609c7a72c55cf4:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  a65a1f1d6988858117d43779271310d0cad56a33fbdc55bbfe5a5531cb6565f6:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  718036e51b47804d80c7ab27f283f270c0e5275670042ba79a32405601cc57b7:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  49aeb56e228250f9278eb39f9a8741b4e9c372fa092d65cecbc1a2afdc924be5:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  bf026e1e0a17b8264d6eaf7ff999e3a7f7ebf7ce2eb4d5e53b7e87a233c2e2f8:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  809642d7111005aed3b3ffb34aa5eb0fae8852937b04257f98139639e2eb2bb9:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  c4d020fbfe1089a6adeba0c8951e049b3cc6d697f7189a0e5f848551c5efc639:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  f47c4c7be45dbce033e3c01b3f6c4897028ab6ae83bba429dc3583f5584e897e:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  71eeaed649a80b9f6c73c5743254e992f1a37a041767e63c23f2c7ff135271d7:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  d98087b37654a675366ff85d8486f8e1e5825d8809a75090845ad8d0d161831b:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  c9f7284fd1add682cd545375a02e2483c288a7eb6859d0047ba7364cbb4c29f5:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  ff75c12e08e139ce965b4da760440e69b1d66c0ea0178a3be2f086abcbadf043:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  4de6eb0eb2edfcbcc87f0b8d006314bbfbbe50eaf59d31450d7e483add031e57:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  9964227ec8f9be443bf35c78f385f921cf59b10bbdd9eef19f42211126706743:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  1cf4860e7f1f257f009c6ad039a0b03bd9660e5e19a4c84ec3cd380d9c53abfe:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  c92c6e5127ddced0a9fa36c4a609e845e23115a3cc29d0da418a1df0d76de0fc:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  8ba88a141222949ba584059305164640eb7b4858bb70088200af58251605bbbf:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  94de2507b927a24d7a06a5e2ad5ec4b198e41ac1b034d5f23c16770b6c2e460d:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  4b178c3185e7cd3f378e68e0a4d2e7771ed1f7e41fc770de27c0d6b985fb3d40:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+  b33035a54f9eaa8d2c015441871bce7612c3e4496980eac97d29f514579324bb:
+    reason: Legitimate Japanese keyboard utility — inasoft.org NumLockLock; AI refs are overlay noise
+    reclassified_as: inasoft.org NumLockLock keyboard utility
+    date: "2026-06-18"
+    analyst: Ryan
+
+  # Locally Uncensored — open-source local LLM runner by PurpleDoubleD (AGPL-3.0)
+  # Reclassified 2026-06-23: cluster 41 triage confirmed legit product (NSIS installer,
+  # signed copyright "PurpleDoubleD", install path "Locally Uncensored", sandbox harmless).
+  # AV flags (3–4 det) are huorong/Trapmine ML FPs. Versions 2.4.5–2.5.4, May–Jun 2026.
+  7f9e6c5021da18797a6c14051166762403fcf155eca5a5d83b955fedfb66e0d2:
+    reason: Legitimate open-source local LLM runner — PurpleDoubleD Locally Uncensored v2.4.5 (AGPL-3.0)
+    reclassified_as: Locally Uncensored by PurpleDoubleD (local LLM runner, NSIS installer)
+    date: "2026-06-23"
+    analyst: Ryan
+  5f201bb42e992af994cd0a86b1929915fd5386cfa6137b22473f93b6526a5402:
+    reason: Legitimate open-source local LLM runner — PurpleDoubleD Locally Uncensored v2.4.8 (AGPL-3.0)
+    reclassified_as: Locally Uncensored by PurpleDoubleD (local LLM runner)
+    date: "2026-06-23"
+    analyst: Ryan
+  da6a1ebcc71ff13ecd38cc8785568db4bff4352561d0fdb6795f6b66d7c6c5b6:
+    reason: Legitimate open-source local LLM runner — PurpleDoubleD Locally Uncensored v2.4.8 (AGPL-3.0)
+    reclassified_as: Locally Uncensored by PurpleDoubleD (local LLM runner, NSIS installer)
+    date: "2026-06-23"
+    analyst: Ryan
+  98cb32b29cacc891d8265fc2080f07d10fa83ba251033708a99e0c453e8199cb:
+    reason: Legitimate open-source local LLM runner — PurpleDoubleD Locally Uncensored v2.4.9 (AGPL-3.0)
+    reclassified_as: Locally Uncensored by PurpleDoubleD (local LLM runner, NSIS installer)
+    date: "2026-06-23"
+    analyst: Ryan
+  c6185767004cc78dd628ae3cdad8fae4ae62cbfa5c9e7fcff3a28fb430bf628d:
+    reason: Legitimate open-source local LLM runner — PurpleDoubleD Locally Uncensored (AGPL-3.0), submitted as "Path"
+    reclassified_as: Locally Uncensored by PurpleDoubleD (local LLM runner)
+    date: "2026-06-23"
+    analyst: Ryan
+  6ae1949dbff67aaa1107312bfbb19917f8dcbdf953d9a74c334bf0df03c8bca0:
+    reason: Legitimate open-source local LLM runner — PurpleDoubleD Locally Uncensored v2.5.1 (AGPL-3.0)
+    reclassified_as: Locally Uncensored by PurpleDoubleD (local LLM runner, NSIS installer)
+    date: "2026-06-23"
+    analyst: Ryan
+  e8d21bd5e8bcc6475761db830cc82ed64f4a88971dc8d09450ccaceaf9f7b6f0:
+    reason: Legitimate open-source local LLM runner — PurpleDoubleD Locally Uncensored v2.5.x (AGPL-3.0)
+    reclassified_as: Locally Uncensored by PurpleDoubleD (local LLM runner)
+    date: "2026-06-23"
+    analyst: Ryan
+  a645d0ad243e7414c1fed6201923a9657f5dfa4816d2e0ccfe933c7f0e6511c5:
+    reason: Legitimate open-source local LLM runner — PurpleDoubleD Locally Uncensored v2.5.x (AGPL-3.0)
+    reclassified_as: Locally Uncensored by PurpleDoubleD (local LLM runner)
+    date: "2026-06-23"
+    analyst: Ryan
+  b7ca9506252da7bfdf4b9179b3a9b48e567b59d3e7fe3313d09593dd15cadf19:
+    reason: Legitimate open-source local LLM runner — PurpleDoubleD Locally Uncensored v2.5.x (AGPL-3.0)
+    reclassified_as: Locally Uncensored by PurpleDoubleD (local LLM runner)
+    date: "2026-06-23"
+    analyst: Ryan
+  9f0b56ef699f2dd222f4262a295fb60256711a9b4e510711f9f19e64dfbc3dff:
+    reason: Legitimate open-source local LLM runner — PurpleDoubleD Locally Uncensored v2.5.4 (AGPL-3.0)
+    reclassified_as: Locally Uncensored by PurpleDoubleD (local LLM runner, NSIS installer)
+    date: "2026-06-23"
+    analyst: Ryan
+
+  # Cluster 61 — generic file infectors using wupdmgr.exe cover name
+  # Reclassified 2026-06-23: all 13 pulled by llmgate-gen3-hunt on name:wupdmgr.exe but are
+  # unrelated commodity malware (Virut, Expiro, TangoStealer, generic crypters). No AI content,
+  # no LLMGATE indicators. The filter name match is false positive. No T1/T2/T3 rules fire.
+  52ece47ce6f8cf8aad1213c8176ad59d1ed8e8f11b50a852ccba900a54d8bfe5:
+    reason: Generic file infector (Virut/Autorun) named wupdmgr.exe — llmgate-gen3-hunt FP
+    reclassified_as: Worm/Win32.AutoRun (uses wupdmgr.exe as cover name, no AI content)
+    date: "2026-06-23"
+    analyst: Ryan
+  a9cd7f2b3dd9c00aa7917bc62defa39e6ae74ad5624cd01e259a19d13ef2061a:
+    reason: Generic file infector (Virut) named wupdmgr.exe — llmgate-gen3-hunt FP
+    reclassified_as: Win32/Virut file infector (cover name wupdmgr.exe, no AI content)
+    date: "2026-06-23"
+    analyst: Ryan
+  d5b6b58d89ace7bb1897588401d9d146b13253e9541d11d4f5397336712b9182:
+    reason: Generic file infector (Expiro) named wupdmgr.exe — llmgate-gen3-hunt FP
+    reclassified_as: Win32/Expiro file infector (cover name wupdmgr.exe, no AI content)
+    date: "2026-06-23"
+    analyst: Ryan
+  d436854b41aac59ceeaf49744d7bc85b2ce764d0bcff789c3a9a1f9c5bf9a424:
+    reason: Generic file infector (Expiro) named wupdmgr.exe — llmgate-gen3-hunt FP
+    reclassified_as: Win32/Expiro file infector (cover name wupdmgr.exe, no AI content)
+    date: "2026-06-23"
+    analyst: Ryan
+  d78ca8bd4d8d1902e1157b921695aa7f108e9115563d1f4d021c8553385b0537:
+    reason: Generic malware (WUpdMgr.exe cover name) — llmgate-gen3-hunt FP
+    reclassified_as: Unknown malware using WUpdMgr.exe cover name, no AI content
+    date: "2026-06-23"
+    analyst: Ryan
+  a8207c5b324c72481aa7250c88785699ca91ffaae9df955a1a70f63f7faf76cc:
+    reason: Generic malware (wupdmgr.exe cover name) — llmgate-gen3-hunt FP
+    reclassified_as: Unknown malware using wupdmgr.exe cover name, no AI content
+    date: "2026-06-23"
+    analyst: Ryan
+  07c54a661555e2ce61598593400a916cf15069bbc4d8743aa6aa2a93bb650556:
+    reason: TangoStealer trojan using wupdmgr.exe cover name — llmgate-gen3-hunt FP
+    reclassified_as: TangoStealer (cover name wupdmgr.exe, no AI content)
+    date: "2026-06-23"
+    analyst: Ryan
+  0460f803b6db921f7974822f1ea9c2741967facd066e28f6a3aa3988a3c6cbec:
+    reason: Generic trojan using wupdmgr.exe cover name — llmgate-gen3-hunt FP
+    reclassified_as: Generic crypter/dropper (cover name wupdmgr.exe, no AI content)
+    date: "2026-06-23"
+    analyst: Ryan
+  0253af86b11e604c177bf4134751346337ceba5361e2f264ac6533b1896eef31:
+    reason: Generic trojan using wupdmgr.exe cover name — llmgate-gen3-hunt FP
+    reclassified_as: Generic crypter/dropper (cover name wupdmgr.exe, no AI content)
+    date: "2026-06-23"
+    analyst: Ryan
+  be70c3b01f793c6ee116f1533a75c78dbb5b63f5480f72a289a6f805af7bf524:
+    reason: File infector (Virut) using wupdmgr.exe cover name — llmgate-gen3-hunt FP
+    reclassified_as: Win32/Virut file infector (cover name wupdmgr.exe, no AI content)
+    date: "2026-06-23"
+    analyst: Ryan
+  0c17c9b789023285c9cd19e3a0cded211e30ae35bd2644bc43db4167506f650a:
+    reason: Generic trojan (GenKryptik) using wupdmgr.exe cover name — llmgate-gen3-hunt FP
+    reclassified_as: Win64/GenKryptik trojan (cover name wupdmgr.exe, no AI content)
+    date: "2026-06-23"
+    analyst: Ryan
+  91918dcabc3119178e137f1ded8e869a2bb1925159561ea4b8505947a7a23ab6:
+    reason: Generic trojan using wupdmgr.exe cover name — llmgate-gen3-hunt FP
+    reclassified_as: Generic crypter/dropper (cover name wupdmgr.exe, no AI content)
+    date: "2026-06-23"
+    analyst: Ryan
+  abb9a17a39398025cb483d45730601306bc1f8bd9050a73f6f5154a05549eb13:
+    reason: Generic trojan using wupdmgr.exe cover name — llmgate-gen3-hunt FP
+    reclassified_as: Generic crypter/dropper (cover name wupdmgr.exe, no AI content)
+    date: "2026-06-23"
+    analyst: Ryan
+
+  # Cluster 14 — PulseBrowser adware, IPamor file infectors, ConnectWise lures, miscellaneous
+  # Reclassified 2026-06-23: heterogeneous cluster with no AI integration evidence.
+  # PulseBrowser (UpdaterSetup.exe): adware installer, offensive-co-occurrence FP.
+  # IPamor/ECLX: real file infectors but prompt-residue hit is incidental; petik feed.
+  # ConnectWise lures: RMM social engineering, ai-analysis-evasion FP.
+  # AiTu.exe: Chinese AI companion with Kuaizip adware; T1 fires on legitimate app strings.
+  # Remainder: low-detection unknowns with no rules and no AI signal.
+  06c2d12fb7041838df76eafdf40b7d40257faae815cc1a40be18d9c5e4b41d91:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (Alabama/PulseBrowser adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  0bd2e21384fa4ec9995e0a2f07cc294b98c9c56c1421ca6a4659f38b49e7438c:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  1527c8f6db63e05c9983fd94061e7096047e1e86b3f2461e60199343b9f07210:
+    reason: IPamor/ECLX file infector from petik feed — prompt-residue FP, no AI content
+    reclassified_as: Virus.IPamor/ECLX file infector (petik automated collection)
+    date: "2026-06-23"
+    analyst: Ryan
+  1fe7ca08ba04ab073de37d7c97eadf169ff77058dae22f5c96db0841440e6ee8:
+    reason: ClaimMaster.exe — low-detection unknown, no rules, no AI integration signal
+    reclassified_as: Unknown low-detection binary, no analytical value
+    date: "2026-06-23"
+    analyst: Ryan
+  3cc8cc8a47278d52b7458dc6d520496a43eafbe1e055faf6c397289d78554497:
+    reason: AiTu.exe — Chinese AI companion app with Kuaizip bundled adware; T1 fires on legitimate local model strings
+    reclassified_as: AiTu Chinese AI companion application (commercial product bundled with Kuaizip adware)
+    date: "2026-06-23"
+    analyst: Ryan
+  48460d9491e80eb2d9d3c95758a3f3920c0997fd31b4b52691815fe5057a316b:
+    reason: Palo Alto GlobalProtect VPN client installer — 2-detection FP, sandbox harmless
+    reclassified_as: Palo Alto GlobalProtect VPN client
+    date: "2026-06-23"
+    analyst: Ryan
+  4931d9dda67069fc3ce2d27c9fa25e69255d2896234f71585603d1fb37f83381:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  6deef05a228345cb4341932784554e8a44dc126541330972ca4a59553122dfdc:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  7dc6e0c64ef8a3fa12ade16d7681ce7eca944ac045902704e03167cddf2242de:
+    reason: KTEMain32.dll — low-detection unknown, no rules, no AI integration signal
+    reclassified_as: Unknown low-detection DLL, no analytical value
+    date: "2026-06-23"
+    analyst: Ryan
+  83b57f95a9a77b0671c50a977e631a4b2987698e5ad652a6093012deed882acb:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  86d6d217dc7f073518105e564b71c8f3b583d0dc2d9e041ac585a882573af294:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  90d34c5a673ab8a58b8d97d3f0a123f1f737173ddb39ce4eab073b7a03b898bc:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  94b0e26a1a234fecdb9bf4ebca818d2e6deb9a4391ea008cf445831161ac7626:
+    reason: Generic setup.exe low-detection unknown — broad-discovery FP, no AI content
+    reclassified_as: Unknown generic setup binary, no analytical value
+    date: "2026-06-23"
+    analyst: Ryan
+  9729ae0ec3ace8fc89b6135ce43c9d3039ae23073f9e0c6ed01d2cce50edcad6:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  9797a5e1ec6359c4e846049f8d45901be2afb995d5ed1fe368a7202e86cb9e5a:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  9c811f4cede76c4baac69dc3b76393e8a49253c249ef78e88552dd775c7e3121:
+    reason: ConnectWise RMM lure (SSA_Document social engineering) — ai-analysis-evasion FP, no AI content
+    reclassified_as: Social engineering lure delivering ConnectWise RMM (ConnectWiseControl)
+    date: "2026-06-23"
+    analyst: Ryan
+  9e94fe63027c683a5d61274c25aa4dda33496f61b8d7aad09f3b7f7bc1be5f0e:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  bf611daf9b2acfdeaa8e26076ee0b137448476d6ec2a36b2f14ee2202cde0bfe:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  c4a1674690d873e73fde8bbddcc5d36d662f19499f5154bcb29363d0c093d037:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  ccaf9793111d283706168c922804e3b4f07483204ebc01b374c38f2314e7949b:
+    reason: PallasNet low-detection binary — offensive-co-occurrence/broad-discovery FP, no AI content
+    reclassified_as: Unknown PallasNet-labeled binary, no analytical value
+    date: "2026-06-23"
+    analyst: Ryan
+  d1d2b9b85e528ecf959a397fc3e9a42913d3766e019700d9931c85a26fa394c3:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  d1f315c973c03e880f80a0af7c92c89c6b84afcad933477ab54495a47c110544:
+    reason: IPamor/ECLX file infector from petik feed — prompt-residue FP, no AI content
+    reclassified_as: Virus.IPamor/ECLX file infector (petik automated collection)
+    date: "2026-06-23"
+    analyst: Ryan
+  e09b3c07c5d0283f38950c8192c8c3faa82e1966361070dcbe22e75b7d898c2a:
+    reason: IPamor/ECLX file infector from petik feed — prompt-residue FP, no AI content
+    reclassified_as: Virus.IPamor/ECLX file infector (petik automated collection)
+    date: "2026-06-23"
+    analyst: Ryan
+  e23223e38edb2c47a9e171d6a7ce1c2f4738747c2d7cdcf9d9a56f2289b360f1:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  e291edab1bd845e780bb9ce48574e80e8fffe05f24724a72456632c429869aaa:
+    reason: ConnectWise RMM lure (fake SharePoint installer) — ai-analysis-evasion FP, no AI content
+    reclassified_as: Social engineering lure delivering ConnectWise RMM (ConnectWiseControl)
+    date: "2026-06-23"
+    analyst: Ryan
+  ecb882bbbc093f76f6736bbc575c6cf82822c0e6ee22c808a76f0ffd9a7544b9:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  ef25358a98074061c8163642f7a1d75088ab8e20eb1f6eabe847096474ee63b7:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  f336996817b1e50b4bcaefab975ee95b15b920cd640ad3a7234e0c50464b359f:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+  f4966da889c96f57ba3d1ba20f27b72549256a7ceb5556726404464af81293c1:
+    reason: PulseBrowser adware installer (UpdaterSetup.exe) — offensive-co-occurrence FP, no AI content
+    reclassified_as: PulseBrowser adware (PulseBrowser/Alabama adware family)
+    date: "2026-06-23"
+    analyst: Ryan
+
+  # Cluster 44 legitimate software — Turkish developers using same .fptable MSVC stub packer
+  # Reclassified 2026-06-23: behaviours confirmed genuine products; packer FP
+  # kenmes_backend: full industrial MES with Ollama AI agent framework — legitimate product
+  # voxshare-gui: audio app (PIL/portaudio); Dota2 Story Generator: Qt/Python game tool
+  4c3edd4c485ac7ffe187cbce174f44cc33d463960018a312e6b4176515e998b0:
+    reason: Legitimate industrial MES — Kenmes Manufacturing Execution System with Ollama AI; packer FP
+    reclassified_as: Kenmes MES (legitimate Turkish industrial software with local LLM swarm agent)
+    date: "2026-06-23"
+    analyst: Ryan
+  fc1f7103fbc9186f0c95ed1ae77b88a0eb42070e4da6e3a3b1803f738f49c313:
+    reason: Legitimate audio app — voxshare-gui v0p10; packer FP (local-model-hunt filter)
+    reclassified_as: voxshare audio GUI application
+    date: "2026-06-23"
+    analyst: Ryan
+  88333805f06e6a1a986da0bd53357beae11181ef89485f90f8deeff19aeeb66b:
+    reason: Legitimate audio app — voxshare-gui v0.11; packer FP
+    reclassified_as: voxshare audio GUI application
+    date: "2026-06-23"
+    analyst: Ryan
+  7ee675a20b6a4edc645a722fab81359b89e167b34187241081a0c7ad791e2d7d:
+    reason: Legitimate Qt/Python app — Dota2 Story Generator; packer FP (provider-api-integration filter)
+    reclassified_as: Dota2 story generator Qt/Python application
+    date: "2026-06-23"
+    analyst: Ryan
+
+  # LM Stud.exe — dead end, 2026-06-17
+  # similar_files pivot: 7 generic low-detection utilities, no shared pattern, no AI signal.
+  # MSIL trojan detections (3) are generic heuristics. Name mimics LM Studio but no
+  # LM Studio strings, no local inference API calls in metadata or sandbox.
+  80002410442f642a5c9e0f2f8dce191dbd07813c9edda77829c3a3d8c595a9d6:
+    reason: Dead end — generic MSIL, name coincidentally similar to LM Studio; no local inference signal
+    reclassified_as: Unknown low-detection MSIL binary, no analytical value
+    date: "2026-06-17"
+    analyst: Ryan
