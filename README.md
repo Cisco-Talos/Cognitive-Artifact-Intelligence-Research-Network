@@ -26,8 +26,6 @@ Nine confirmed AI-malware archetypes are documented in the corpus to date:
 | **A8 — Malicious AI SDK** | Fake/backdoored npm or PyPI package masquerading as an AI service SDK | QUIETVAULT |
 | **A9 — LLM-Assisted Worm** | Impacket-style propagation combined with LLM-directed tasking | WURM |
 
-Full taxonomy and progression timeline: [`docs/SOA.md`](docs/SOA.md)
-
 ---
 
 ## How It Works
@@ -375,9 +373,6 @@ Individual technical reports for each confirmed family are in `docs/families/`:
 | VOZDYHAN | — | Node.js | [docs/families/VOZDYHAN.md](docs/families/VOZDYHAN.md) |
 | XENORAT | — | .NET (Xeno-RAT) | [docs/families/XENORAT.md](docs/families/XENORAT.md) |
 
-> **SUPERO** (previously listed as A8) was retracted 2026-06-15 as a false positive — confirmed as the legitimate [Supero](https://supero.dev) platform SDK. See [docs/families/SUPERO.md](docs/families/SUPERO.md) for the full investigation record.
-> **RIFTLOADER** was retracted 2026-07-02 as a false positive — confirmed as the Rocket League game DLL injector. See [docs/families/RIFTLOADER.md](docs/families/RIFTLOADER.md) for the investigation record.
-
 ---
 
 ## Repository Layout
@@ -476,23 +471,6 @@ CAIRN is designed to operate without touching malware directly:
 
 ---
 
-## Research Context
-
-CAIRN was developed to study the operational use of AI within malware ecosystems. The central hypothesis is that AI-enabled malware leaves identifiable cognitive artifacts — prompt residue, tool orchestration grammars, model lineage references, AI-analysis evasion instructions — that survive operationalization and can be extracted from metadata without binary access.
-
-Six research questions guide the project:
-
-- **RQ1:** Can ontology-driven artifact extraction reliably identify AI-related artifacts?
-- **RQ2:** Do recurring categories of cognitive artifacts emerge across malware ecosystems?
-- **RQ3:** Can embedding-based attribution identify related artifacts when lexical strings differ?
-- **RQ4:** Do malware ecosystems exhibit increasing agentic complexity over time?
-- **RQ5:** Can explainable artifact attribution improve analyst understanding over opaque AI classification?
-- **RQ6:** Can cognitive artifact evolution serve as a leading indicator of future offensive capability?
-
-Current status and preliminary answers: [`PLAN.md`](PLAN.md)
-
----
-
 ## Contributing
 
 Contributions welcome. Before opening a pull request:
@@ -506,4 +484,6 @@ Contributions welcome. Before opening a pull request:
 
 ## License
 
-To be determined.
+MIT License
+
+Copyright (c) 2026 Cisco Systems, Inc. and its affiliates (see LICENSE file)
