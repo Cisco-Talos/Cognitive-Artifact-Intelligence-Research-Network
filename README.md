@@ -314,18 +314,17 @@ Twenty-seven named channels in `config/acquisition_filters.yaml` (one disabled).
 | `llmgate-gen3-hunt` | hunt | peexe | 3 | LLMGATE Gen3 variants with rotated cover names (sysmntsvc, wupdmgr) |
 | `promptlock-hunt` | hunt | peexe, pedll, lua | 3 | Targeted PROMPTLOCK ransomware variant hunt |
 | `honestcue-hunt` | hunt | peexe, pedll | 3 | HONESTCUE .NET LLM probe loader |
-| `airefusal-hunt-a` | hunt | peexe | 3 | AIREFUSAL Group A — copyright-framed LLM-refusal + prompt-injection strings |
-| `airefusal-hunt-b` | hunt | peexe | 3 | AIREFUSAL Group B — simulated multi-turn LLM refusal dialogue in PE string table |
+| `airefusal-hunt-a` | hunt | peexe | 3 | copyright-framed LLM-refusal + prompt-injection strings |
+| `airefusal-hunt-b` | hunt | peexe | 3 | simulated multi-turn LLM refusal dialogue in PE string table |
 | `local-model-hunt` | hunt | peexe | 2 | Local model runtime binaries (GGUF, Ollama, llama.cpp) |
 | `local-inference-deploy-hunt` | hunt | peexe, pedll, ps1, py, elf | 2 | Deployment-level signals: ollama serve/pull, llama-server, localhost:11434, HF model downloads |
-| `vozdyhan-hunt` | hunt | peexe | 2 | Targeted VOZDYHAN WebRAT variant hunt |
-| `convagent-hunt` | hunt | peexe | 2 | Targeted CONVAGENT Go agent kit (Turkish C2, Efficio/ClusterEye branding) |
+| `vozdyhan-hunt` | hunt | peexe | 2 | Targeted WebRAT variant hunt |
+| `convagent-hunt` | hunt | peexe | 2 | Targeted Go agent kit (Turkish C2, Efficio/ClusterEye branding) |
 | `plotsafe-hunt` | hunt | peexe, pedll | 2 | Targeted PLOTSAFE GoKrypt ACRStealer (plotsafe.icu C2) |
-| `jobradar-hunt` | hunt | peexe | 2 | Targeted JOBRADAR Wails Go AI lure + Midie credential stealer |
-| `vibearound-hunt` | hunt | peexe | 2 | Targeted VIBEAROUND Tauri/Rust Chinese AI coding IDE distributing Galirus downloader |
-| `jadepuffer-hunt` | hunt | elf, sh | 1 | JADEPUFFER Langflow-themed ransomware (CVE-2025-3248); C2 45.131.66.106 |
-| `cagdasgpt-hunt` | hunt | peexe, py | 1 | CAGDASGPT Turkish PyInstaller AI tool with date-gate sandbox evasion |
-| `sangfor-lure-watch` | hunt | peexe | 3 | **disabled** — passive watch only |
+| `jobradar-hunt` | hunt | peexe | 2 | Targeted Wails Go AI lure + Midie credential stealer |
+| `vibearound-hunt` | hunt | peexe | 2 | Targeted Tauri/Rust Chinese AI coding IDE distributing Galirus downloader |
+| `jadepuffer-hunt` | hunt | elf, sh | 1 | Langflow-themed ransomware (CVE-2025-3248); C2 45.131.66.106 |
+| `cagdasgpt-hunt` | hunt | peexe, py | 1 | Turkish PyInstaller AI tool with date-gate sandbox evasion |
 
 ---
 
