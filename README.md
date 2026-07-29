@@ -14,19 +14,10 @@ CAIRN combines a tiered YARA ontology over structured VT scan text with embeddin
 
 ## What CAIRN Finds
 
-Nine confirmed AI-malware archetypes are documented in the corpus to date:
+Nine confirmed AI-malware archetypes are documented in the corpus to date [To be released]
 
-| Archetype | Description | Example Families |
-|---|---|---|
-| **A1 — LLM-Directed Payload Generation** | LLM used as a runtime code factory via hardcoded prompts | PROMPTLOCK, HONESTCUE |
-| **A2 — LLM API Routing Backdoor** | Victim machine silently proxies operator LLM traffic | LLMGATE |
-| **A3 — AI-Analysis Evasion** | Natural-language instructions embedded to suppress automated analysis | FRUITSHELL |
-| **A4 — LLM-Tasked C2** | LLM used as live C2 channel; ranges from fully autonomous (CLOSEDQUORUM) to human-in-the-loop natural-language remote control (SUPERAGENT) | WURM, CLOSEDQUORUM, SUPERAGENT |
-| **A5 — LLM Infrastructure Supply Chain** | Backdoored LLM proxy/SDK intercepts all provider API keys at the gateway | TEAMPCP |
-| **A6 — AI Credential Harvester** | Targets LLM API keys and Hugging Face tokens specifically — via config scraping, MitM hosts redirect, or UI lure | LAMEHUG, PROMPTSTEAL, QUIETVAULT, ZAPRETCORE, KEYHARVEST |
-| **A7 — LLM-Augmented Offensive Tool** | Conventional offensive tool augmented with an LLM API call | PANDORA, DEEPZOO, WEIBORAT, CONVAGENT, SISTEMATIZADOR, QUARK |
-| **A8 — Malicious AI SDK** | Fake/backdoored npm or PyPI package masquerading as an AI service SDK | QUIETVAULT |
-| **A9 — LLM-Assisted Worm** | Impacket-style propagation combined with LLM-directed tasking | WURM |
+- Launch blog: [Talos Tech Blog]
+- CLOSEDQUORUM: [Link to CQ Blog]
 
 ---
 
@@ -340,40 +331,20 @@ Twenty-seven named channels in `config/acquisition_filters.yaml` (one disabled).
 
 ## Confirmed Families
 
-Individual technical reports for each confirmed family are in `docs/families/`:
+Individual technical reports for each confirmed family are in `docs/families/`, only previously publicly-released reports are provided at the initial repo launch:
 
 | Family | Archetype | Platform | Report |
 |---|---|---|---|
 | PROMPTLOCK | A1 — LLM payload generation | Go / Lua | [docs/families/PROMPTLOCK.md](docs/families/PROMPTLOCK.md) |
 | HONESTCUE | A1 — LLM payload generation | .NET | [docs/families/HONESTCUE.md](docs/families/HONESTCUE.md) |
-| LLMGATE | A2 — LLM API routing backdoor | Go / Windows PE | [docs/families/LLMGATE.md](docs/families/LLMGATE.md) |
 | FRUITSHELL | A3 — AI-analysis evasion | PowerShell | [docs/families/FRUITSHELL.md](docs/families/FRUITSHELL.md) |
-| PLOTSAFE | A3 — AI-analysis evasion | Go / Windows PE | [docs/families/PLOTSAFE.md](docs/families/PLOTSAFE.md) |
-| AIREFUSAL | A3 — AI-analysis evasion | Windows PE (Themida/VMProtect packed) | [docs/families/AIREFUSAL.md](docs/families/AIREFUSAL.md) |
-| WURM | A4+A9 — LLM-tasked C2 + worm | Python | [docs/families/WURM.md](docs/families/WURM.md) |
-| CLOSEDQUORUM | A4 — autonomous LLM-orchestrated implant | Go / Windows PE | [docs/families/CLOSEDQUORUM.md](docs/families/CLOSEDQUORUM.md) |
-| SUPERAGENT | A4 — human-in-the-loop LLM RAT | Python (FastAPI / WebSocket) | [docs/families/SUPERAGENT.md](docs/families/SUPERAGENT.md) |
 | TEAMPCP | A5 — LLM infrastructure supply chain | Python / npm | [docs/families/TEAMPCP.md](docs/families/TEAMPCP.md) |
 | LAMEHUG | A6 — AI credential harvester | Python | [docs/families/LAMEHUG.md](docs/families/LAMEHUG.md) |
 | PROMPTSTEAL | A6 — AI credential harvester | Python (PyInstaller) | [docs/families/PROMPTSTEAL.md](docs/families/PROMPTSTEAL.md) |
 | QUIETVAULT | A6+A8 — AI credential harvester / malicious SDK | JavaScript / npm | [docs/families/QUIETVAULT.md](docs/families/QUIETVAULT.md) |
-| ZAPRETCORE | A6 — AI credential harvester (hosts-redirect MitM) | Windows PE | [docs/families/ZAPRETCORE.md](docs/families/ZAPRETCORE.md) |
-| KEYHARVEST | A6 — AI credential harvester (UI lure) | C++ / Dear ImGui / Windows PE | [docs/families/KEYHARVEST.md](docs/families/KEYHARVEST.md) |
-| PANDORA | A7 — LLM-augmented offensive tool | Python | [docs/families/PANDORA.md](docs/families/PANDORA.md) |
-| DEEPZOO | A7 — LLM-augmented offensive tool | FlyStudio / Win32 | [docs/families/DEEPZOO.md](docs/families/DEEPZOO.md) |
-| WEIBORAT | A7 — LLM-augmented offensive tool | FlyStudio / Win32 | [docs/families/WEIBORAT.md](docs/families/WEIBORAT.md) |
-| CONVAGENT | A7 — LLM-augmented offensive tool | Go / Windows PE | [docs/families/CONVAGENT.md](docs/families/CONVAGENT.md) |
-| SISTEMATIZADOR | A7 — LLM-augmented offensive tool | Go (Wails) + Tauri / Windows | [docs/families/SISTEMATIZADOR.md](docs/families/SISTEMATIZADOR.md) |
-| QUARK | A7 — LLM-augmented offensive tool | Win64 DLL | [docs/families/QUARK.md](docs/families/QUARK.md) |
-| CHATGRIP | A7 — LLM-augmented offensive tool (trojanized AI app) | Go / Windows PE | [docs/families/CHATGRIP.md](docs/families/CHATGRIP.md) |
-| CAGDASGPT | A7 — LLM-augmented offensive tool | PyInstaller / Python | [docs/families/CAGDASGPT.md](docs/families/CAGDASGPT.md) |
-| VIBEAROUND | A7c — trojanized AI tool as delivery vehicle | Tauri/Rust / Windows PE | [docs/families/VIBEAROUND.md](docs/families/VIBEAROUND.md) |
-| JOBRADAR | A7c — trojanized AI tool as delivery vehicle | Go/Wails / Windows PE | [docs/families/JOBRADAR.md](docs/families/JOBRADAR.md) |
-| STARLOCK | A7d — local-LLM-lure ransomware | PyInstaller / Python | [docs/families/STARLOCK.md](docs/families/STARLOCK.md) |
 | PROMPTFLUX | archetype pending (dropper; payload not recovered) | VBScript | [docs/families/PROMPTFLUX.md](docs/families/PROMPTFLUX.md) |
 | **AI-adjacent** | | | |
-| VOZDYHAN | — | Node.js | [docs/families/VOZDYHAN.md](docs/families/VOZDYHAN.md) |
-| XENORAT | — | .NET (Xeno-RAT) | [docs/families/XENORAT.md](docs/families/XENORAT.md) |
+
 
 ---
 
@@ -412,35 +383,12 @@ CAIRN/
 │   ├── families/
 │   │   ├── PROMPTLOCK.md       Family report — Go/Lua LLM-directed ransomware (A1)
 │   │   ├── HONESTCUE.md        Family report — .NET LLM probe loader (A1)
-│   │   ├── LLMGATE.md          Family report — Go LLM API routing backdoor (A2)
 │   │   ├── FRUITSHELL.md       Family report — PowerShell reverse shell with AI-evasion (A3)
-│   │   ├── WURM.md             Family report — Python Impacket+LLM worm (A4+A9)
-│   │   ├── CLOSEDQUORUM.md     Family report — Go autonomous LLM-orchestrated implant (A4)
-│   │   ├── SUPERAGENT.md       Family report — Python LLM-mediated human-in-the-loop RAT (A4)
 │   │   ├── TEAMPCP.md          Family report — backdoored LiteLLM proxy (A5)
 │   │   ├── LAMEHUG.md          Family report — HuggingFace token abuser (A6)
 │   │   ├── PROMPTSTEAL.md      Family report — PyInstaller AI credential stealer (A6)
 │   │   ├── QUIETVAULT.md       Family report — npm telemetry spy / malicious SDK (A6+A8)
-│   │   ├── PANDORA.md          Family report — LLM-augmented defacement tool (A7)
-│   │   ├── DEEPZOO.md          Family report — FlyStudio RAT + DeepSeek (A7)
-│   │   ├── WEIBORAT.md         Family report — FlyStudio Weibo automation + DeepSeek (A7)
-│   │   ├── CONVAGENT.md        Family report — Go agent kit, Turkish C2, DeepL translation (A7)
-│   │   ├── SISTEMATIZADOR.md   Family report — Brazilian Portuguese AI automation RAT (A7)
-│   │   ├── QUARK.md            Family report — Win64 DLL stealer targeting Minecraft PE players (A7)
-│   │   ├── ZAPRETCORE.md       Family report — hosts-redirect MitM AI credential harvester (A6)
-│   │   ├── KEYHARVEST.md       Family report — Dear ImGui multi-provider API key lure (A6)
-│   │   ├── CHATGRIP.md         Family report — Go trojanized AI chat app, conversation exfil (A7)
-│   │   ├── CAGDASGPT.md        Family report — Turkish PyInstaller AI tool, date-gate evasion (A7)
-│   │   ├── VIBEAROUND.md       Family report — Tauri/Rust Chinese AI IDE distributing Galirus (A7c)
-│   │   ├── JOBRADAR.md         Family report — Wails Go AI job-search lure + Midie stealer (A7c)
-│   │   ├── STARLOCK.md         Family report — PyInstaller local-LLM-lure ransomware (A7d)
-│   │   ├── PLOTSAFE.md         Family report — Go DLL with AI-evasion string (A3)
-│   │   ├── AIREFUSAL.md        Family report — packed PE malware with LLM-refusal evasion strings (A3)
 │   │   ├── PROMPTFLUX.md       Family report — VBScript dropper (archetype pending)
-│   │   ├── VOZDYHAN.md         Family report — Node.js WebRAT (AI-adjacent)
-│   │   ├── XENORAT.md          Family report — Xeno-RAT targeting AI ecosystem (AI-adjacent)
-│   │   ├── SUPERO.md           Retracted FP record — legitimate Supero platform SDK
-│   │   └── RIFTLOADER.md       Retracted FP record — Rocket League DLL injector
 │   └── corpus-schema.md        SQLite schema documentation
 │
 ├── data/                       SQLite corpus (gitignored)
