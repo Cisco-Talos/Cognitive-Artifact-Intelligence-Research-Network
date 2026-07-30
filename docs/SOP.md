@@ -156,9 +156,9 @@ cairn rescan
 ```
 
 **Rule tiers:**
-- **T1** — Primitive artifacts (API endpoints, prompt residue, local runtimes, codegen phrases) — 8 rules
-- **T2** — Behavioral context (shell co-occurrence, Discord C2, agentic+offensive, local inference persistence) — 5 rules
-- **T3** — Operational families (LLMGATE, PROMPTLOCK, HONESTCUE, FRUITSHELL, XENORAT, SUPERAGENT, …) — 17 rules
+- **T1** — Primitive artifacts (API endpoints, prompt residue, local runtimes, codegen phrases) — 9 rules
+- **T2** — Behavioral context (shell co-occurrence, Discord C2, agentic+offensive, local inference persistence) — 8 rules
+- **T3** — Public operational families (PROMPTLOCK, HONESTCUE, TEAMPCP, LAMEHUG, PROMPTFLUX, PROMPTSTEAL, QUIETVAULT, FRUITSHELL) — 8 rules
 
 ---
 
@@ -168,9 +168,9 @@ Seeds are known ground-truth samples used to validate rule recall. Expected matc
 
 ```bash
 # Add a known seed with an expected rule match
-cairn seed-add --sha256 <sha256> --family LLMGATE \
+cairn seed-add --sha256 <sha256> --family TEAMPCP \
   --source-url https://... \
-  --expect T3-LLMGATE_Go_Backdoor_Fake_UpdateService
+  --expect T3-TEAMPCP_Backdoored_LiteLLM_Proxy
 
 # Add a FRUITSHELL seed from a SHA256
 cairn seed-fruitshell --sha256 <sha256> --notes "variant with port 4444"

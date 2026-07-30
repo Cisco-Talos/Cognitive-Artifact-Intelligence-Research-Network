@@ -143,9 +143,9 @@ Rules are organized into three tiers of increasing specificity:
 |---|---|---|
 | **T1 — Primitive Artifacts** | Individual cognitive artifacts; high recall, FPs expected | `T1-LLM_API_Endpoint`, `T1-LLM_API_Key_Hardcoded` |
 | **T2 — Behavioral Context** | Two or more co-occurring primitives in an operationally meaningful combination | `T2-AI_Decoy_Prompt_In_Malware`, `T2-Agentic_Offensive_Tasking` |
-| **T3 — Operational Families** | Family-level attribution anchored to confirmed seed hashes | `T3-TEAMPCP_Backdoored_LiteLLM_Proxy`, `T3-WURM_Python_Impacket_LLM_Worm` |
+| **T3 — Operational Families** | Family-level attribution anchored to confirmed seed hashes | `T3-TEAMPCP_Backdoored_LiteLLM_Proxy`, `T3-HONESTCUE_LLM_Probe_Loader` |
 
-Current rule counts: **9 T1 / 8 T2 / 27 T3** — 44 total.
+Current rule counts: **9 T1 / 8 T2 / 8 T3** — 25 total.
 
 ---
 
@@ -358,7 +358,7 @@ CAIRN/
 │
 ├── config/
 │   ├── acquisition_filters.yaml   27 named VT acquisition channels
-│   ├── yara_rules.yar             44 tiered cognitive artifact rules (T1/T2/T3)
+│   ├── yara_rules.yar             25 tiered cognitive artifact rules (T1/T2/T3)
 │   ├── exclusions.yaml            Corpus blocklist — hashes silently skipped on pull and removed by prune
 │   └── dead_end_hashes.txt        Cluster noise filter — known FP cluster members; suppressed by cluster-summary
 │

@@ -58,7 +58,7 @@ def build_explorer_graph(corpus_path: Path) -> dict[str, list[dict[str, Any]]]:
     sample_families: dict[str, str] = {}
     for edge in edges:
         if edge["type"] == "matched_rule":
-            rule = edge["target"]  # "rule:T3-DEEPZOO_..."
+            rule = edge["target"]  # "rule:T3-FAMILY_..."
             rule_name = rule.removeprefix("rule:")
             if rule_name.startswith("T3-") and "_" in rule_name:
                 family = rule_name[3:].split("_")[0]
