@@ -1,114 +1,94 @@
-# PROMPTFLUX — Research Report
+# PROMPTFLUX — Threat Intelligence Report
 
-**Family designation:** PROMPTFLUX (TrendMicro `Trojan.VBS.PROMPTFLUX.THBBDBF`; Microsoft `Trojan:VBS/PromptFlux.GVA!MTB`)
 **Author:** Ryan Fetterman (https://fetterm4n.github.io)
-**First seen:** 2025-05-10 (earliest VT submission in corpus)
-**Last seen:** 2025-05-10 (single corpus sample)
-**Variants:** 1 confirmed seed; 1 corpus hit
-**Platform:** VBScript (.vbs) — heavy obfuscation, ~4.4 MB
-**CAIRN rules:** `T3-PROMPTFLUX_VBS_Dropper`
-**Related report:** N/A
+**Aliases:** `Trojan.VBS.PROMPTFLUX.THBBDBF` (TrendMicro) · `Trojan:VBS/PromptFlux.GVA!MTB` (Microsoft)
+**First seen:** 2025-05-10
+**Platform:** VBScript dropper → Windows PE payload
+**Archetype:** A1 — LLM-Directed Payload Generation (self-mutation sub-pattern)
+**LLM provider:** Google Gemini (hardcoded API key in payload)
+**TLP:** TLP:AMBER
 
 ---
 
 ## Summary
 
-PROMPTFLUX is a heavily obfuscated VBScript dropper (~4.4 MB) that stages and executes a chunked, base64-encoded PE payload. The script assembles the PE from an `ExeDataParts` array of base64 chunks, decodes and writes the PE to disk, then executes it. The filename `crypted_pw-free-online (4).vbs` is a social engineering lure presenting as a password recovery or credential dump tool.
+PROMPTFLUX uses a language model as a **self-rewriting obfuscation engine**. The delivered payload carries a hardcoded Google Gemini API key, submits **its own source code** to the model at runtime with a request for an obfuscated, evasion-hardened rewrite, then overwrites itself on disk with the model's output.
 
-PROMPTFLUX instantiates **A1 (LLM-Directed Payload Generation)** with a self-mutation sub-pattern: the delivered payload holds a hardcoded Gemini API key and sends the payload's own source to the model at runtime, requesting rewritten obfuscated/evasion variants. The LLM output replaces the payload on disk for persistence. This distinguishes PROMPTFLUX from other A1 families (PromptLock generates encryption logic; HONESTCUE generates a C# stage2 loader) — PROMPTFLUX uses the LLM as a self-rewriting obfuscation engine. Because the hash changes on every LLM rewrite cycle, corpus sample count is likely an undercount of true deployment scale.
+This makes hash-based tracking structurally unreliable. Each rewrite cycle produces a new file hash for functionally equivalent malware, and the mutation rate is bounded only by API quota rather than by operator effort. Where conventional polymorphism requires an operator to build and maintain a mutation engine, here the engine is a commercial API — no development cost, no maintenance, and output diversity beyond what most hand-written packers achieve.
+
+The practical consequence for defenders: **any sample count for this family is a floor, not an estimate.** The stable, detectable artifact is the delivery stage — a ~4.4 MB obfuscated VBScript dropper that assembles a base64-chunked PE from an `ExeDataParts` array. The payload it drops is ephemeral by design.
+
+Within the A1 archetype, PROMPTFLUX occupies a distinct position:
+
+| Family | What the model generates |
+|---|---|
+| PROMPTLOCK | Lua code implementing a SPECK cipher |
+| HONESTCUE | A C# second-stage loader |
+| **PROMPTFLUX** | **A rewritten copy of the malware's own source** |
+
+The first two use the model to produce capability. PROMPTFLUX uses it to produce *variation* — the model is applied to survival rather than function.
 
 ---
 
-## Discovery
+## Architecture
 
-PROMPTFLUX was added to the CAIRN corpus as a seed sample. The T3 rule fires on AV label consensus (TrendMicro and Microsoft both name the `PROMPTFLUX`/`PromptFlux` family) and on the `ExeDataParts` array name, which is a distinctive string from the dropper's chunked PE assembly logic. VT metadata does not surface the VBScript body content, so AI-interaction strings from the dropped PE are not recoverable from corpus metadata alone.
+| Stage | Component | Role |
+|---|---|---|
+| 1 | `crypted_pw-free-online (4).vbs` | ~4.4 MB obfuscated VBScript; assembles and drops the PE |
+| 2 | Dropped Windows PE | Primary payload; holds the hardcoded Gemini key |
+| 3 | Gemini API | Rewrites stage 2's source on request |
+| 4 | Rewritten stage 2 | Replaces the on-disk payload — new hash, same behavior |
+
+Stage 4 loops back into stage 3. Persistence is achieved through continuous mutation rather than through a registry key or scheduled task, so the artifact defenders would normally pivot on keeps changing while the foothold remains.
 
 ---
 
-## crypted_pw-free-online (4).vbs — VBS Dropper
+## Samples
 
-### Binary Characteristics
+| SHA256 | Filename | Size | Detections | First Seen (UTC) |
+|---|---|---|---|---|
+| `eb0687daed29f3651c61b0a2aa4a0cdcf2049a1ebae2e15e2dd9326471d318a1` | `crypted_pw-free-online (4).vbs` | ~4,302 KB | 34 | 2025-05-10 |
+
+One dropper sample is confirmed. Given the self-mutation design, the payload population is expected to be substantially larger and largely invisible to hash-based collection.
+
+---
+
+## Dropper Details
 
 | Field | Value |
 |---|---|
 | File type | VBScript (`.vbs`) |
-| Filename | `crypted_pw-free-online (4).vbs` |
-| Size | ~4,302 KB (4.4 MB) |
-| First seen | 2025-05-10 |
+| Size | ~4.4 MB |
 | Detections | 34 |
+| Code signing | None |
 | Tags | `base64-string`, `long-sleeps`, `write-file`, `create-ole`, `run-file`, `vba`, `anti-analysis`, `obfuscated`, `run-dll`, `spreader` |
-| Code-signing | None |
-| Provider references | None recovered in corpus metadata |
 
-The 4.4 MB size is characteristic of a base64-encoded PE embedded inside the VBScript body — a common dropper technique for bypassing file-type filters on email gateways or web proxies.
+### Delivery Chain
 
-### Dropper Mechanism
+1. **Storage.** The PE payload is base64-encoded and split across an `ExeDataParts` array of string literals. At 4.4 MB the encoded PE is effectively the entire script.
+2. **Reconstruction.** Array elements are joined, base64-decoded, and written to disk through `Scripting.FileSystemObject`.
+3. **Execution.** The dropped PE is launched via `WScript.Shell.Run`.
+4. **Anti-analysis.** Long sleep delays target sandbox timeouts; additional obfuscation layers are present.
 
-PROMPTFLUX uses a chunked base64 PE assembly pattern:
+The 4.4 MB size is itself characteristic — a script this large exists to smuggle a PE past file-type filtering on mail gateways and web proxies.
 
-1. **Payload storage.** The PE binary is base64-encoded and split into an `ExeDataParts` array of string literals in the VBScript body. At 4.4 MB, the encoded PE occupies virtually the entire script.
+### Social Engineering
 
-2. **Reconstruction.** The script joins the array elements, base64-decodes the result, and writes the decoded PE to disk via `WriteFile` / `CreateObject("Scripting.FileSystemObject")`.
+The filename `crypted_pw-free-online (4).vbs` targets users searching for free password-recovery or credential-extraction tooling. The `(4)` suffix is consistent with distribution as one item in a numbered series from a fake tool site or file-sharing page.
 
-3. **Execution.** The dropped PE is executed via `Shell` or `WScript.Shell.Run`.
-
-4. **Anti-analysis.** The `long-sleeps` tag indicates the dropper includes sleep delays to defeat sandbox timeout-based analysis. The `anti-analysis` and `obfuscated` tags confirm additional evasion layers.
-
-### Lure
-
-The filename `crypted_pw-free-online (4).vbs` is a social engineering lure targeting users searching for free password recovery or credential extraction tools. The `(4)` suffix suggests the file was distributed as the fourth in a series of downloads from a fake tool website or file sharing platform.
-
-### Crowdsourced YARA Hit
-
-VT's crowdsourced YARA engine fired `Base64_Encoded_URL` on this sample — confirming at least one base64-encoded URL is present in the script body. This is consistent with the dropper encoding a callback URL or C2 address alongside the PE payload.
+VirusTotal's crowdsourced YARA flagged `Base64_Encoded_URL`, confirming at least one base64-encoded URL in the script body alongside the PE payload.
 
 ---
 
-## Operator Infrastructure
+## Detection
 
-No C2 domains, IPs, or delivered payload URLs were recovered from VT metadata for the dropper script. The dropped PE contains the LLM-related infrastructure; without access to the delivered binary, operator C2 is unknown.
-
-**C2AE (C2 Attribute Enricher) verdict:** Undetected — the dropper's network activity did not produce confirmed C2 endpoints in VT's C2AE pipeline.
-
----
-
-## Assessment
-
-### Archetype
-
-**A1 — LLM-Directed Payload Generation (self-mutation sub-pattern)**
-
-The delivered payload holds a hardcoded Gemini API key. At runtime it sends its own source code to the Gemini API requesting an obfuscated/evasion rewrite, then replaces itself on disk with the LLM's output. The LLM is a self-rewriting obfuscation engine — not a code factory for a separate stage. This is a novel A1 variant:
-
-| Family | LLM Role |
-|---|---|
-| PromptLock | LLM generates Lua SPECK encryption logic at runtime |
-| HONESTCUE | LLM generates a C# stage2 reflective loader |
-| **PROMPTFLUX** | **LLM rewrites the payload's own source for obfuscation/persistence** |
-
-Because the hash changes on every rewrite cycle, VT corpus sample count is a significant undercount of true deployment scale. The dropper (VBS, `ExeDataParts` chunked base64) is the stable artifact that CAIRN detects; the delivered PE is ephemeral by design.
-
-### Assessment
-
-PROMPTFLUX is a 4.4 MB obfuscated VBScript dropper using chunked base64 PE assembly, targeting users seeking free password tools. The dropper pattern is conventional; the CAIRN interest is in the delivered PE, which carries the `PROMPTFLUX` family attribution from two major AV engines. Without access to the dropped binary, the payload's AI-related behavior cannot be characterized from metadata alone.
-
-**Confidence:** High for A1 archetype assignment (confirmed via external reporting: hardcoded Gemini key, LLM-driven self-rewriting obfuscation, persistence via hash-cycling). Low for variant count — corpus undercount is expected by design.
-
-### Open Questions
-
-- **Distribution campaign:** Is `crypted_pw-free-online (4).vbs` part of a broader fake-tool distribution campaign? The "(4)" suffix and lure filename suggest an active series. Hard to track via hash due to self-mutation.
-- **Payload capabilities beyond obfuscation:** Does the dropped PE have a primary payload (stealer, RAT, ransomware) beyond the LLM self-rewrite loop, or is the rewrite loop the entirety of the operation?
-- **Gemini model/key rotation:** Is a single hardcoded Gemini key reused across all variants, or does the key rotate? A burnt key would suppress the rewrite capability without affecting dropper delivery.
-
----
-
-## CAIRN Rules
+### YARA
 
 ```yara
 rule T3-PROMPTFLUX_VBS_Dropper
 {
     meta:
-        description = "Detects PROMPTFLUX VBS dropper — 4.4MB heavily obfuscated script staging chunked base64 PE payload via ExeDataParts array; Kaspersky/Microsoft consensus on PROMPTFLUX family"
+        description = "Detects PROMPTFLUX VBS dropper — 4.4MB heavily obfuscated script staging chunked base64 PE payload via ExeDataParts array"
         author = "CAIRN"
         artifact_class = "llm_api_backdoor"
         artifact_type = "orchestration_logic"
@@ -126,31 +106,34 @@ rule T3-PROMPTFLUX_VBS_Dropper
 }
 ```
 
-Fires on:
-- Samples carrying `Trojan.VBS.PROMPTFLUX` (TrendMicro) or `PromptFlux.GVA` (Microsoft) detection labels
-- Samples containing the `ExeDataParts` array name from the chunked PE assembly pattern
+`ExeDataParts` is the durable anchor — it is the dropper's own array identifier and survives payload mutation entirely, because the dropper is not what mutates.
 
-1 corpus sample confirmed.
+### Detection Guidance
 
----
+**Detect the dropper, not the payload.** The delivery stage is stable and signaturable; the payload's hash has a lifetime measured in rewrite cycles. Every hash-based control — blocklists, reputation lookups, retrospective hunting — degrades against stage 2 and holds firm against stage 1.
 
-## Indicators of Compromise
+Recommended controls:
 
-**Registered seed:** `eb0687daed29f3651c61b0a2aa4a0cdcf2049a1ebae2e15e2dd9326471d318a1`
-
-| SHA256 | Filename | Detections | First Seen (UTC) |
-|---|---|---|---|
-| `eb0687daed29f3651c61b0a2aa4a0cdcf2049a1ebae2e15e2dd9326471d318a1` | `crypted_pw-free-online (4).vbs` | 34 | 2025-05-10 |
-
----
-
-## Update Log
-
-| Date | Change |
+| Control | Rationale |
 |---|---|
-| 2026-06-12 | Initial report — 1 corpus sample confirmed; dropper mechanism documented; archetype classification pending payload analysis; seed registered |
-| 2026-06-24 | Archetype confirmed A1 (self-mutation sub-pattern) via external reporting: hardcoded Gemini key, LLM rewrites payload source for obfuscation/persistence, hash-cycling by design. A1 first-confirmed date in SOA.md updated to 2025-05-10. |
+| Block / alert on multi-megabyte `.vbs` files at the gateway | A 4.4 MB script has no legitimate use case |
+| Restrict `wscript.exe` / `cscript.exe` execution from user-writable paths | Removes the delivery mechanism entirely |
+| Monitor outbound traffic to generative-AI endpoints from non-developer hosts | The rewrite loop is a hard external dependency |
+| Alert on an executable overwriting its own image on disk | Self-replacement is the family's defining behavior and is rare in legitimate software |
+
+The last row is the most specific available signal. It is also mutation-proof: however the model rewrites the code, the rewritten copy must still replace the original for persistence to work.
+
+**Denying model access breaks the mutation loop.** It does not remove the foothold — the payload remains resident and functional — but it freezes the payload at a known hash, which restores every hash-based control that the design was built to defeat.
 
 ---
 
-*Discovered using CAIRN v0.1.0. Report last updated 2026-06-12. Author: Ryan Fetterman (https://fetterm4n.github.io)*
+## Open Questions
+
+1. **What is the payload's primary function?** Whether stage 2 carries a stealer, RAT, or ransomware capability in addition to the rewrite loop — or whether the rewrite loop is the whole operation — is unresolved. This is the most consequential gap: it separates a self-obfuscating tool from a self-obfuscating *implant*.
+2. **Is the Gemini key shared or rotated?** A single hardcoded key across all variants would be a decisive intervention point; revocation would halt mutation family-wide. Per-variant keys would not.
+3. **Campaign breadth.** The `(4)` suffix and lure theme suggest an active fake-tool distribution series. Hash-based tracking cannot measure it; only the dropper pattern can.
+4. **Rewrite fidelity and drift.** Whether the model's rewrites preserve functionality reliably over many generations, or degrade, is unknown. Accumulated drift would be a meaningful weakness in the design.
+
+---
+
+*SHA256 hashes truncated to 8 characters in narrative; full hashes in tables. Last updated 2026-08-04.*

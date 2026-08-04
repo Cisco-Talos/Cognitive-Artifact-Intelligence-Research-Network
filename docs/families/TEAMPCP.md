@@ -1,244 +1,139 @@
-# TEAMPCP — Research Report
+# TEAMPCP — Threat Intelligence Report
 
-**Family designation:** TEAMPCP (named after the threat actor; AV label `Generic.PY.TeamPCP` reflects existing actor attribution by Bitdefender)
 **Author:** Ryan Fetterman (https://fetterm4n.github.io)
-**First seen:** 2026-03-25 (earliest submission date observed)
-**Last seen:** 2026-03-26 (last variant submission; campaign ongoing — see Shai-Hulud)
-**Variants:** 3 confirmed (Python scripts) — LiteLLM component only; full TeamPCP toolset is broader
-**Platform:** Windows / Linux; Python 3 script (cross-platform via LiteLLM deployment)
-**CAIRN rules:** `T3-TEAMPCP_Backdoored_LiteLLM_Proxy`
-**Actor's worm component:** Shai-Hulud (TeamPCP NPM/PyPI supply chain worm — separate from WURM; see note below)
-**checkmarx.zone C2:** `checkmarx.zone:8443/telemetry/checkmarx.json` — confirmed live C2 endpoint (Sophos: C2/Generic-A)
+**Aliases:** `Generic.PY.TeamPCP` (Bitdefender) · `Trojan/Python.PthLlmStealer` (ESET) · `TrojanSpy.Python.TPCPSTEAL` (TrendMicro) · `HEUR:Trojan-Spy.Python.Stealer.gen` (Kaspersky)
+**First seen:** 2026-03-25
+**Last seen:** 2026-03-26 (LiteLLM component; actor activity ongoing)
+**Platform:** Python 3 — Windows / Linux, wherever LiteLLM deploys
+**Archetype:** A5 — LLM Infrastructure Supply Chain
+**Actor:** TeamPCP — a documented, multi-ecosystem supply chain threat actor
+**TLP:** TLP:AMBER
 
 ---
 
 ## Summary
 
-TEAMPCP is a supply chain attack against LiteLLM proxy deployments. The actor distributes a backdoored version of `litellm/proxy/proxy_server.py` — a file that operators legitimately place at the core of their LLM API gateway infrastructure. The malicious variant is functionally identical to the legitimate LiteLLM proxy but adds credential interception logic targeting three asset classes: LLM API keys in transit through the proxy, AWS IAM credentials via the EC2 instance metadata endpoint (`169.254.169.254/latest/meta-data/iam/security-credentials/`), and any secrets accessible to the process at runtime.
+TEAMPCP is a supply-chain compromise of **LiteLLM**, the widely deployed open-source LLM API gateway. The actor distributes a backdoored `litellm/proxy/proxy_server.py` — functionally identical to the upstream file, with added credential interception.
 
-The delivery mechanism is the `@qwork/sdk` npm package, which bundles a `qwork-server` binary embedding the backdoored proxy file at `node_modules/@qwork/sdk/binaries/win32-x64/qwork-server/_internal/litellm/proxy/proxy_server.py`. This npm-level embedding allows the malicious proxy to be silently deployed by operators who install the SDK as a dependency, with no obvious indication that `proxy_server.py` has been tampered with. Exfiltrated credentials are forwarded to two actor-controlled Railway.app instances (`litellm-production-7002.up.railway.app`, `exampleopenaiendpoint-production.up.railway.app`) that masquerade as legitimate LiteLLM infrastructure.
+The target selection is the sophisticated part. LiteLLM exists to normalize API calls across providers, which means an organization running it has routed **every LLM API key, from every application, for every provider, through this one file**. It is the designed chokepoint of the AI stack. Backdooring it harvests credentials at organizational scale without touching a single application, and the harvest arrives pre-aggregated.
 
-A second artifact (`b64_decode.py`) represents a heavily obfuscated variant of the same proxy server — 15,000 lines, base64-obfuscated code body — likely a hardening iteration designed to defeat static detection. The plain `proxy_server.py` variant (`e55065...`) appears to be an intermediate build between the clean upstream source and the fully obfuscated version.
+Three asset classes are stolen:
 
-**Note:** TeamPCP is a documented threat actor. Public reporting describes a coordinated series of supply chain attacks against widely-used open source tools including Trivy, KICS, and LiteLLM — the LiteLLM compromise is the operation CAIRN independently surfaced from the `python-ai-scripts` filter. The actor is known to deploy CanisterWorm (a self-propagating worm), use AES-256 + RSA-4096 exfiltration encryption, conduct Kubernetes lateral movement, and employ audio steganography for detection evasion. The CAIRN `python-ai-scripts` filter independently rediscovered the LiteLLM component, confirming methodology validity. The "No public analyst coverage" assessment in the initial CAIRN triage was incorrect — the AV label `Generic.PY.TeamPCP` was itself an attribution signal to a known, documented actor that was not recognized at initial analysis time.
-
----
-
-## Discovery
-
-CAIRN's `python-ai-scripts` acquisition filter returned all three samples on 2026-06-09. The filter matched `content:"api.openai.com"` and `content:"litellm"` across the three samples, which fired `T1-LLM_API_Endpoint` on rescan. The AV label `Generic.PY.TeamPCP` (Bitdefender) and `Trojan/Python.PthLlmStealer` (ESET) elevated all three for manual triage. The `@qwork/sdk` npm path artifact in the `proxy_server.py` submission names and the AWS IMDS credential theft URL were identified during manual inspection of the embedded URL relationship objects.
-
----
-
-## proxy_server.py — Backdoored LiteLLM Proxy
-
-### Binary Characteristics
-
-| Field | Value |
+| Target | Method |
 |---|---|
-| File type | Python script, ASCII text executable, very long lines (up to 34476u) |
-| Base | LiteLLM `proxy_server.py` v1.82.7 / v1.82.8 (upstream open source) |
-| Code size | ~34,000+ character lines (plain); 15,288 lines obfuscated |
-| Internal name | `litellm-1.82.7_itellm_proxy_proxy_server_stage0.py` (staging artifact name) |
-| Import hash | N/A (Python script) |
-| Delivery | `@qwork/sdk` npm package → `qwork-server` binary bundle |
+| LLM API keys (OpenAI, Anthropic, Gemini, …) | Extracted from `Authorization: Bearer` headers in transit through the proxy |
+| AWS IAM role credentials | Queried from the EC2 instance metadata endpoint (`169.254.169.254`, IMDSv1) |
+| Runtime-accessible secrets | Whatever the proxy process can reach |
 
-TEAMPCP backdoors a specific version of LiteLLM's proxy server. LiteLLM is a widely-deployed open-source LLM API gateway that normalises requests across providers (OpenAI, Anthropic, Gemini, etc.). Operators who run LiteLLM in production have all their LLM API keys flowing through `proxy_server.py`, making it an ideal intercept target. The backdoor adds credential harvesting without modifying the proxy's visible behaviour.
+Delivery is one layer deeper still. The backdoored Python file is embedded inside the **`@qwork/sdk` npm package**, at `node_modules/@qwork/sdk/binaries/win32-x64/qwork-server/_internal/litellm/proxy/proxy_server.py`. An operator installing an npm SDK deploys a backdoored Python LLM gateway, with nothing in the npm dependency tree indicating that a Python file several directories down has been altered. Cross-ecosystem embedding of this kind defeats per-ecosystem auditing: npm tooling does not inspect bundled Python, and Python tooling never sees the package.
 
-The staging artifact name `proxy_server_stage0.py` confirms iterative development — the actor versioned their build pipeline explicitly.
+Exfiltration goes to two actor-controlled Railway.app instances named to disappear into a LiteLLM operator's own telemetry: `litellm-production-7002.up.railway.app` and `exampleopenaiendpoint-production.up.railway.app`.
 
-### Code-Signing Certificate
-
-Not applicable — Python script.
-
-### PE Resource Strings
-
-Not applicable — Python script.
-
-### Embedded URL Infrastructure
-
-| URL | Role |
-|---|---|
-| `https://litellm-production-7002.up.railway.app/` | Actor C2 — masquerades as LiteLLM production instance |
-| `https://exampleopenaiendpoint-production.up.railway.app/` | Actor C2 — masquerades as OpenAI-compatible endpoint |
-| `http://169.254.169.254/latest/meta-data/iam/security-credentials/` | AWS EC2 IMDSv1 credential theft endpoint |
-| `https://otlp.arize.com/v1` | Arize AI observability — legitimate telemetry (possible covert exfil channel) |
-| `https://models.litellm.ai/` | LiteLLM model registry — legitimate |
-| `https://docs.litellm.ai/` | LiteLLM documentation — legitimate (obfuscation via expected referrer traffic) |
-| `https://docs.datadoghq.com/tracing/...` | Datadog APM — legitimate (expected in LiteLLM deployments) |
-| `https://checkmarx.zone/raw` | Suspicious — not `checkmarx.com`; possible typosquat of security vendor |
-
-The two Railway.app C2 domains are named to blend into a LiteLLM operator's network telemetry — `litellm-production-7002` and `exampleopenaiendpoint-production` both look like legitimate deployment artifacts at a glance.
-
-### Sandbox Behavior and Detection
-
-27–37 AV detections across variants. ESET: `Trojan/Python.PthLlmStealer` (most specific label). Bitdefender: `Generic.PY.TeamPCP.G.F56DECEA`. TrendMicro: `TrojanSpy.Python.TPCPSTEAL`. Microsoft: `Trojan:HTML/Obfuse.MU!MTB` (obfuscated variant). Kaspersky: `HEUR:Trojan-Spy.Python.Stealer.gen`.
-
-Sandbox produces minimal behavioural telemetry — the proxy requires a running LiteLLM deployment context to activate credential interception logic. The script is inert when executed in isolation without incoming API traffic to intercept.
-
-Tags across variants: `idle`, `python`, `service-scan`. The `service-scan` tag on the `b64_decode.py` variant indicates the script actively probed network services during sandbox execution.
-
-### Variants (3 confirmed)
-
-| SHA256 | Detections | First Seen (UTC) | Notes |
-|---|---|---|---|
-| `a0d229be8efcb2f9135e2ad55ba275b76ddcfeb55fa4370e0a522a5bdee0120b` | 37 | 2026-03-25 | Plain; `@qwork/sdk` npm embedding confirmed; seed |
-| `e55065785190468fc6a5e424679b825924c64bb62aa9486a6510bf2bfd06c87b` | 27 | 2026-03-25 | Plain; intermediate build; `stage0` naming artifact |
-| `8333e8facf9f8d3df55127b29097b8c1f8274463388cb94799d2f3528d8f44f9` | 32 | 2026-03-26 | Heavily obfuscated; 15,288 lines; `b64_decode.py` submission name |
-
-### VT Submission Source Keys
-
-| SHA256 | Binary | Sources | Date |
-|---|---|---|---|
-| `a0d229be` | `litellm/proxy/proxy_server.py` | 7 unique sources (incl. `auto_black_abuse` path; `7a4d5f37` DE) | 2026-03-25 |
-| `e55065785` | `proxy_server.py` | 2 sources (`auto_black_abuse` path artifact) | 2026-03-25 |
-| `8333e8fa` | `b64_decode.py` | 2 sources (`auto_black_abuse` path + `7a4d5f37` DE) | 2026-03-26 |
-
-**Cross-family submitter note:** Source key `7a4d5f37` (DE) submitted both `a0d229be` and `8333e8fa`. This same key is the confirmed primary VOZDYHAN operator identity and also appears on PROMPTLOCK (Aug 2025), LAMEHUG (Jul 2025), and XENORAT (Mar 2026) samples. For TEAMPCP specifically, `7a4d5f37` is one of several submitters alongside distinct researcher paths — insufficient to attribute TEAMPCP to the Vozdyhan operator. See [VOZDYHAN.md](VOZDYHAN.md) and [PROMPTLOCK.md](PROMPTLOCK.md) for full cross-family timeline.
-
-The `a0d229be` variant has 9 submissions from 7 unique sources — significantly wider than the other two. This is the variant embedded in `@qwork/sdk`, which explains the broader submission pattern: multiple downstream users or CI pipelines encountered and submitted it independently.
-
----
-
-## Infection Chain
-
-**Initial access:** npm supply chain. The `@qwork/sdk` package bundles a pre-built `qwork-server` binary containing `proxy_server.py`. Any operator or developer who installs `@qwork/sdk` and runs `qwork-server` deploys the backdoored LiteLLM proxy without awareness. The legitimate-appearing package name is the social engineering vector.
-
-**Deployment sequence:**
-
-1. Victim developer installs `@qwork/sdk` via npm (or pulls a project dependency that includes it)
-2. `qwork-server` binary executes — internally runs the embedded `proxy_server.py` as its LLM gateway component
-3. Backdoored proxy starts accepting LLM API traffic on local port (default LiteLLM: 4000)
-4. Each inbound API request passes through the interceptor; API keys extracted from `Authorization: Bearer` headers
-5. On AWS EC2 hosts: script queries `169.254.169.254/latest/meta-data/iam/security-credentials/` via IMDSv1 to harvest IAM role credentials
-6. Stolen credentials exfiltrated to actor Railway.app C2 instances
-7. Actor's Railway.app instance receives and stores harvested credentials
-
-**Component dependencies:**
-
-- Requires incoming LLM API traffic to intercept — inert on an isolated host
-- AWS IMDS theft only activates on EC2 instances with IMDSv1 enabled (IMDSv2 token requirement would block this)
-
-**Persistence:**
-
-Provided by the npm package's normal install/autostart mechanism — no separate persistence payload needed; the backdoor runs whenever the legitimate `qwork-server` service runs.
-
-**Operator command path:**
-
-Actor monitors Railway.app-hosted C2 endpoints for incoming credential POST data. No interactive shell capability observed — this is a passive credential harvester, not a RAT.
-
-**Key / credential custody:**
-
-Victim LLM API keys (OpenAI, Anthropic, etc.) → intercepted from `Authorization` headers → exfiltrated to Railway.app C2. AWS IAM credentials → harvested from IMDS → exfiltrated to Railway.app C2.
-
-**Gaps:**
-
-- `@qwork/sdk` npm package not confirmed retrieved/analysed — may have been removed from registry
-- Exact exfiltration mechanism (POST body format, encryption) not confirmed
-- `checkmarx.zone` domain role unconfirmed — possible additional exfil channel
-- Whether `otlp.arize.com` telemetry is abused for covert exfil not confirmed
-- Second-stage activity after credential theft not observed
-
----
-
-## Actor Timeline
-
-| Date | SHA256 | Binary | Component | Notes |
-|---|---|---|---|---|
-| 2026-03-25 | `a0d229be` | `litellm/proxy/proxy_server.py` | Backdoored proxy (plain, npm-embedded) | Widest distribution — 7 unique VT sources |
-| 2026-03-25 | `e55065785` | `proxy_server.py` | Backdoored proxy (intermediate build) | `stage0` naming; same-day as a0d229be |
-| 2026-03-26 | `8333e8fa` | `b64_decode.py` | Backdoored proxy (obfuscated) | Next-day obfuscation hardening; `service-scan` tag |
+TeamPCP is a documented actor with a track record of coordinated supply-chain attacks against widely used open-source security and infrastructure tooling — Trivy, KICS, and LiteLLM among them. Reported capabilities include the **Shai-Hulud** self-propagating npm/PyPI worm, AES-256 + RSA-4096 exfiltration encryption, Kubernetes lateral movement, and audio steganography for evasion. This profile is not commodity crimeware; it blends financially motivated credential theft with tradecraft normally associated with state-adjacent operations.
 
 ---
 
 ## Architecture
 
-| Component | Binary | Language | Role | C2 |
+| Component | Artifact | Language | Role | C2 |
 |---|---|---|---|---|
-| Backdoored proxy | `proxy_server.py` | Python 3 | LLM API key intercept + AWS IMDS credential theft | `litellm-production-7002.up.railway.app` |
-| npm delivery | `@qwork/sdk` | Node.js / Python bundle | Supply chain delivery of backdoored proxy | N/A |
-| Actor C2 (primary) | Railway.app instance | Unknown | Receives exfiltrated credentials | `litellm-production-7002.up.railway.app` |
-| Actor C2 (secondary) | Railway.app instance | Unknown | Receives exfiltrated credentials | `exampleopenaiendpoint-production.up.railway.app` |
+| Backdoored proxy | `proxy_server.py` | Python 3 | API key intercept + AWS IMDS theft | `litellm-production-7002.up.railway.app` |
+| Delivery vehicle | `@qwork/sdk` | npm (bundling Python) | Cross-ecosystem supply-chain delivery | — |
+| Primary collector | Railway.app instance | Unknown | Receives exfiltrated credentials | `litellm-production-7002.up.railway.app` |
+| Secondary collector | Railway.app instance | Unknown | Receives exfiltrated credentials | `exampleopenaiendpoint-production.up.railway.app` |
+
+---
+
+## Samples
+
+| SHA256 | Detections | First Seen (UTC) | Notes |
+|---|---|---|---|
+| `a0d229be8efcb2f9135e2ad55ba275b76ddcfeb55fa4370e0a522a5bdee0120b` | 37 | 2026-03-25 | Plain source; `@qwork/sdk` npm embedding confirmed; widest distribution (7 unique VT sources) |
+| `e55065785190468fc6a5e424679b825924c64bb62aa9486a6510bf2bfd06c87b` | 27 | 2026-03-25 | Intermediate build; `proxy_server_stage0.py` naming artifact |
+| `8333e8facf9f8d3df55127b29097b8c1f8274463388cb94799d2f3528d8f44f9` | 32 | 2026-03-26 | Heavily obfuscated — 15,288 lines, base64 body; submitted as `b64_decode.py` |
+
+The three samples capture the actor's hardening cycle within 48 hours: a `stage0` intermediate, the npm-embedded production build, and next-day base64 obfuscation. The staging artifact name confirms an explicitly versioned build pipeline rather than ad-hoc modification.
+
+The wider submission footprint on `a0d229be` — 9 submissions from 7 unique sources — is consistent with the npm-embedded build being encountered independently by multiple downstream consumers and CI pipelines.
+
+---
+
+## Component Details
+
+| Field | Value |
+|---|---|
+| Base | LiteLLM `proxy_server.py` v1.82.7 / v1.82.8 (upstream open source) |
+| File type | Python 3 source; very long lines (up to ~34,000 characters) |
+| Obfuscated variant | 15,288 lines, base64-encoded body |
+| Internal name artifact | `litellm-1.82.7_itellm_proxy_proxy_server_stage0.py` |
+| Delivery | `@qwork/sdk` npm package → `qwork-server` binary bundle |
+
+### Infection Chain
+
+1. Developer or operator installs `@qwork/sdk` — directly, or through a project dependency
+2. `qwork-server` runs, launching the embedded `proxy_server.py` as its LLM gateway
+3. The backdoored proxy begins accepting LLM API traffic (LiteLLM default port 4000)
+4. Each inbound request passes the interceptor; keys extracted from `Authorization: Bearer` headers
+5. On EC2 hosts, the script queries IMDSv1 at `169.254.169.254/latest/meta-data/iam/security-credentials/` for IAM role credentials
+6. Harvested credentials are exfiltrated to the Railway.app collectors
+
+Persistence requires no separate payload: the backdoor runs whenever the legitimate `qwork-server` service runs.
+
+### Operational Constraints
+
+Two properties limit exposure and explain why sandbox analysis of these samples yields almost nothing:
+
+| Constraint | Consequence |
+|---|---|
+| Requires live inbound LLM API traffic | **Inert in isolation** — a sandbox with no proxy traffic sees no malicious behavior |
+| AWS theft requires IMDSv1 | **IMDSv2's token requirement blocks it outright** |
+
+The second is directly actionable: enforcing IMDSv2 eliminates the cloud-credential half of this attack.
+
+This is a **passive harvester, not a RAT**. No interactive shell capability was observed. The operator monitors the collectors for inbound credential POSTs.
 
 ---
 
 ## Infrastructure IOCs
 
-**Actor-controlled Railway.app instances:**
+### Actor-Controlled
 
-- `litellm-production-7002.up.railway.app` — primary credential exfil receiver; named to blend with legitimate LiteLLM deployments
-- `exampleopenaiendpoint-production.up.railway.app` — secondary; named to blend with OpenAI-compatible endpoint deployments
+| Indicator | Role |
+|---|---|
+| `litellm-production-7002.up.railway.app` | Primary credential exfiltration receiver |
+| `exampleopenaiendpoint-production.up.railway.app` | Secondary receiver |
+| `checkmarx.zone:8443/telemetry/checkmarx.json` | Confirmed live C2 — impersonates the Checkmarx security vendor brand (23 vendor detections; Sophos: `C2/Generic-A`) |
+| `@qwork/sdk` | npm delivery package |
 
-**Suspicious domain (unconfirmed role):**
+Both Railway.app names are chosen to survive a glance at network telemetry: `litellm-production-7002` and `exampleopenaiendpoint-production` read as ordinary deployment artifacts in exactly the environment being attacked. `checkmarx.zone` is not `checkmarx.com` — it is a brand-impersonating typosquat of a security vendor, and it is live infrastructure rather than a phishing page.
 
-- `checkmarx.zone` — not `checkmarx.com` (legitimate security vendor); possible typosquat; observed in `b64_decode.py` embedded URLs only
+### Victim-Side Indicator
 
-**Credential theft endpoint (victim-side):**
+| Indicator | Significance |
+|---|---|
+| `http://169.254.169.254/latest/meta-data/iam/security-credentials/` | Not actor-owned, but any outbound reference to it from a proxy process indicates cloud-credential targeting |
 
-- `http://169.254.169.254/latest/meta-data/iam/security-credentials/` — AWS EC2 IMDSv1; not actor-owned but a key indicator of cloud-targeting intent
+### Legitimate Endpoints Present in the File
 
-**npm supply chain vector:**
-
-- `@qwork/sdk` — npm package name; registry status at time of writing unknown
-
----
-
-## Assessment
-
-### Archetype
-
-**LLM Infrastructure Supply Chain Attack / API Key Harvester.** TEAMPCP represents a novel archetype in the CAIRN corpus: rather than embedding LLM functionality in malware, the actor backdoors the infrastructure layer that operators use to manage LLM API access. The LiteLLM proxy is a chokepoint — it sees all API keys for all providers from all applications. Compromising it yields credentials at scale without touching individual applications.
-
-### APT vs. FIN Assessment
-
-**Assessment revised in light of actor attribution.**
-
-TeamPCP is a documented threat actor with a public profile that substantially exceeds the initial CAIRN FIN assessment. Known capabilities include: coordinated multi-ecosystem supply chain compromise (Trivy, KICS, LiteLLM simultaneously), CanisterWorm self-propagating worm deployment, AES-256 + RSA-4096 exfiltration encryption (explaining why POST body content was opaque in sandbox), Kubernetes lateral movement within cloud-native environments, and audio steganography for detection evasion. This profile is inconsistent with a commodity FIN actor; it describes a sophisticated, persistent, multi-target supply chain operation.
-
-The initial CAIRN assessment of "financially motivated with above-average knowledge of enterprise AI/ML operations, confidence medium-high" was based on metadata alone and underweighted the actor's sophistication. The correct framing: TeamPCP is a persistent threat actor whose operations blend FIN objectives (credential theft, inference abuse) with APT-grade tradecraft (audio steganography, multi-ecosystem coordination, encrypted exfil). Whether the primary motivation is financial or espionage-adjacent is not resolvable from the LiteLLM component alone.
-
-**Shai-Hulud / WURM resolution:** TeamPCP's self-propagating worm is **Shai-Hulud** (not "CanisterWorm" — that name has no basis in public threat intel). Shai-Hulud is a NPM/PyPI supply chain worm that propagates by compromising package repositories and embedding malicious payloads. WURM is an Impacket SMB propagation framework with OpenAI LLM tasking and Slack/Ethereum C2 — architecturally distinct from Shai-Hulud's package ecosystem delivery model. **WURM is not Shai-Hulud.** The `auto_black_abuse` co-occurrence and same-day submission are coincidental collection artifacts. WURM remains independently attributed. See WURM.md.
-
-**`checkmarx.zone` resolved:** Confirmed live C2 endpoint at `checkmarx.zone:8443/telemetry/checkmarx.json`. Sophos classifies it C2/Generic-A (23 malicious vendor detections). Not a phishing page — an active command and exfiltration endpoint impersonating the Checkmarx security vendor brand. The `localhostc2-main/realc2/hi-malwareresearcher/` cluster (RuntimeBroker.exe, Invoice78271.pdf.hta) uses this C2 and was surfaced via the checkmarx.zone pivot. This cluster has a distinct actor handle (`ashduasdoasdoasd` GitHub) and may not be TeamPCP — it fired the TEAMPCP rule only via the shared C2 endpoint, not via LiteLLM strings. Possible interpretations: (a) TeamPCP operates a broader toolkit beyond LiteLLM backdoors, (b) a second actor is sharing or piggybacking the checkmarx.zone C2. Assessment: insufficient evidence for single-actor attribution.
-
-**`mini-shai-hulud-scanner` rule false positive:** The scanner zip/script (`3d08fadb`, `78a911a2`) fired T3-TEAMPCP_Backdoored_LiteLLM_Proxy because they reference TeamPCP IOCs (including checkmarx.zone) in detection logic. These are legitimate security research tools, not malware. The TEAMPCP rule fires because it matches the C2 domain string regardless of context. Rule refinement: add a negative condition excluding `scan_` submission names or `provider_references` from legitimate AI vendors. These samples should be suppressed in future scans.
-
-### Inferred Use Case
-
-Bulk LLM API credential harvesting for resale or direct abuse (free inference at victim cost). AWS IAM credentials harvested as a secondary yield — higher value if the EC2 role has broad permissions. Confidence: medium.
-
-### Attribution Signals
-
-- `auto_black_abuse` path artifact — same automated collection pipeline as WURM; not an attribution signal, likely a shared malware collection feed
-- `@qwork/sdk` package name — no public GitHub presence or legitimate project found at time of writing
-- Railway.app subdomain naming convention mimics legitimate deployment patterns — deliberate operational security
-
-### Open Questions
-
-- Is `@qwork/sdk` still live on npm? Were downstream victims affected before removal?
-- Is `otlp.arize.com` used for covert telemetry exfiltration, or is the Arize AI reference incidental?
-- Exact backdoor diff against upstream LiteLLM source not performed — injection points unknown; AES-256/RSA-4096 encryption means exfil content is not recoverable from metadata alone
-- `localhostc2-main/realc2/hi-malwareresearcher/` cluster — TeamPCP or separate actor sharing the checkmarx.zone C2? Pivot `ashduasdoasdoasd` GitHub handle for additional artifacts
-- Did TeamPCP also compromise Trivy or KICS versions visible in the VT corpus? Pivot on known Trivy/KICS supply chain IOCs from public reporting
-- **RESOLVED:** `checkmarx.zone` — confirmed C2 endpoint, not phishing page. See Assessment above.
-- **RESOLVED:** WURM / CanisterWorm overlap — WURM is not Shai-Hulud (TeamPCP's worm); architecturally distinct. See WURM.md.
+Inherited from upstream LiteLLM and useful for reducing false positives: `models.litellm.ai`, `docs.litellm.ai`, `docs.datadoghq.com`, `otlp.arize.com`. Their presence is expected in any genuine LiteLLM deployment and is not evidence of compromise.
 
 ---
 
-## CAIRN Rules
+## Detection
+
+### YARA
 
 ```yara
 rule T3-TEAMPCP_Backdoored_LiteLLM_Proxy
 {
     meta:
-        description = "Detects TeamPCP backdoored LiteLLM proxy — malicious proxy_server.py intercepts LLM API keys and steals AWS IAM credentials via instance metadata endpoint; distributed via @qwork/sdk npm package; C2 on actor-controlled Railway.app LiteLLM instance"
+        description = "Detects TeamPCP backdoored LiteLLM proxy — malicious proxy_server.py intercepts LLM API keys and steals AWS IAM credentials via instance metadata endpoint; distributed via @qwork/sdk npm package"
         author = "CAIRN"
         artifact_class = "llm_api_backdoor"
         artifact_type = "api_key_pattern"
         tier = "T3"
         confidence = "high"
         family = "TEAMPCP"
-        reference = "VT SHA256 a0d229be8efcb2f9135e2ad55ba275b76ddcfeb55fa4370e0a522a5bdee0120b; ESET: Trojan/Python.PthLlmStealer; AV: Generic.PY.TeamPCP; Railway.app C2 litellm-production-7002.up.railway.app; @qwork/sdk npm supply chain vector; AWS IMDSv1 credential theft"
 
     strings:
         $av_teamcp   = "TeamPCP"                                                   nocase
@@ -255,19 +150,32 @@ rule T3-TEAMPCP_Backdoored_LiteLLM_Proxy
 }
 ```
 
-Fires on all three variants confirmed by `cairn rescan`. String sources: AV detection labels (`$av_teamcp`, `$av_stealer`), embedded URL relationship objects (`$railway_c2`, `$railway_ex`, `$imds`), submission name artifact (`$stage0`), npm path artifact (`$qwork`).
+**Known false-positive class.** This rule matches IOC strings wherever they appear — including inside **legitimate detection tooling**. Security scanners that reference TeamPCP indicators (for instance `mini-shai-hulud-scanner`) will match on the C2 domain alone. Any hit should be checked for whether the sample *uses* the indicator or merely *catalogs* it; detection content and malware are not distinguishable by string presence.
 
----
+### Detection and Mitigation Guidance
 
-## Update Log
+Ordered by effectiveness:
 
-| Date | Change |
+| Control | Effect |
 |---|---|
-| 2026-06-09 | Initial report — 3 variants confirmed; T3 rule written and fires on all three; @qwork/sdk npm supply chain vector identified; AWS IMDSv1 credential theft confirmed; checkmarx.zone role unresolved |
-| 2026-06-10 | Actor attribution corrected — TeamPCP is a documented threat actor; initial "no public coverage" assessment was wrong; AV label was an attribution signal missed at triage; APT/FIN assessment revised upward |
-| 2026-06-10 | checkmarx.zone pivot: confirmed live C2 endpoint (Sophos C2/Generic-A); localhostc2 cluster surfaced; mini-shai-hulud-scanner identified as legitimate detection tool (rule FP); WURM/Shai-Hulud overlap resolved — WURM is architecturally distinct from TeamPCP's NPM/PyPI worm; "CanisterWorm" name has no public threat intel basis |
-| 2026-06-22 | Cross-family submitter note added: `7a4d5f37` (DE) submits `a0d229be` and `8333e8fa`; same key is confirmed VOZDYHAN operator identity; TEAMPCP attribution to that actor not confirmed |
+| **Enforce IMDSv2** on all EC2 instances | Eliminates the AWS credential theft path entirely |
+| **Verify `proxy_server.py` against upstream LiteLLM** by hash for the deployed version | Directly detects the backdoor; the file should match upstream exactly |
+| **Alert on outbound traffic from LLM gateway hosts to `*.up.railway.app`** | Catches exfiltration; a production gateway has no reason to reach an unknown PaaS instance |
+| **Audit npm packages that bundle non-JavaScript executables or interpreters** | Addresses the cross-ecosystem delivery pattern generally |
+| **Treat inference API keys as rotatable secrets with short lifetimes** | Limits the value of a successful harvest |
+
+The second row is the highest-confidence check available. LiteLLM is open source, so the correct content of `proxy_server.py` for any given version is publicly verifiable — a hash comparison is definitive, requires no signatures, and works even against a variant that defeats every string-based rule above.
 
 ---
 
-*Discovered using CAIRN v0.1.0. Report last updated 2026-06-09. Author: Ryan Fetterman (https://fetterm4n.github.io)*
+## Open Questions
+
+1. **Is `@qwork/sdk` still available on npm, and who consumed it?** The downstream victim population is unquantified. This is the most urgent gap — every affected operator has had their entire multi-provider key inventory exposed.
+2. **Where exactly is the backdoor injected?** No diff against upstream LiteLLM has been performed, so the injection points are unmapped. Because exfiltration is reportedly AES-256 + RSA-4096 encrypted, captured traffic will not reveal content — source comparison is the only path.
+3. **Is `otlp.arize.com` abused as a covert channel?** The Arize observability endpoint is legitimate in a LiteLLM deployment, which makes it an attractive exfiltration cover. Unconfirmed either way.
+4. **Are Trivy or KICS compromised builds also in circulation?** Public reporting places those tools in the same actor's campaign; corresponding samples have not been examined here.
+5. **Is the `checkmarx.zone` C2 exclusive to TeamPCP?** A separate cluster (distinct actor handle, unrelated tooling) shares this endpoint. Either the actor's toolkit is broader than the LiteLLM component, or a second party is sharing the infrastructure. Current evidence does not settle it — and a shared C2 alone is not sufficient grounds for single-actor attribution.
+
+---
+
+*SHA256 hashes truncated to 8 characters in narrative; full hashes in tables. Last updated 2026-08-04.*

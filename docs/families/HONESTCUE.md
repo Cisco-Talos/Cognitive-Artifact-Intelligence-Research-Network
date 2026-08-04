@@ -1,197 +1,43 @@
-# HONESTCUE — Research Report
+# HONESTCUE — Threat Intelligence Report
 
-**Family designation:** HONESTCUE (Mandiant GTIG attribution; confirmed `popular_threat_name` on VT)
 **Author:** Ryan Fetterman (https://fetterm4n.github.io)
-**First seen:** 2025-07-22 (earliest VT submission in corpus)
-**Last seen:** 2025-08-01 (latest submission in tight 11-day window)
-**Variants:** 41 confirmed (all `ConsoleApplication1.exe`; two dominant build variants by imphash)
-**Platform:** Windows x86-64; PE32+ console executable
-**CAIRN rules:** `T3-HONESTCUE_LLM_Probe_Loader`
-**Related report:** N/A
+**Aliases:** HONESTCUE (Mandiant GTIG, September 2025) · `trojan.agentb/cryp` (VT suggested label)
+**First seen:** 2025-07-22
+**Last seen:** 2025-08-01
+**Platform:** Windows x86-64 (PE32+ console), .NET
+**Archetype:** A1 — LLM-Directed Payload Generation
+**LLM provider:** Google Gemini (`generativelanguage.googleapis.com`)
+**TLP:** TLP:AMBER
 
 ---
 
 ## Summary
 
-HONESTCUE is a Windows PE loader that uses the Google Gemini API as a live code factory. Stage 1 embeds a hard-coded prompt instructing Gemini to generate a C# class (`AITask` or `Stage2`); it receives the generated code, compiles it in-memory using `CSharpCodeProvider` (invoking `csc.exe` at runtime), and executes the resulting assembly without writing a persistent file to disk. The stage2 payload is therefore never statically present in the binary and cannot be recovered from VT metadata alone.
+HONESTCUE is a Windows .NET loader that treats the **Google Gemini API as its payload server**. The binary embeds a hard-coded prompt instructing Gemini to generate a C# class — named `AITask` or `Stage2` — then compiles the model's response at runtime with `CSharpCodeProvider` (which spawns the real `csc.exe` compiler) and executes the resulting assembly in-process.
 
-All 41 corpus samples share the filename `ConsoleApplication1.exe` — the default Visual Studio project output name, indicating either development/testing build artifacts or a deliberate omission of cover naming. The full corpus was submitted to VirusTotal in an 11-day window (2025-07-22 to 2025-08-01). Two dominant imphash clusters account for 32 of 41 samples, indicating two stable compiled variants; 8 singleton imphashes represent outlier or early builds.
+The second stage therefore **has no static existence**. It is not packed, not encrypted, and not downloaded from operator-controlled infrastructure; it does not exist until the model writes it. This defeats payload extraction as an analysis technique and removes the operator's need to host anything: there is no staging server to seize, no CDN link to block, and no payload hash to blocklist. Google's own infrastructure serves the malicious code.
 
-HONESTCUE was publicly attributed by Mandiant GTIG in September 2025. No actor identity or campaign targeting has been confirmed from VT metadata alone.
+41 samples were submitted in a tight 11-day window. Every one carries the filename `ConsoleApplication1.exe` — the untouched Visual Studio default. Two imphash clusters account for 32 of the 41, indicating two stable build configurations rather than two campaigns.
 
----
-
-## Discovery
-
-HONESTCUE was imported into the CAIRN corpus via the Mandiant GTIG report (September 2025) and VT `popular_threat_name` attribution. The YARA rule `T3-HONESTCUE_LLM_Probe_Loader` was written against the published indicators and fires on four independent signals: the Mandiant family label string, the hard-coded Gemini probe prompt (`class named AITask`), the in-memory C# compilation string (`CSharpCodeProvider`), and the Gemini API endpoint (`generativelanguage.googleapis.com`). Forty-one corpus samples confirmed.
+Mandiant GTIG published attribution for this family in September 2025.
 
 ---
 
-## ConsoleApplication1.exe — LLM-Directed Loader
+## Architecture
 
-### Binary Characteristics
-
-| Field | Value |
-|---|---|
-| File type | PE32+ executable (console) x86-64 |
-| Filename | `ConsoleApplication1.exe` (all 41 samples — default VS project name) |
-| Code-signing | None (no Authenticode signature) |
-| PE resources | Single RT_MANIFEST (entropy ~4.91) — standard application manifest; no embedded payloads |
-| CompanyName / ProductName / FileDescription | All null — stripped / default build |
-| Detection range | 12–45 across corpus |
-| Provider references | None recovered in CAIRN metadata |
-
-The absence of version strings and the default Visual Studio output name together point to a development or test build pipeline that was not hardened for deployment. Either the operator left the default project settings intact, or the naming omission is deliberate obfuscation.
-
-### Imphash Clusters
-
-Two stable compiled variants dominate the corpus. Imphash differences indicate distinct import tables, consistent with different .NET runtime linking or dependency configurations between the two builds.
-
-| Imphash | Sample count | Notes |
+| Stage | Mechanism | Artifact left behind |
 |---|---|---|
-| `a63661caccd7017c284e41d9db93d8d4` | 22 | Primary build; largest cluster |
-| `df407d359c3abfab25011d2a0d9ec42a` | 10 | Secondary build |
-| (8 singleton imphashes) | 8 (1 each) | Outlier or early builds; pre-stable compilation |
-| **Total** | **41** | |
+| 1 | Embedded prompt → HTTPS POST to Gemini | Outbound request to `generativelanguage.googleapis.com` |
+| 2 | `CSharpCodeProvider` compiles the response | `csc.exe` child process; transient `.cs` / `.dll` in a temp path |
+| 3 | Compiled assembly loaded and run in-process | None persistent |
 
-The two dominant clusters share the same submission window and filename, indicating two parallel or sequential build configurations rather than separate campaigns.
-
-### Execution Flow
-
-HONESTCUE implements a three-stage LLM-as-code-factory pattern:
-
-1. **Stage 1 — Gemini API probe.** The PE contains a hard-coded prompt string embedded as a binary string literal. At runtime it sends an HTTP POST to `generativelanguage.googleapis.com` (Google Gemini API) with a prompt instructing the model to generate a C# class named `AITask` or `Stage2`. The prompt is structurally a code-generation request, not a C2 command channel.
-
-2. **Stage 2 — In-memory compilation.** The loader receives the LLM-generated C# source from the API response. It invokes `CSharpCodeProvider` to compile the source code at runtime, spawning `csc.exe` as a child process and writing intermediate compile artifacts to a temporary or suspicious-path location (confirmed by Sigma). The compiled assembly is loaded into memory directly.
-
-3. **Stage 3 — Fileless execution.** The compiled assembly executes in-process. No persistent PE is written to a standard location. Stage3 payload content is unknown — it is generated fresh by the LLM at execution time and is not present in any static artifact observable via VT metadata. Two samples loaded a Python DLL from a non-Python process (`Python Image Load By Non-Python Process` sigma hit), suggesting stage3 may use Python as a runtime or that a separate Python-based tool executes co-resident.
-
-**Gemini API key custody:** Whether the API key is hardcoded in the binary or retrieved dynamically is unknown without access to the string table. CAIRN safety constraints preclude binary download; this cannot be determined from metadata alone.
+Stage 3 behavior is not fixed across executions. Because the model generates the source each run, two executions of the identical binary can produce functionally different payloads — meaning **a single sandbox capture is not necessarily representative of the family**.
 
 ---
 
-## Behavioral Indicators
+## Samples
 
-All behavioral evidence is derived from sandbox Sigma rule matches across 41 corpus samples. No network-level IOCs (C2 domains, IPs) were recovered from VT metadata.
-
-| Sigma Rule | Hits | Coverage | Significance |
-|---|---|---|---|
-| Dynamic .NET Compilation Via Csc.EXE | 33/41 | 80% | Direct confirmation of stage2 compilation model: `csc.exe` spawned at runtime |
-| Dot net compiler compiles file from suspicious location | 31/41 | 76% | Compilation input sourced from a non-standard or temp path |
-| Dynamic CSharp Compile Artefact | 31/41 | 76% | `.cs` source or compiled DLL written to temp / suspicious path during compilation |
-| Read Contents From Stdin Via Cmd.EXE | 2/41 | 5% | Stdin-based data ingestion in loader stage; possible piped input from LLM response processing |
-| DNS Query To Common Malware Hosting and Shortener Services | 2/41 | 5% | Queries to shortener / hosting services — payload delivery path candidate |
-| Python Image Load By Non-Python Process | 2/41 | 5% | Python DLL loaded by a non-Python host process; stage3 may involve a Python runtime |
-| Non Interactive PowerShell Process Spawned | 1/41 | 2% | Non-interactive PowerShell launched — post-compilation tasking candidate |
-| Suspicious DNS Query for IP Lookup Service APIs | 1/41 | 2% | IP geolocation API query — victim profiling before primary function |
-
-The three dominant Sigma hits (`csc.exe` compilation, suspicious-path source, compile artefact) form a tight behavioral cluster. Their consistency across 80% of samples confirms the dynamic compilation model is the defining characteristic of the family, not a sandbox artefact.
-
-The low-frequency hits (stdin read, Python load, PowerShell) are present on only 2–1 samples. These may represent distinct stages of execution in a subset of samples, or sandbox-specific artefacts. They are documented here but not treated as defining family indicators.
-
----
-
-## Build Comparison
-
-The two dominant imphash clusters are structurally distinct compiled outputs. No behavioral differentiation between clusters is confirmed from available metadata — all Sigma-attributed behavioral data is aggregated across the full corpus and does not resolve to specific imphash groups.
-
-| Attribute | Primary build (`a63661ca…`) | Secondary build (`df407d35…`) |
-|---|---|---|
-| Sample count | 22 | 10 |
-| Imphash | `a63661caccd7017c284e41d9db93d8d4` | `df407d359c3abfab25011d2a0d9ec42a` |
-| Filename | `ConsoleApplication1.exe` | `ConsoleApplication1.exe` |
-| Platform | PE32+ x86-64 | PE32+ x86-64 |
-| Code-signing | None | None |
-| Behavioral differentiation | Not confirmed from metadata | Not confirmed from metadata |
-| Notes | Dominant build; majority of corpus | Secondary configuration; different import table |
-
-Both clusters share the same submission window and identical file naming. The imphash difference indicates a recompilation with different import dependencies — possibly a .NET framework version change, a different set of linked assemblies, or a minor code change that altered the import table.
-
----
-
-## Infrastructure
-
-**LLM provider endpoint:** `generativelanguage.googleapis.com` — Google Gemini API. The stage1 loader sends code-generation prompts to this endpoint at runtime.
-
-**No operator C2 identified.** No command-and-control domains, IPs, or hardcoded stage2 delivery URLs were recovered from VT metadata. Stage2 is generated by the Gemini API at execution time; there is no pre-staged binary payload to host.
-
-**`popular_threat_label`:** `suggested_threat_label: trojan.agentb/cryp`. `popular_threat_name` entries: `agentb` (2), `cryp` (2), `honestcue` (2). The `honestcue` name appears on multiple samples, confirming AV engine attribution consistent with the Mandiant family designation.
-
----
-
-## Assessment
-
-### Archetype
-
-**HONESTCUE is archetype A1 — LLM-Directed Payload Generation.** Confirmed.
-
-The family instantiates A1 directly: the loader embeds a hard-coded prompt at build time, sends it to Google Gemini at runtime, receives executable C# source code in response, and compiles and executes it in-memory via `CSharpCodeProvider`. The LLM is a code factory — it is not a C2 channel, not a credential target, and not a routing layer. The generated stage2 is the payload; the LLM generates it fresh per execution.
-
-This is distinct from A2 (LLMGATE — LLM traffic routing through victim egress), A4 (WURM — LLM as live tasking channel), and A6 (credential harvesters). The definining property of A1 is that **the LLM output is executable code that runs immediately**, not instructions to the operator or routed traffic.
-
-PromptLock was the first confirmed A1 instance (2025-08-25 corpus entry; Lua script generating SPECK-based encryption via an LLM). HONESTCUE is the second confirmed A1 instance; it extends the archetype into the C# / .NET compilation domain and substitutes Google Gemini for PromptLock's provider. Both families share the core A1 pattern: prompt embedded at build time → LLM generates code → code executes immediately → no static payload artifact.
-
-**Archetypes column:** A1.
-
-### Assessment
-
-HONESTCUE demonstrates that the A1 LLM-Directed Payload Generation pattern is not limited to a single provider, language, or compilation model. PromptLock used a Lua-scripted LLM prompt to generate encryption logic; HONESTCUE uses a .NET/C# compilation pipeline with Google Gemini. The Mandiant GTIG public attribution in September 2025 confirms external analyst visibility. The tight 11-day submission window (2025-07-22 to 2025-08-01) and two-cluster imphash structure are consistent with a concentrated test or deployment period followed by cessation or retooling.
-
-No actor identity, targeting sector, or initial access vector is confirmed from VT metadata.
-
-**Confidence:** High (A1 archetype confirmed; behavioral indicators consistent across 80% of corpus; Mandiant attribution corroborated by VT `popular_threat_name`).
-
-### Open Questions
-
-- **Gemini API key custody:** Hardcoded binary string or retrieved dynamically? Cannot determine without string table access (binary not downloadable under CAIRN safety constraints).
-- **Stage2 payload content:** What does the Gemini-generated C# code actually do? Unknown. The fileless execution model leaves no recoverable artifact in VT metadata. The generated code changes per execution and may vary across samples or over time.
-- **Python Image Load hits (2 samples):** Is stage2 launching a Python runtime as a sub-component? Or is a separate Python-based tool co-executing alongside the loader? The 2/41 hit rate does not confirm this as a family-wide behavior.
-- **Single operator or kit?** Do all 41 samples represent one operator's deployment, or multiple independent deployments of a shared loader kit? The tight submission window and two-cluster structure are consistent with a single operator, but VT submission source key analysis was not performed.
-- **Post-August 2025 activity:** The corpus window closes 2025-08-01. No subsequent variants have been confirmed. Whether the operator retooled, shifted provider, or ceased operations is unknown.
-- **Stage2 variability:** Because stage2 is LLM-generated at execution time, the actual payload behavior may differ across executions even for the same binary. Sandbox captures may not be representative.
-
----
-
-## CAIRN Rules
-
-```yara
-rule T3-HONESTCUE_LLM_Probe_Loader
-{
-    meta:
-        description = "Detects HONESTCUE downloader — hard-coded Gemini API prompts embedded as binary string literals; probe prompt contains 'class named AITask'; stage2 prompts reference Stage2 class and CSharpCodeProvider for fileless in-memory C# compilation"
-        author = "CAIRN"
-        artifact_class = "llm_api_backdoor"
-        artifact_type = "downloader"
-        tier = "T3"
-        confidence = "high"
-        family = "HONESTCUE"
-        reference = "Mandiant GTIG blog Sep 2025; Gemini API generates C# stage2 downloader/reflective loader compiled in-memory via CSharpCodeProvider; Discord CDN payload delivery"
-
-    strings:
-        $aitask_prompt  = "class named AITask"                nocase
-        $stage2_prompt  = "class named 'Stage2'"              nocase
-        $csharp_compile = "CSharpCodeProvider"                nocase
-        $gemini_api     = "generativelanguage.googleapis.com" nocase
-        $honestcue      = "HONESTCUE"                         nocase
-
-    condition:
-        $honestcue or $aitask_prompt or $stage2_prompt or
-        ($csharp_compile and $gemini_api)
-}
-```
-
-Fires on:
-- Samples carrying the `HONESTCUE` AV/Mandiant detection label string
-- Samples with the hard-coded Gemini code-generation prompt (`class named AITask` or `class named 'Stage2'`)
-- Samples combining in-memory C# compilation with the Gemini API endpoint (`CSharpCodeProvider` AND `generativelanguage.googleapis.com`)
-
-All 41 corpus samples confirmed against this rule via `cairn rescan`.
-
----
-
-## Indicators of Compromise
-
-**Registered seed:** `eb0687daed29f3651c61b0a2aa4a0cdcf2049a1ebae2e15e2dd9326471d318a1` (status: not_tested — hash not yet in corpus at time of report)
+All 41 samples: filename `ConsoleApplication1.exe`, PE32+ x86-64 console, unsigned, no version strings.
 
 ### Primary build — imphash `a63661caccd7017c284e41d9db93d8d4` (22 samples)
 
@@ -249,14 +95,106 @@ All 41 corpus samples confirmed against this rule via `cairn rescan`.
 | `80690dcc5b7779ca26ff7b981e101ddb74e5e3bd10edcec343de0325cdfe835a` | 34 | 2025-07-27 |
 | `6994b8b2b870f4e920b969b9efca6bdce9fca8dce2f4a782dfae1e7af2b20a77` | 37 | 2025-07-27 |
 
+The two dominant clusters share the same submission window and filename; the imphash split reflects a recompilation with different linked assemblies (a .NET framework or dependency change), not two distinct tools.
+
 ---
 
-## Update Log
+## Binary Details
 
-| Date | Change |
+| Field | Value |
 |---|---|
-| 2026-06-12 | Initial report — 41 samples confirmed; two-cluster imphash structure documented; behavioral indicators from Sigma corpus; A1 archetype confirmed; seed registered (not_tested) |
+| File type | PE32+ executable (console), x86-64 |
+| Filename | `ConsoleApplication1.exe` (41/41) |
+| Code signing | None |
+| PE resources | Single `RT_MANIFEST` (entropy ~4.91) — standard app manifest, **no embedded payload** |
+| CompanyName / ProductName / FileDescription | All null |
+| Detection range | 12–45 |
+
+The default project name plus fully stripped version metadata indicates a build pipeline that was never hardened for deployment — either operator carelessness or a deliberate refusal to supply cover naming that would itself be a signature.
 
 ---
 
-*Discovered using CAIRN v0.1.0. Report last updated 2026-06-12. Author: Ryan Fetterman (https://fetterm4n.github.io)*
+## Behavioral Indicators
+
+Observed across 41 samples under automated analysis:
+
+| Detection | Hits | Coverage | Significance |
+|---|---|---|---|
+| Dynamic .NET compilation via `csc.exe` | 33/41 | 80% | Direct confirmation of the runtime-compilation model |
+| .NET compiler compiling from a suspicious location | 31/41 | 76% | Compilation input in a temp / non-standard path |
+| Dynamic C# compile artifact written | 31/41 | 76% | Transient `.cs` / `.dll` during compilation |
+| Stdin contents read via `cmd.exe` | 2/41 | 5% | Possible piping of the model response |
+| DNS query to malware-hosting / shortener services | 2/41 | 5% | Candidate secondary delivery path |
+| Python image loaded by non-Python process | 2/41 | 5% | Stage 3 may involve a Python runtime |
+| Non-interactive PowerShell spawned | 1/41 | 2% | Post-compilation tasking candidate |
+| DNS query to IP-lookup service API | 1/41 | 2% | Victim geolocation profiling |
+
+The top three form one tight cluster present in ~80% of samples — this is the family's defining behavior, not a sandbox artifact. The low-frequency hits appear on 1–2 samples each and should be treated as leads rather than family traits.
+
+---
+
+## Infrastructure
+
+**LLM endpoint:** `generativelanguage.googleapis.com` (Google Gemini).
+
+**No operator C2 has been identified** — no command-and-control domain, IP, or pre-staged payload URL. This is a structural property of the design rather than a gap in collection: with the model generating stage 2 on demand, the operator has nothing to host.
+
+The absence of attacker-controlled infrastructure is the family's most significant defensive implication. Conventional blocking — sinkholes, domain takedowns, payload hash blocklists — has no target. The only chokepoint is the inference provider itself.
+
+---
+
+## Detection
+
+### YARA
+
+```yara
+rule T3-HONESTCUE_LLM_Probe_Loader
+{
+    meta:
+        description = "Detects HONESTCUE downloader — hard-coded Gemini API prompts embedded as binary string literals; probe prompt contains 'class named AITask'; stage2 prompts reference Stage2 class and CSharpCodeProvider for fileless in-memory C# compilation"
+        author = "CAIRN"
+        artifact_class = "llm_api_backdoor"
+        artifact_type = "downloader"
+        tier = "T3"
+        confidence = "high"
+        family = "HONESTCUE"
+        reference = "Mandiant GTIG blog Sep 2025"
+
+    strings:
+        $aitask_prompt  = "class named AITask"                nocase
+        $stage2_prompt  = "class named 'Stage2'"              nocase
+        $csharp_compile = "CSharpCodeProvider"                nocase
+        $gemini_api     = "generativelanguage.googleapis.com" nocase
+        $honestcue      = "HONESTCUE"                         nocase
+
+    condition:
+        $honestcue or $aitask_prompt or $stage2_prompt or
+        ($csharp_compile and $gemini_api)
+}
+```
+
+### Detection Guidance
+
+The prompt strings are the durable anchor — they are functional requirements of the design, not incidental strings, and cannot be removed without breaking the loader. They can, however, be obfuscated; the behavioral chain cannot.
+
+**Highest-value composite signal:** an unsigned .NET console executable that issues an outbound request to a generative-AI endpoint and then invokes `csc.exe`. Legitimate software that compiles C# at runtime exists, but almost none of it sources the source code from an LLM API moments earlier.
+
+Practical controls:
+
+1. **Alert on `csc.exe` spawned by a non-developer process**, particularly where the compilation input sits in a temp path.
+2. **Treat outbound inference-API traffic from non-developer endpoints as anomalous.** For this family it is a hard dependency: no model access means no payload.
+3. **Do not rely on payload-based detection.** There is no payload to detect until after the model responds, and it may differ every run.
+
+---
+
+## Open Questions
+
+1. **What does the generated stage 2 actually do?** Unresolved, and structurally hard to resolve — the code is fileless, model-generated, and potentially different on each execution. Capturing the Gemini response, not the binary, is the only path to an answer.
+2. **How is the Gemini API key supplied?** Whether it is embedded in the binary or fetched at runtime is undetermined. This matters materially: an embedded key is both a takedown lever and an attribution artifact.
+3. **Is Python part of stage 3?** Two samples loaded a Python image into a non-Python process. At 2/41 this is a lead, not a family characteristic.
+4. **One operator or a shared kit?** The 11-day window and two-cluster build structure are consistent with a single operator, but do not exclude multiple deployments of a shared loader.
+5. **Post-August 2025 activity.** The observation window closes 2025-08-01. Whether the operator retooled, changed provider, or stopped is unknown.
+
+---
+
+*SHA256 hashes truncated to 8 characters in narrative; full hashes in tables. Last updated 2026-08-04.*

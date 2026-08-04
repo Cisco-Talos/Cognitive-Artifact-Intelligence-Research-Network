@@ -1,121 +1,100 @@
-# QUIETVAULT — Research Report
+# QUIETVAULT — Threat Intelligence Report
 
-**Family designation:** QUIETVAULT (TrendMicro `TrojanSpy.JS.QVAULT.THBBDBF`; Microsoft `Trojan:JS/QuietVault!MTB`)
 **Author:** Ryan Fetterman (https://fetterm4n.github.io)
-**First seen:** 2025-08-27 (earliest VT submission in corpus)
-**Last seen:** 2025-08-27 (single corpus sample)
-**Variants:** 1 confirmed seed; 1 corpus hit
+**Aliases:** `TrojanSpy.JS.QVAULT.THBBDBF` (TrendMicro) · `Trojan:JS/QuietVault!MTB` (Microsoft)
+**First seen:** 2025-08-27
 **Platform:** JavaScript / Node.js (6.6 KB)
-**CAIRN rules:** `T3-QUIETVAULT_JS_Telemetry_Spy`
-**Related report:** N/A
+**Archetype:** A8 — Malicious AI SDK / Package (with A6 credential-theft objective)
+**TLP:** TLP:AMBER
 
 ---
 
 ## Summary
 
-QUIETVAULT is a JavaScript stealer distributed as a fake npm package telemetry module (`package/telemetry.js`). It masquerades as a routine package telemetry component but performs credential or data theft, drops `edb.chk`, and includes geofencing and anti-debug evasion. The supply chain vector (npm package masquerade) classifies QUIETVAULT alongside SUPERO as an A8 (Malicious AI SDK / Package) family, distinguishing it from conventional JavaScript stealers by its delivery mechanism.
+QUIETVAULT is a JavaScript credential stealer that ships inside an npm package disguised as a **telemetry module** (`package/telemetry.js`). It activates in the developer's own environment during dependency installation, steals credentials, drops a file named `edb.chk`, and gates execution behind geolocation and anti-debug checks.
+
+The choice of disguise is the notable part. Telemetry modules are ubiquitous in legitimate npm packages, are expected to make outbound network requests, and are almost never read during code review. A malicious telemetry module is therefore *pre-justified*: the two behaviors that would otherwise draw attention — network egress and system enumeration — are exactly what the file's name says it does.
+
+The victim profile follows from the delivery mechanism. npm is the primary package ecosystem for Node.js and web development, which now includes a large population of AI application developers using LangChain.js, the OpenAI Node SDK, and similar tooling. Those developers install dependencies rapidly and in volume, and their machines hold precisely the high-value secrets a stealer wants: inference API keys, npm publish tokens, cloud credentials, and SSH keys. A single compromised developer with publish rights also opens the path to further supply-chain propagation.
+
+The presence of **geofencing and anti-debug logic** argues against an indiscriminate campaign. An operator who wanted maximum installations would not add code that suppresses execution for most of them. This is victim selection, which implies a specific intended target set.
 
 ---
 
-## Discovery
+## Delivery
 
-QUIETVAULT was added to the CAIRN corpus as a seed sample. The T3 rule fires on TrendMicro (`TrojanSpy.JS.QVAULT`) and Microsoft (`QuietVault`) family name consensus, plus the co-occurrence of the `package/telemetry.js` path identifier and the `edb.chk` drop path.
+| Step | Mechanism |
+|---|---|
+| 1 | Malicious package published to npm containing `package/telemetry.js` |
+| 2 | Developer runs `npm install` / `npm ci` — directly or via a transitive dependency |
+| 3 | Telemetry module executes in the developer's environment |
+| 4 | Geolocation and anti-debug checks gate the payload |
+| 5 | On a passing check: credential theft, `edb.chk` drop, exfiltration |
+
+Step 2 is what makes this class of attack effective — a developer may never have chosen this package. Transitive dependencies are installed silently and reviewed by nobody.
 
 ---
 
-## package/telemetry.js — JavaScript npm Supply Chain Stealer
+## Samples
 
-### Binary Characteristics
+| SHA256 | Filenames | Size | Detections | First Seen (UTC) |
+|---|---|---|---|---|
+| `8eea1f65e468b515020e3e2854805f1ef5c611342fa23c4b31d8ed3374286a90` | `package/telemetry.js`, `telemetry.js` | 6,632 | 37 | 2025-08-27 |
+
+---
+
+## Script Details
 
 | Field | Value |
 |---|---|
 | File type | JavaScript (Node.js) |
-| Filenames | `package/telemetry.js`, `telemetry.js` |
 | Size | 6,632 bytes |
-| First seen | 2025-08-27 |
 | Detections | 37 |
-| Tags | `long-sleeps`, `javascript` |
-| Code-signing | None |
+| Code signing | None |
 | Crowdsourced YARA | `Windows_API_Function` |
-| Provider references | None recovered in corpus metadata |
+| VT tags | `long-sleeps`, `javascript` |
 
-The 6,632-byte size is characteristic of a hand-written JavaScript stealer — small enough to avoid file-size heuristics, large enough to include evasion logic and payload delivery. The `package/telemetry.js` path is the characteristic npm package internal path — the script presents itself as a telemetry module within a legitimate-looking npm package.
+At 6,632 bytes this is hand-written rather than bundled or minified — compact enough to read as a plausible telemetry helper, large enough to carry evasion logic and exfiltration.
 
-### Delivery Mechanism
-
-QUIETVAULT uses the npm supply chain as its delivery vector. The script is structured as a `package/telemetry.js` module within an npm package. When installed by a developer (via `npm install` or `npm ci`), the telemetry module activates. This pattern is consistent with the malicious npm package supply chain attack technique documented for SUPERO (A8).
-
-The npm supply chain vector is particularly effective against AI developers — the target audience installs many packages quickly, and telemetry modules are common in legitimate packages and rarely audited.
-
-### Behavioral Profile
+### Behavior
 
 | Behavior | Evidence |
 |---|---|
-| Data theft / credential access | TrendMicro `TrojanSpy.JS.QVAULT` classification; `Spy` prefix |
-| File drop | `edb.chk` dropped at runtime |
-| Anti-analysis | `long-sleeps` tag — sleep delays to defeat sandbox timeout analysis |
-| Geofencing | Referenced in VT sandbox — victim geolocation check before activation |
-| Anti-debug | Referenced in VT sandbox — debugger/sandbox detection |
-| Windows API calls | Crowdsourced YARA `Windows_API_Function` — Node.js accessing Win32 API via native module |
+| Credential / data theft | `TrojanSpy` classification across vendors |
+| File drop | `edb.chk` written at runtime |
+| Sandbox evasion | `long-sleeps` — delays intended to exceed sandbox analysis windows |
+| Geofencing | Victim geolocation checked before activation |
+| Anti-debug | Debugger and analysis-environment detection |
+| Win32 API access | `Windows_API_Function` YARA match — native API reach from Node.js |
 
-The `edb.chk` drop is a distinctive artifact. `.chk` files are associated with Windows file system check operations — the filename is a cover for a data staging or persistence file. The Windows API access from a Node.js process (via `Crowdsourced: Windows_API_Function`) is unusual for a telemetry module and confirms the script accesses system resources beyond normal telemetry scope.
+Two of these deserve emphasis:
 
-### Embedded URLs
+**Win32 API access from a telemetry module** has no legitimate justification. Genuine telemetry collects application metrics through Node's own APIs; reaching into the Windows API indicates access to system resources far outside any telemetry scope.
 
-1 embedded URL hash was identified in VT relationship data. The specific URL was not fully enumerated in corpus metadata but likely corresponds to the C2 exfiltration endpoint.
+**`edb.chk` as a filename** is deliberate camouflage. Real `edb.chk` files are Extensible Storage Engine checkpoint files associated with Windows database components — a name chosen to survive a casual look at a directory listing.
 
 ---
 
-## Operator Infrastructure
+## Infrastructure
 
-| IOC | Type | Notes |
+| Indicator | Type | Notes |
 |---|---|---|
-| (1 embedded URL hash) | URL | C2 exfil endpoint — specific URL not fully enumerated |
-| `edb.chk` | Drop path | Data staging or persistence marker |
+| `edb.chk` | Dropped file | Data staging or persistence marker |
+| 1 embedded URL reference | URL | Exfiltration endpoint — not individually enumerated |
 
-No hardcoded C2 domain was recovered from VT metadata for this sample. The geofencing check implies a remote geolocation service was queried at runtime.
-
----
-
-## Assessment
-
-### Archetype
-
-**QUIETVAULT is archetype A8 — Malicious AI SDK / Package.** Confirmed.
-
-QUIETVAULT is delivered as a fake npm package telemetry module — the same supply chain vector as SUPERO (malicious PyPI package). The defining A8 characteristic is that the malicious code activates on install/import within a developer's package environment, not via a traditional execution vector. QUIETVAULT is a JavaScript instance of A8 where SUPERO was a Python instance.
-
-The `TrojanSpy` prefix confirms the primary goal is credential or data theft rather than payload staging — making QUIETVAULT a stealer delivered via npm supply chain.
-
-QUIETVAULT is the second confirmed A8 instance (after SUPERO), and the first confirmed A8 in the JavaScript/npm ecosystem.
-
-**Archetype column:** A8.
-
-### Assessment
-
-QUIETVAULT demonstrates that the malicious package supply chain attack pattern (A8) has extended from PyPI (SUPERO) into npm. The npm ecosystem is the primary package manager for web and Node.js development — including a large segment of AI application developers who use LangChain.js, the OpenAI Node.js SDK, and other AI framework packages. Targeting npm telemetry module conventions provides high-confidence activation: developers installing AI tooling regularly install packages without inspecting telemetry modules.
-
-The geofencing and anti-debug capabilities suggest QUIETVAULT is a purpose-built targeted tool rather than a spray-and-pray npm package — the operator wanted specific victim profiles, not random installations.
-
-**Confidence:** High (A8 archetype confirmed; AV label consensus across TrendMicro and Microsoft; supply chain vector confirmed by `package/telemetry.js` path; behavioral indicators consistent with stealer operation; single corpus sample limits variant assessment).
-
-### Open Questions
-
-- **Stolen data targets:** What credentials does QUIETVAULT steal? Browser cookies, npm auth tokens, `.npmrc` credentials, LLM API keys, SSH keys? Unknown without script body access.
-- **Exfil endpoint:** The single embedded URL hash corresponds to the C2. The specific URL was not fully enumerated in corpus metadata.
-- **Package identity:** Which npm package was QUIETVAULT distributed in? The sample path is `package/telemetry.js` — the parent package name and version are unknown.
-- **Scale:** Was this a targeted attack on a specific developer or organization, or a broader npm package campaign? Single corpus sample; full campaign scope unknown.
-- **`edb.chk` role:** Is this a persistence marker, a data staging file, or a flag for secondary payload activation? Cannot determine from metadata alone.
+No hardcoded C2 domain was recovered. The geofencing behavior implies a geolocation service is queried at runtime, which may be a separate endpoint from the exfiltration target.
 
 ---
 
-## CAIRN Rules
+## Detection
+
+### YARA
 
 ```yara
 rule T3-QUIETVAULT_JS_Telemetry_Spy
 {
     meta:
-        description = "Detects QUIETVAULT — JavaScript stealer masquerading as npm package telemetry module (package/telemetry.js); drops edb.chk; TrendMicro/Microsoft consensus on QVAULT/QuietVault family"
+        description = "Detects QUIETVAULT — JavaScript stealer masquerading as npm package telemetry module (package/telemetry.js); drops edb.chk"
         author = "CAIRN"
         artifact_class = "llm_api_backdoor"
         artifact_type = "c2_comms"
@@ -134,36 +113,32 @@ rule T3-QUIETVAULT_JS_Telemetry_Spy
 }
 ```
 
-Fires on:
-- Samples carrying `TrojanSpy.JS.QVAULT` (TrendMicro) or `QuietVault` / `Trojan:JS/QuietVault!MTB` (Microsoft) labels
-- Samples combining the `package/telemetry.js` npm module path with the `edb.chk` drop artifact
+Note that `package/telemetry.js` is required to co-occur with `edb.chk` — the path alone appears in countless legitimate packages and is worthless as a standalone signal.
 
-1 corpus sample confirmed.
+### Detection Guidance
 
----
+Supply-chain attacks of this shape are best addressed before execution, since by the time the payload runs it is already inside a trusted developer environment.
 
-## Indicators of Compromise
-
-**Registered seed:** `8eea1f65e468b515020e3e2854805f1ef5c611342fa23c4b31d8ed3374286a90`
-
-| SHA256 | Filenames | Detections | First Seen (UTC) |
-|---|---|---|---|
-| `8eea1f65e468b515020e3e2854805f1ef5c611342fa23c4b31d8ed3374286a90` | `package/telemetry.js`, `telemetry.js` | 37 | 2025-08-27 |
-
-**Dropped files:**
-
-| Path | Type | Notes |
-|---|---|---|
-| `edb.chk` | Drop | Data staging or persistence marker |
-
----
-
-## Update Log
-
-| Date | Change |
+| Control | Effect |
 |---|---|
-| 2026-06-12 | Initial report — 1 corpus sample confirmed; A8 archetype confirmed (first confirmed npm/JS supply chain A8); npm telemetry masquerade technique documented; seed registered |
+| `npm install --ignore-scripts` in CI, with an explicit allowlist | Blocks install-time execution, the primary activation path |
+| Lockfile pinning + review of dependency *additions*, not just direct deps | Transitive dependencies are the realistic delivery route |
+| Alert on `node.exe` performing Win32 API calls or writing outside the project tree | Catches the payload behavior regardless of the package name |
+| Alert on creation of `edb.chk` outside legitimate ESE database directories | Family-specific and low-noise |
+| Scope developer credentials: short-lived tokens, no long-lived cloud keys on workstations | Limits the yield when prevention fails |
+
+The final row matters most. Every control above can be bypassed; reducing what a compromised developer machine can surrender is the durable mitigation.
 
 ---
 
-*Discovered using CAIRN v0.1.0. Report last updated 2026-06-12. Author: Ryan Fetterman (https://fetterm4n.github.io)*
+## Open Questions
+
+1. **Which npm package carried it?** The sample path is only `package/telemetry.js` — the parent package name and version are unidentified. Without them, downstream victim scope cannot be assessed and affected consumers cannot be notified. This is the most important open question.
+2. **What credentials are targeted?** Browser cookies, `.npmrc` tokens, LLM API keys, SSH keys, cloud credentials — undetermined without full script analysis. It defines the actual impact.
+3. **What is the exfiltration endpoint?** Present as a single embedded URL reference but not individually resolved.
+4. **What is `edb.chk` for?** Persistence marker, staged data, or an activation flag for a second stage — unresolved.
+5. **What does the geofence select for?** The geographic criterion would be direct evidence of intended targeting. Not recoverable from available metadata.
+
+---
+
+*SHA256 hashes truncated to 8 characters in narrative; full hashes in tables. Last updated 2026-08-04.*

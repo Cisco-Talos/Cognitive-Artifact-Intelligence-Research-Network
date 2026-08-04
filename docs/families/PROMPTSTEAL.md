@@ -1,128 +1,102 @@
-# PROMPTSTEAL — Research Report
+# PROMPTSTEAL — Threat Intelligence Report
 
-**Family designation:** PROMPTSTEAL (ESET `Python/TrojanDownloader.Agent.ARS`; Avast/AVG `Win32:LAMEHUG-A [Pws]`)
 **Author:** Ryan Fetterman (https://fetterm4n.github.io)
-**First seen:** 2025-07-11 (earliest VT submission in corpus)
-**Last seen:** 2025-07-11 (single corpus sample)
-**Variants:** 1 confirmed seed; 1 corpus hit
-**Platform:** Windows PE32+ (PyInstaller-packed Python); 10.4 MB
-**CAIRN rules:** `T3-PROMPTSTEAL_PyInstaller_AI_Credential_Stealer`
-**Related report:** `LAMEHUG.md` (bare Python variant of the same family)
+**Aliases:** `Python/TrojanDownloader.Agent.ARS` (ESET) · `Win32:LAMEHUG-A [Pws]` (Avast/AVG)
+**First seen:** 2025-07-11
+**Platform:** Windows x86-64 (PE32+, PyInstaller-packed Python), 10.4 MB
+**Archetype:** A6 — AI Credential Harvester
+**Related:** [LAMEHUG](LAMEHUG.md) — the bare-script form of the same family
+**TLP:** TLP:AMBER
 
 ---
 
 ## Summary
 
-PROMPTSTEAL is a PyInstaller-packed Windows executable that implements the LAMEHUG credential theft and recon operation in a self-contained Win64 binary. It targets LLM API credentials and document files, harvesting them to `C:\ProgramData\info\`, and uses `router.huggingface.co` for DNS-based C2 beaconing or API interaction. The sample uses a Ukrainian-language homoglyph filename (`Додаток.pif` — "Application.pif") as a social engineering lure.
+PROMPTSTEAL is the **weaponized delivery form of LAMEHUG**: the same AI-credential-theft and LLM-directed reconnaissance operation, packed into a self-contained 10.4 MB Windows executable, fitted with a Ukrainian-language homoglyph lure, and extended with a document-harvesting stage that the bare script does not have.
 
-PROMPTSTEAL is assessed as a PyInstaller-packed delivery form of LAMEHUG based on shared AV labeling (`Win32:LAMEHUG-A`) and the HuggingFace router domain. It adds a document harvesting stage not confirmed in the bare Python LAMEHUG variant.
+Three changes distinguish it from the script variant, and all three point the same direction — from opportunistic to targeted:
+
+1. **PyInstaller packaging.** No Python installation required on the victim host; the interpreter and every dependency ship inside the PE overlay. This converts a script that only runs on a developer machine into one that runs anywhere.
+2. **Ukrainian homoglyph lure.** The filename `Додаток.pif` ("Application.pif") uses Cyrillic characters and the executable `.pif` extension. This is language-specific victim selection, not broad spray.
+3. **Document harvesting.** Files are staged to `C:\ProgramData\info\` — a persistent directory, not a temp path — indicating an intent to collect and hold victim documents alongside credentials.
+
+The family shares AV attribution (`Win32:LAMEHUG-A`) and the `router.huggingface.co` inference path with LAMEHUG, establishing common lineage. The combination of a Ukrainian lure, sandbox-evasion checks, and document theft is consistent with a targeted operation against Ukrainian developers or AI practitioners rather than the indiscriminate credential burn the bare script performs.
 
 ---
 
-## Discovery
+## Samples
 
-PROMPTSTEAL was added to the CAIRN corpus as a seed sample. The T3 rule fires on the `ProgramData\info\info.txt` harvest path and the ESET downloader label. After the ImTip false positive incident (2026-06-12), `router.huggingface.co` alone was removed as a standalone T3 condition — the domain is shared with the legitimate ImTip AI input tool. The rule was tightened to require either the `info_dir` path or the ESET AV label as primary conditions.
+| SHA256 | Filename | Size | Detections | First Seen (UTC) |
+|---|---|---|---|---|
+| `766c356d6a4b00078a0293460c5967764fcd788da8c1cd1df708695f3a15b777` | `Додаток.pif` | ~10,430 KB | 46 | 2025-07-11 |
 
 ---
 
-## Додаток.pif — PyInstaller AI Credential Stealer
-
-### Binary Characteristics
+## Binary Details
 
 | Field | Value |
 |---|---|
-| File type | PE32+ executable (console) x86-64 (PyInstaller bundle) |
-| Filename | `Додаток.pif` (Ukrainian: "Application.pif") |
-| Size | ~10,430 KB (10.4 MB — consistent with PyInstaller bundle including Python runtime) |
-| First seen | 2025-07-11 |
+| File type | PE32+ executable (console), x86-64 — PyInstaller bundle |
+| Size | ~10.4 MB (Python runtime + dependencies in overlay) |
 | Detections | 46 |
-| Tags | `checks-bios`, `checks-network-adapters`, `overlay`, `detect-debug-environment`, `peexe`, `calls-wmi`, `64bits` |
-| Code-signing | None |
+| Code signing | None |
 | Crowdsourced YARA | `PyInstaller` |
-| Provider references | `HuggingFace` (via memory_pattern_domains: `router.huggingface.co`) |
+| VT tags | `checks-bios`, `checks-network-adapters`, `overlay`, `detect-debug-environment`, `calls-wmi`, `64bits` |
+| Provider reference | `router.huggingface.co` (observed in process memory) |
 
-The 10.4 MB size is characteristic of a PyInstaller bundle — the Python interpreter and all imported modules are bundled into the PE overlay. Crowdsourced YARA confirms PyInstaller packing.
+### The Lure
 
-### Lure and Targeting
+`Додаток.pif` is Ukrainian for "Application" written in Cyrillic. Two mechanisms combine:
 
-The filename `Додаток.pif` is a Ukrainian-language homoglyph lure. The Sigma rule `Homoglyph Attack Using Lookalike Characters in Filename` confirmed on this sample — the Cyrillic characters (`Д`, `о`, `д`, `а`, `т`, `о`, `к`) are visually similar to Latin characters in some contexts, and the `.pif` extension is associated with Program Information Files that Windows can execute. The combination targets Ukrainian-speaking users or organizations.
-
-**Targeting hypothesis:** Ukrainian-language lure + BIOS/network adapter checks + WMI calls is consistent with targeted credential theft in the Ukrainian tech or developer ecosystem.
-
-### Behavioral Indicators (Sigma)
-
-| Sigma Rule | Significance |
+| Element | Effect |
 |---|---|
-| `Python Image Load By Non-Python Process` | PyInstaller PE loading Python DLLs — confirms Python runtime bundle |
-| `Potential Python DLL SideLoading` | Python DLL loaded outside the standard Python install directory |
-| `Homoglyph Attack Using Lookalike Characters in Filename` | Cyrillic characters in filename used as a lure |
-| `WMIC Loading Scripting Libraries` | WMI-based system recon (BIOS, network adapters) |
-| `Suspicious Copy From/To System Directory` | File operations in system paths — consistent with harvest drop to `C:\ProgramData\` |
-| `Non Interactive PowerShell Process Spawned` | PowerShell invoked non-interactively — post-harvest scripting or exfil |
-| `Python:LAMEHUG / Win32:LAMEHUG` (AV) | Cross-variant attribution to LAMEHUG family by Avast/AVG |
+| Cyrillic characters | Visually resemble Latin equivalents in many fonts; defeats casual filename inspection and simple string blocklists |
+| `.pif` extension | A legacy Program Information File type that Windows will **execute**, while reading as a benign document type to most users |
 
-### Harvest Path
+A Ukrainian-language filename presupposes a Ukrainian-reading victim. This is targeting, and it should be read as intelligence about victim selection rather than as incidental packaging.
 
-The string `Programdata\info\info.txt` (matched via T3 rule string `$info_dir`) indicates PROMPTSTEAL harvests data to `C:\ProgramData\info\`. This is a persistent staging directory rather than a temp path — documents and credentials are written here before exfiltration.
+### Anti-Analysis
 
-The `checks-bios` and `checks-network-adapters` VT tags confirm VM/sandbox evasion checks are performed before the primary payload activates.
+The `checks-bios` and `checks-network-adapters` tags, together with WMI usage, confirm environment checks executed **before** the primary payload activates. Automated analysis in a virtualized sandbox may therefore observe only benign behavior — absence of malicious activity in a sandbox report is not evidence of a benign sample here.
 
-### HuggingFace Router Interaction
+### Observed Behavior
 
-`router.huggingface.co` appears in memory pattern domains — consistent with LAMEHUG's HuggingFace token rotation and Hyperbolic provider query pattern. Whether PROMPTSTEAL uses the same 400+ hardcoded `hf_` token pool as the bare Python variant is unknown without decompiling the PyInstaller bundle.
+| Indicator | Significance |
+|---|---|
+| Python image loaded by non-Python process | PyInstaller bundle unpacking its runtime |
+| Potential Python DLL sideloading | Python DLL loaded outside a standard install path |
+| Homoglyph attack in filename | Cyrillic lure confirmed |
+| WMIC loading scripting libraries | WMI-based recon (BIOS, network adapters) |
+| Suspicious copy from/to system directory | Consistent with the `C:\ProgramData\` harvest drop |
+| Non-interactive PowerShell spawned | Post-harvest scripting or exfiltration |
+
+### Harvest Staging
+
+Collected data is written to **`C:\ProgramData\info\info.txt`**. The choice of `ProgramData` over a temp path is deliberate: the directory is world-writable, survives reboots, and is excluded from many user-profile-focused monitoring configurations. Data accumulates there pending exfiltration.
 
 ---
 
-## Embedded URLs
+## Infrastructure
 
-20 embedded URL hashes were identified in VT relationship data. These likely correspond to the HuggingFace inference router, the operator's webhook or SSH exfil endpoint, and potentially download URLs for secondary payloads. Specific URLs within the 20-hash set were not fully enumerated in the corpus.
-
----
-
-## Operator Infrastructure
-
-| IOC | Type | Notes |
+| Indicator | Type | Notes |
 |---|---|---|
-| `router.huggingface.co` | Domain | HuggingFace inference router — confirmed in memory patterns |
-| `C:\ProgramData\info\info.txt` | Path | Document/credential harvest staging path |
-| (20 embedded URL hashes) | URLs | Not fully enumerated — likely includes exfil endpoints |
+| `router.huggingface.co` | Domain | HuggingFace inference router — observed in process memory |
+| `C:\ProgramData\info\info.txt` | File path | Credential and document harvest staging |
+| 20 embedded URL references | URLs | Not fully enumerated; expected to include exfiltration endpoints |
+
+Whether PROMPTSTEAL carries the same 400+ stolen `hf_` token pool as the bare LAMEHUG script is unconfirmed — resolving it requires unpacking the PyInstaller bundle.
 
 ---
 
-## Assessment
+## Detection
 
-### Archetype
-
-**PROMPTSTEAL is archetype A6 — AI Credential Harvester.** Confirmed (shared with LAMEHUG).
-
-PROMPTSTEAL is a delivery variant of LAMEHUG that adds document harvesting. The LAMEHUG family label from Avast/AVG (`Win32:LAMEHUG-A`) and the HuggingFace router domain confirm shared lineage. Both variants target AI credentials (`hf_` tokens) and use AI infrastructure for recon.
-
-The document harvest stage (`ProgramData\info\`) is an additional data theft objective not confirmed in the bare Python variant. This may reflect a targeting-specific payload modification: the Ukrainian lure and document harvest suggest a targeted deployment against a specific individual or organization, rather than the broad credential burn pattern of the bare script.
-
-**Archetype column:** A6 (see LAMEHUG).
-
-### Assessment
-
-PROMPTSTEAL is a hardened deployment form of the LAMEHUG family: PyInstaller-packed for easier delivery, homoglyph-lured for targeted victims, and extended with a document harvest stage. The combination of AI credential theft, BIOS/adapter evasion checks, and a Ukrainian-language lure is consistent with a targeted credential theft operation against a Ukrainian developer or AI practitioner.
-
-**Confidence:** High (AV label cross-references to LAMEHUG; HuggingFace router domain confirmed; harvest path confirmed; PyInstaller confirmed; behavioral indicators consistent with the described operation).
-
-### Open Questions
-
-- **Token pool:** Does PROMPTSTEAL embed the same 400+ hardcoded `hf_` tokens as the bare Python LAMEHUG script? Or does it retrieve a fresh pool dynamically? Cannot determine from metadata — requires PyInstaller decompression.
-- **Document harvest scope:** What file types are collected to `C:\ProgramData\info\`? API key files, `.env` configs, documents, source code? Unknown without binary analysis.
-- **Exfil endpoint:** The 20 embedded URL hashes include the exfil destination. The specific URLs were not fully enumerated.
-- **Ukrainian targeting:** Is this a targeted deployment against a known individual/organization, or is the Ukrainian lure a broad phishing campaign targeting Ukrainian developers?
-
----
-
-## CAIRN Rules
+### YARA
 
 ```yara
 rule T3-PROMPTSTEAL_PyInstaller_AI_Credential_Stealer
 {
     meta:
-        description = "Detects PROMPTSTEAL — PyInstaller Python stealer targeting LLM API credentials and documents; harvests docs to C:\\ProgramData\\info\\; DNS beacon to router.huggingface.co. NOTE: router.huggingface.co alone removed as standalone condition — legitimate AI aggregator tools embed it as a provider config string; use $info_dir or AV label as primary anchors"
+        description = "Detects PROMPTSTEAL — PyInstaller Python stealer targeting LLM API credentials and documents; harvests to C:\\ProgramData\\info\\; router.huggingface.co is NOT a standalone condition (legitimate AI tools embed it as provider config)"
         author = "CAIRN"
         artifact_class = "llm_api_backdoor"
         artifact_type = "api_key_pattern"
@@ -140,38 +114,28 @@ rule T3-PROMPTSTEAL_PyInstaller_AI_Credential_Stealer
 }
 ```
 
-**Rule tuning note (2026-06-12):** `router.huggingface.co` was initially a standalone T3 condition but was removed after the ImTip false positive (`77f4e241...` — github.com/aardio/ImTip open-source AI input assistant). ImTip includes the HuggingFace router as a provider config string. The current rule requires `$info_dir` (harvest path) or the ESET downloader label as primary anchors; `$hf_dns` is retained only as a co-occurrence amplifier.
+**Rule design note.** `router.huggingface.co` was removed as a standalone condition after it produced a false positive against a legitimate open-source AI input assistant that embeds the router as provider configuration. The lesson generalizes: **a legitimate AI provider endpoint is never sufficient evidence of malice.** The harvest path and AV label are the anchors; the domain only amplifies.
 
-Fires on:
-- Samples containing the `ProgramData\info\info.txt` harvest staging path
-- Samples carrying ESET's `Python/TrojanDownloader.Agent.ARS` label
-- Samples combining both the HuggingFace router domain and the harvest path
+### Detection Guidance
 
----
-
-## Indicators of Compromise
-
-**Registered seed:** `766c356d6a4b00078a0293460c5967764fcd788da8c1cd1df708695f3a15b777`
-
-| SHA256 | Filename | Detections | First Seen (UTC) |
-|---|---|---|---|
-| `766c356d6a4b00078a0293460c5967764fcd788da8c1cd1df708695f3a15b777` | `Додаток.pif` (Ukrainian homoglyph lure) | 46 | 2025-07-11 |
-
-**Infrastructure:**
-
-| IOC | Type |
+| Control | Rationale |
 |---|---|
-| `router.huggingface.co` | LLM inference router (HuggingFace) |
-| `C:\ProgramData\info\info.txt` | Credential/document harvest staging path |
+| Alert on any file creation under `C:\ProgramData\info\` | Family-specific and highly reliable |
+| Flag executable extensions (`.pif`, `.scr`, `.com`) carrying non-ASCII filenames | Catches the homoglyph lure class generally, not just this family |
+| Monitor `wmic.exe` invoked by an unsigned single-file executable | The recon stage |
+| Treat inbound `.pif` attachments as executable | Many gateways do not classify `.pif` as executable — a longstanding gap this family exploits |
+
+The homoglyph rule is worth generalizing. Non-ASCII characters in an executable filename have almost no legitimate use in most environments and reliably indicate a lure.
 
 ---
 
-## Update Log
+## Open Questions
 
-| Date | Change |
-|---|---|
-| 2026-06-12 | Initial report — 1 corpus sample confirmed; A6 archetype confirmed; harvest path and Ukrainian lure documented; T3 rule tightened after ImTip FP; cross-referenced to LAMEHUG |
+1. **Does it carry the same token pool?** Whether the 400+ stolen `hf_` tokens from the bare script are embedded here, or a fresh pool is fetched at runtime, is unresolved. A dynamic pool would imply supporting operator infrastructure not otherwise observed.
+2. **What documents are collected?** The file types written to `C:\ProgramData\info\` are unconfirmed. `.env` files, API-key stores, source code, and office documents are all plausible; the answer defines the actual victim impact.
+3. **Exfiltration endpoint.** Present among the 20 embedded URL references but not individually identified. This is the highest-value outstanding IOC.
+4. **Targeting specificity.** Whether the Ukrainian lure indicates a specific named target or a broad phishing campaign against Ukrainian developers is undetermined. One sample cannot distinguish these.
 
 ---
 
-*Discovered using CAIRN v0.1.0. Report last updated 2026-06-12. Author: Ryan Fetterman (https://fetterm4n.github.io)*
+*SHA256 hashes truncated to 8 characters in narrative; full hashes in tables. Last updated 2026-08-04.*
