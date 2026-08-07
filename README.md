@@ -14,10 +14,6 @@ CAIRN combines a tiered YARA ontology over structured VT scan text with embeddin
 
 ---
 
-## What CAIRN Finds
-
-Nine confirmed AI-malware archetypes are documented in the corpus to date [To be released]
-
 - Launch blog: [Talos Tech Blog]
 - CLOSEDQUORUM: [Link to CQ Blog]
 
