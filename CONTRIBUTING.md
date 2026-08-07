@@ -2,6 +2,34 @@
 
 Contributions are welcome. CAIRN is a research toolkit, so the most valuable contributions are new YARA rules, family reports for newly confirmed AI-malware families, and improvements to the acquisition filters or corpus tooling.
 
+Please note that all of your interactions in the project are subject to our
+[Code of Conduct](/CODE_OF_CONDUCT.md). This includes creation of issues or pull
+requests, commenting on issues or pull requests, and extends to all interactions
+in any real-time space e.g., Slack, Discord, etc.
+
+## Reporting Issues
+
+Before reporting a new issue, please ensure that the issue was not already
+reported or fixed by searching through our [issues
+list](https://github.com/org_name/repo_name/issues).
+
+When creating a new issue, please be sure to include a **title and clear
+description**, as much relevant information as possible, and, if possible, a
+test case.
+
+**If you discover a security bug, please do not report it through GitHub.
+Instead, please see security procedures in [SECURITY.md](/SECURITY.md).**
+
+## Sending Pull Requests
+
+Before sending a new pull request, take a look at existing pull requests and
+issues to see if the proposed change or fix has been discussed in the past, or
+if the change was already implemented but not yet released.
+
+We expect new pull requests to include tests for any affected behavior, and, as
+we follow semantic versioning, we may reserve breaking changes until the next
+major version release.
+
 ## Prerequisites
 
 - Python 3.11+
