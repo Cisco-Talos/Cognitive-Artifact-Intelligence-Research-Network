@@ -8,8 +8,6 @@ The open-source repo does not contain the SQL-lite database of findings due to c
 
 CAIRN combines a tiered YARA ontology over structured VT scan text with embedding-based semantic clustering and relationship graph construction — producing explainable, provenance-tracked attribution for confirmed AI-malware families.
 
-
-<p align="center"><img src="config/logo.png" alt="CAIRN Logo" width="320"/></p>
 <p align="center"><img src="config/explorer.png" alt="CAIRN explorer screenshot" width="1280"/></p>
 
 ---
