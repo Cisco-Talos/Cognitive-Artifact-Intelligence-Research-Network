@@ -1,8 +1,6 @@
-# CAIRN
+# Cognitive Artifact Intelligence Research Network
 
-**Cognitive Artifact Intelligence Research Network**
-
-CAIRN is a research toolkit for identifying, attributing, and tracking AI-related artifacts embedded in malware. It works exclusively from VirusTotal metadata — no binary downloads, no detonation. Its central thesis is that AI-enabled malware leaves identifiable *cognitive artifacts* (hardcoded prompts, LLM API callouts, agent orchestration logic, AI-analysis evasion strings, provider key prefixes) that can be extracted, classified, and studied without touching the binary itself.
+**Cognitive Artifact Intelligence Research Network** (CAIRN) is a research toolkit for identifying, attributing, and tracking AI-related artifacts embedded in malware. It works exclusively from VirusTotal metadata — no binary downloads, no detonation. Its central thesis is that AI-enabled malware leaves identifiable *cognitive artifacts* (hardcoded prompts, LLM API callouts, agent orchestration logic, AI-analysis evasion strings, provider key prefixes) that can be extracted, classified, and studied without touching the binary itself.
 
 The open-source repo does not contain the SQL-lite database of findings due to copyright. Users with a VT API key can rebuild the database from the published report hashes and acquisition filters.
 
