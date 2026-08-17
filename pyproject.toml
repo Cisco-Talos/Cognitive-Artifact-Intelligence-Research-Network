@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cairn"
+name = "cisco-cairn"
 version = "0.1.0"
 description = "Cognitive Artifact Intelligence Research Network — metadata-only AI-malware research toolkit"
 readme = "README.md"
@@ -40,4 +40,3 @@ include = ["cairn*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-
