@@ -426,6 +426,6 @@ Contributions welcome. Before opening a pull request:
 
 ## License
 
-MIT License
+Distributed under the MIT License. See [LICENSE](https://github.com/cisco-ospo/oss-template/blob/main/LICENSE) for more information.
 
-Copyright (c) 2026 Cisco Systems, Inc. and its affiliates (see LICENSE file)
+Copyright (c) 2026 Cisco Systems, Inc. and its affiliates
