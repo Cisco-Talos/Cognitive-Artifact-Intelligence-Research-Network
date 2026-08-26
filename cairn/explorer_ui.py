@@ -42,14 +42,14 @@ HTML = r"""<!DOCTYPE html>
     --success:   #4fef8e;
     --warn:      #efb84f;
 
-    --c-sample:   #4f8ef7;
-    --c-rule:     #7c5aef;
-    --c-filter:   #4fef8e;
-    --c-provider: #efb84f;
-    --c-imphash:  #ef8e4f;
-    --c-domain:   #ef5a9a;
-    --c-cert:     #c084fc;
-    --c-submitter:#38bdf8;
+    --c-sample:   #3D93CE;
+    --c-rule:     #9F7BB8;
+    --c-filter:   #F5AD4E;
+    --c-provider: #F28F52;
+    --c-imphash:  #75B9E7;
+    --c-domain:   #698999;
+    --c-cert:     #B9A0CB;
+    --c-submitter:#93A9B5;
   }
 
   html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px; }
@@ -96,20 +96,24 @@ HTML = r"""<!DOCTYPE html>
   #layout.sidebar-hidden #btn-collapse { display: block; }
 
   #sidebar-header {
-    padding: 12px 16px;
+    padding: 16px;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
     display: flex; flex-direction: column; align-items: center; gap: 10px;
+    background: linear-gradient(180deg, rgba(34, 50, 67, .58), rgba(19, 22, 30, .18));
+    box-shadow: inset 0 -1px rgba(111, 153, 184, .12);
   }
 
   #sidebar-header img {
-    width: 88%; height: auto; object-fit: contain; display: block;
+    width: 84%; max-width: 280px; height: auto; object-fit: contain; display: block;
+    opacity: .9;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .9)) drop-shadow(0 0 6px rgba(135, 190, 235, .15));
   }
 
-  #stats { display: flex; gap: 12px; margin-top: 0; justify-content: center; }
-  .stat { text-align: center; }
-  .stat .n { font-size: 16px; color: var(--text); }
-  .stat .l { font-size: 10px; color: var(--text-dim); letter-spacing: .08em; }
+  #stats { display: flex; gap: 16px; margin-top: 0; justify-content: center; }
+  .stat { min-width: 42px; text-align: center; }
+  .stat .n { font-size: 18px; font-weight: 400; color: #e0e5f0; font-variant-numeric: tabular-nums; }
+  .stat .l { margin-top: 2px; font-size: 9px; color: #6e7688; letter-spacing: .1em; }
 
   /* ── Controls ── */
   #controls {
@@ -119,28 +123,36 @@ HTML = r"""<!DOCTYPE html>
     display: flex; flex-direction: column; gap: 7px;
   }
 
+  .search-field { position: relative; }
+  .search-icon {
+    position: absolute; left: 11px; top: 50%; width: 10px; height: 10px;
+    border: 1.5px solid var(--text-dim); border-radius: 50%; transform: translateY(-65%);
+    pointer-events: none;
+  }
+  .search-icon::after { content: ''; position: absolute; width: 5px; height: 1.5px; right: -4px; bottom: -2px; background: var(--text-dim); transform: rotate(45deg); transform-origin: left center; }
   #search {
     background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); padding: 6px 10px; border-radius: 4px;
+    color: var(--text); padding: 6px 10px 6px 30px; border-radius: 4px;
     width: 100%; outline: none; font-family: inherit; font-size: 12px;
   }
-  #search:focus { border-color: var(--accent); }
+  #search:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(79,142,247,.18); }
 
   .toggle-row { display: flex; flex-wrap: wrap; gap: 5px; }
 
   .tog {
     padding: 3px 9px; border-radius: 3px; cursor: pointer;
     font-size: 10px; letter-spacing: .06em; border: 1px solid transparent;
-    transition: opacity .15s;
+    transition: opacity .15s, transform .15s, box-shadow .15s;
   }
-  .tog.active { opacity: 1; }
+  .tog.active { opacity: 1; box-shadow: inset 0 -2px rgba(0,0,0,.48), 0 0 0 1px rgba(255,255,255,.16); }
   .tog.inactive { opacity: .35; }
+  .tog:hover { transform: translateY(-1px); }
   .tog-sample   { background: var(--c-sample);   color: #000; }
-  .tog-rule     { background: var(--c-rule);     color: #fff; }
+  .tog-rule     { background: var(--c-rule);     color: #000; }
   .tog-filter   { background: var(--c-filter);   color: #000; }
   .tog-provider { background: var(--c-provider); color: #000; }
   .tog-imphash  { background: var(--c-imphash);  color: #000; }
-  .tog-domain   { background: var(--c-domain);   color: #fff; }
+  .tog-domain   { background: var(--c-domain);   color: #000; }
   .tog-cert      { background: var(--c-cert);      color: #000; }
   .tog-submitter { background: var(--c-submitter); color: #000; }
 
@@ -155,10 +167,14 @@ HTML = r"""<!DOCTYPE html>
   .btn.active { border-color: var(--accent); color: var(--accent); }
   .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); }
   .btn.primary:hover { background: #6aa3ff; }
+  #btn-clear-filters {
+    background: #202631; border-color: #333c4d; color: #aeb7c8;
+  }
+  #btn-clear-filters:hover { background: #272f3d; border-color: #47546a; color: var(--text); }
 
   /* ── Editor sections (rules / filters / providers) ── */
   .editor-section {
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid #30384a;
     flex-shrink: 0;
   }
   .editor-section-header {
@@ -288,6 +304,18 @@ HTML = r"""<!DOCTYPE html>
   .fpill.fpill-all { border-color: var(--text-dim); color: var(--text-dim); }
   .fpill.fpill-all.active { border-color: var(--text); color: var(--text); }
 
+  #graph-legend {
+    position: absolute; bottom: 12px; left: 12px; z-index: 10;
+    max-width: 232px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px;
+    background: rgba(13,15,20,.82); color: var(--text-dim); font-size: 10px;
+    backdrop-filter: blur(4px);
+  }
+  #graph-legend summary { cursor: pointer; color: var(--text); letter-spacing: .06em; }
+  #graph-legend[open] summary { margin-bottom: 6px; }
+  .legend-grid { display: grid; grid-template-columns: repeat(2, max-content); gap: 4px 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+
   /* ── Toolbar ── */
   #toolbar {
     position: absolute; top: 12px; right: 14px;
@@ -303,7 +331,7 @@ HTML = r"""<!DOCTYPE html>
     color: var(--text); backdrop-filter: blur(4px);
     transition: border-color .15s;
   }
-  .tb-btn:hover { border-color: var(--accent); }
+  .tb-btn:hover { border-color: var(--accent); background: rgba(26,30,40,.92); }
   .tb-btn.active { border-color: var(--accent); color: var(--accent); }
 
   /* ── UMAP cluster controls bar (below canvas, not overlaid) ── */
@@ -346,6 +374,8 @@ HTML = r"""<!DOCTYPE html>
     animation: spin .8s linear infinite;
   }
   #loading p { color: var(--text-dim); font-size: 12px; }
+  .state-message { padding: 12px 16px; color: var(--text-dim); font-size: 11px; line-height: 1.6; }
+  .state-message strong { color: var(--text); font-weight: normal; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* ── Editor modal ── */
@@ -381,6 +411,15 @@ HTML = r"""<!DOCTYPE html>
   }
   #toast.visible { opacity: 1; }
   #toast.error { border-color: var(--danger); color: var(--danger); }
+
+  button:focus-visible, input:focus-visible, textarea:focus-visible,
+  [role="button"]:focus-visible, .fpill:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  #stats, .hit-badge, .det-count, #node-count, .kv-v { font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  }
 
   /* scrollbar */
   ::-webkit-scrollbar { width: 5px; }
@@ -451,16 +490,19 @@ HTML = r"""<!DOCTYPE html>
     </div>
 
     <div id="controls">
-      <input id="search" type="text" placeholder="Search SHA256, family, rule, domain…" autocomplete="off">
+      <div class="search-field">
+        <span class="search-icon" aria-hidden="true"></span>
+        <input id="search" type="text" placeholder="Search SHA256, family, rule, domain…" autocomplete="off">
+      </div>
       <div class="toggle-row" id="type-toggles">
-        <div class="tog tog-sample active"   data-type="sample">SAMPLE</div>
-        <div class="tog tog-rule active"     data-type="yara_rule">RULE</div>
-        <div class="tog tog-filter active"   data-type="acquisition_filter">FILTER</div>
-        <div class="tog tog-provider active" data-type="provider">PROVIDER</div>
-        <div class="tog tog-imphash active"  data-type="imphash">IMPHASH</div>
-        <div class="tog tog-domain active"   data-type="domain">DOMAIN</div>
-        <div class="tog tog-cert active"      data-type="cert">CERT</div>
-        <div class="tog tog-submitter active" data-type="submitter">SUBMITTER</div>
+        <div class="tog tog-sample active"   data-type="sample" role="button" tabindex="0" aria-pressed="true">SAMPLE</div>
+        <div class="tog tog-rule active"     data-type="yara_rule" role="button" tabindex="0" aria-pressed="true">RULE</div>
+        <div class="tog tog-filter active"   data-type="acquisition_filter" role="button" tabindex="0" aria-pressed="true">FILTER</div>
+        <div class="tog tog-provider active" data-type="provider" role="button" tabindex="0" aria-pressed="true">PROVIDER</div>
+        <div class="tog tog-imphash active"  data-type="imphash" role="button" tabindex="0" aria-pressed="true">IMPHASH</div>
+        <div class="tog tog-domain active"   data-type="domain" role="button" tabindex="0" aria-pressed="true">DOMAIN</div>
+        <div class="tog tog-cert active"      data-type="cert" role="button" tabindex="0" aria-pressed="true">CERT</div>
+        <div class="tog tog-submitter active" data-type="submitter" role="button" tabindex="0" aria-pressed="true">SUBMITTER</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
         <label for="submitter-max" style="font-size:10px;color:var(--text-dim);white-space:nowrap;letter-spacing:.06em">SUBMITTER MAX</label>
@@ -481,6 +523,7 @@ HTML = r"""<!DOCTYPE html>
         <button class="btn" id="btn-umap">UMAP</button>
         <button class="btn" id="btn-table">TABLE</button>
       </div>
+      <button class="btn" id="btn-clear-filters">CLEAR FILTERS</button>
       <button id="btn-sidebar-hide">◀ HIDE PANEL</button>
     </div>
 
@@ -537,6 +580,19 @@ HTML = r"""<!DOCTYPE html>
     <div id="umap-tooltip" style="display:none;position:fixed;background:var(--surface);border:1px solid var(--border);padding:4px 8px;font:11px monospace;pointer-events:none;z-index:30;max-width:320px;word-break:break-all;"></div>
     <div id="graph-3d"></div>
     <div id="family-pills"></div>
+    <details id="graph-legend" open>
+      <summary>LEGEND</summary>
+      <div class="legend-grid">
+        <span class="legend-item"><i class="legend-dot" style="background:var(--c-sample)"></i>sample</span>
+        <span class="legend-item"><i class="legend-dot" style="background:var(--c-rule)"></i>rule</span>
+        <span class="legend-item"><i class="legend-dot" style="background:var(--c-filter)"></i>filter</span>
+        <span class="legend-item"><i class="legend-dot" style="background:var(--c-provider)"></i>provider</span>
+        <span class="legend-item"><i class="legend-dot" style="background:var(--c-imphash)"></i>imphash</span>
+        <span class="legend-item"><i class="legend-dot" style="background:var(--c-domain)"></i>domain</span>
+        <span class="legend-item"><i class="legend-dot" style="background:var(--c-cert)"></i>certificate</span>
+        <span class="legend-item"><i class="legend-dot" style="background:var(--c-submitter)"></i>submitter</span>
+      </div>
+    </details>
 
     <!-- ── Family report panel ── -->
     <div id="family-report-panel">
@@ -580,14 +636,14 @@ HTML = r"""<!DOCTYPE html>
 <script>
 // ── Palette ──────────────────────────────────────────────────────────────────
 const NODE_COLOR = {
-  sample:             '#4f8ef7',
-  yara_rule:          '#7c5aef',
-  acquisition_filter: '#4fef8e',
-  provider:           '#efb84f',
-  imphash:            '#ef8e4f',
-  domain:             '#ef5a9a',
-  cert:               '#c084fc',
-  submitter:          '#38bdf8',
+  sample:             '#3D93CE',
+  yara_rule:          '#9F7BB8',
+  acquisition_filter: '#F5AD4E',
+  provider:           '#F28F52',
+  imphash:            '#75B9E7',
+  domain:             '#698999',
+  cert:               '#B9A0CB',
+  submitter:          '#93A9B5',
 };
 
 // Derive a stable, visually-distinct family color from the family name.
@@ -606,13 +662,13 @@ function familyColorFromName(name) {
 }
 
 const EDGE_COLOR = {
-  matched_rule:       'rgba(124,90,239,.45)',
-  acquired_by:        'rgba(79,239,142,.3)',
-  references_provider:'rgba(239,184,79,.4)',
-  shares_imphash:     'rgba(239,142,79,.35)',
-  communicates_with:  'rgba(239,90,154,.3)',
-  shares_cert:        'rgba(192,132,252,.35)',
-  submitted_by:       'rgba(56,189,248,.35)',
+  matched_rule:       'rgba(159,123,184,.45)',
+  acquired_by:        'rgba(245,173,78,.30)',
+  references_provider:'rgba(242,143,82,.40)',
+  shares_imphash:     'rgba(117,185,231,.35)',
+  communicates_with:  'rgba(105,137,153,.35)',
+  shares_cert:        'rgba(185,160,203,.35)',
+  submitted_by:       'rgba(147,169,181,.35)',
 };
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -623,6 +679,8 @@ let activeTypes = new Set(['sample','yara_rule','acquisition_filter','provider',
 let familyColorMap = {};
 let highlightNodes = new Set();
 let highlightLinks = new Set();
+let hoverNodes = new Set();
+let hoverLinks = new Set();
 let selectedNode = null;
 let activeFamilyFilter = null;   // last-clicked (for report panel)
 let activeFamilyFilters = new Set(); // all active families
@@ -659,7 +717,7 @@ fetch('/api/graph')
     renderFamilyPills();
   })
   .catch(e => {
-    document.getElementById('loading').innerHTML = `<p style="color:var(--danger)">Failed to load graph: ${e}</p>`;
+    document.getElementById('loading').innerHTML = `<div class="state-message"><strong style="color:var(--danger)">Graph unavailable</strong><br>${esc(e)}</div>`;
   });
 
 function processGraph(raw) {
@@ -724,6 +782,7 @@ function initGraph2d() {
     .linkDirectionalParticleWidth(2)
     .linkDirectionalParticleColor(l => l._color)
     .onNodeClick(onNodeClick)
+    .onNodeHover(onNodeHover)
     .onBackgroundClick(() => clearHighlight())
     .backgroundColor('#0d0f14')
     .width(document.getElementById('graph-wrap').clientWidth)
@@ -751,6 +810,7 @@ function initGraph3d() {
     .linkDirectionalParticleWidth(2)
     .linkDirectionalParticleColor(l => l._color)
     .onNodeClick(onNodeClick)
+    .onNodeHover(onNodeHover)
     .onBackgroundClick(() => clearHighlight())
     .backgroundColor('#0d0f14')
     .width(el.clientWidth)
@@ -761,25 +821,28 @@ function initGraph3d() {
 // ── Node / link accessor fns ──────────────────────────────────────────────────
 function nodeColorFn(n) {
   if (highlightNodes.size && !highlightNodes.has(n.id)) return 'rgba(80,85,110,.4)';
+  if (hoverNodes.has(n.id)) return '#ffffff';
   return n._color;
 }
 function nodeValFn(n) {
-  if (n.type === 'sample') return Math.max(1, Math.log2((n.detections || 1) + 1));
-  if (n.type === 'yara_rule') return 3;
-  if (n.type === 'submitter') return Math.max(1, Math.log2((n.corpus_sample_count || 1) + 1));
-  return 2;
+  const emphasis = hoverNodes.has(n.id) ? 1.28 : 1;
+  if (n.type === 'sample') return Math.max(1, Math.log2((n.detections || 1) + 1)) * emphasis;
+  if (n.type === 'yara_rule') return 3 * emphasis;
+  if (n.type === 'submitter') return Math.max(1, Math.log2((n.corpus_sample_count || 1) + 1)) * emphasis;
+  return 2 * emphasis;
 }
 function linkColorFn(l) {
   if (highlightLinks.size && !highlightLinks.has(l)) return 'rgba(255,255,255,.04)';
+  if (hoverLinks.has(l)) return 'rgba(255,255,255,.82)';
   return l._color;
 }
-function linkWidthFn(l) { return highlightLinks.has(l) ? 2 : 0.5; }
-function linkParticlesFn(l) { return highlightLinks.has(l) ? 4 : 0; }
+function linkWidthFn(l) { return highlightLinks.has(l) ? 2 : hoverLinks.has(l) ? 1.35 : 0.5; }
+function linkParticlesFn(l) { return highlightLinks.has(l) ? 4 : hoverLinks.has(l) ? 2 : 0; }
 
 function refreshGraphAccessors() {
   const g = currentGraph();
   if (!g) return;
-  g.nodeColor(nodeColorFn).linkColor(linkColorFn)
+  g.nodeColor(nodeColorFn).nodeVal(nodeValFn).linkColor(linkColorFn)
    .linkWidth(linkWidthFn).linkDirectionalParticles(linkParticlesFn);
 }
 
@@ -1080,6 +1143,26 @@ function renderUmap() {
 }
 
 // ── Highlight / selection ─────────────────────────────────────────────────────
+function onNodeHover(node) {
+  hoverNodes.clear();
+  hoverLinks.clear();
+  if (node) {
+    hoverNodes.add(node.id);
+    const g = currentGraph();
+    if (g) (g.graphData().links || []).forEach(l => {
+      const sid = typeof l.source === 'object' ? l.source.id : l.source;
+      const tid = typeof l.target === 'object' ? l.target.id : l.target;
+      if (sid === node.id || tid === node.id) {
+        hoverLinks.add(l);
+        hoverNodes.add(sid);
+        hoverNodes.add(tid);
+      }
+    });
+  }
+  document.getElementById('graph-wrap').style.cursor = node ? 'pointer' : '';
+  refreshGraphAccessors();
+}
+
 function onNodeClick(node) {
   selectedNode = node;
   highlightNodes.clear();
@@ -1106,6 +1189,8 @@ function onNodeClick(node) {
 function clearHighlight() {
   highlightNodes.clear();
   highlightLinks.clear();
+  hoverNodes.clear();
+  hoverLinks.clear();
   selectedNode = null;
   refreshGraphAccessors();
   renderDetailPlaceholder();
@@ -1208,6 +1293,9 @@ function renderFamilyPills() {
 
   const allPill = document.createElement('div');
   allPill.className = 'fpill fpill-all active';
+  allPill.setAttribute('role', 'button');
+  allPill.tabIndex = 0;
+  allPill.setAttribute('aria-pressed', 'true');
   allPill.textContent = 'ALL';
   allPill.addEventListener('click', () => setFamilyFilter(null));
   wrap.appendChild(allPill);
@@ -1215,6 +1303,9 @@ function renderFamilyPills() {
   for (const [fam, color] of Object.entries(familyColorMap)) {
     const p = document.createElement('div');
     p.className = 'fpill inactive';
+    p.setAttribute('role', 'button');
+    p.tabIndex = 0;
+    p.setAttribute('aria-pressed', 'false');
     p.textContent = fam;
     p.style.borderColor = color;
     p.style.color = color;
@@ -1261,10 +1352,12 @@ function setFamilyFilter(family, multi = false) {
     if (p.classList.contains('fpill-all')) {
       p.classList.toggle('active', !anyActive);
       p.classList.toggle('inactive', anyActive);
+      p.setAttribute('aria-pressed', String(!anyActive));
     } else {
       const active = activeFamilyFilters.has(p.dataset.family);
       p.classList.toggle('active', active);
       p.classList.toggle('inactive', !active);
+      p.setAttribute('aria-pressed', String(active));
     }
   });
 
@@ -1442,19 +1535,33 @@ function _clearProviderItemActive() {
 }
 function _resetFamilyPills() {
   document.querySelectorAll('.fpill').forEach(p => {
-    p.classList.toggle('active', p.classList.contains('fpill-all'));
-    p.classList.toggle('inactive', !p.classList.contains('fpill-all'));
+    const isAll = p.classList.contains('fpill-all');
+    p.classList.toggle('active', isAll);
+    p.classList.toggle('inactive', !isAll);
+    p.setAttribute('aria-pressed', String(isAll));
   });
 }
 
 // ── Controls ──────────────────────────────────────────────────────────────────
-document.querySelectorAll('.tog').forEach(el => {
-  el.addEventListener('click', () => {
+function toggleNodeType(el) {
     const t = el.dataset.type;
     if (activeTypes.has(t)) { activeTypes.delete(t); el.classList.replace('active','inactive'); }
     else                    { activeTypes.add(t);    el.classList.replace('inactive','active'); }
+    el.setAttribute('aria-pressed', String(activeTypes.has(t)));
     applyFilter();
+}
+
+document.querySelectorAll('.tog').forEach(el => {
+  el.addEventListener('click', () => toggleNodeType(el));
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleNodeType(el); }
   });
+});
+
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.fpill')) {
+    e.preventDefault(); e.target.click();
+  }
 });
 
 document.getElementById('submitter-max').addEventListener('input', e => {
@@ -1463,8 +1570,16 @@ document.getElementById('submitter-max').addEventListener('input', e => {
   applyFilter();
 });
 
-document.getElementById('btn-reset').addEventListener('click', () => {
-  // Clear all active filters then zoom to fit
+function clearActiveFilters() {
+  activeTypes = new Set(['sample','yara_rule','acquisition_filter','provider','imphash','domain','cert','submitter']);
+  document.querySelectorAll('.tog').forEach(el => {
+    el.classList.remove('inactive');
+    el.classList.add('active');
+    el.setAttribute('aria-pressed', 'true');
+  });
+  document.getElementById('search').value = '';
+  document.getElementById('submitter-max').value = '';
+  submitterMaxCount = Infinity;
   activeFamilyFilter = null;
   activeFamilyFilters.clear();
   activeRuleFilter = null;
@@ -1479,7 +1594,18 @@ document.getElementById('btn-reset').addEventListener('click', () => {
   _clearRuleItemActive();
   _clearProviderItemActive();
   _resetFamilyPills();
+  hideFamilyReport();
+  clearHighlight();
   applyFilter();
+}
+
+document.getElementById('btn-clear-filters').addEventListener('click', () => {
+  clearActiveFilters();
+  showToast('Filters cleared', false);
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  clearActiveFilters();
   const g = currentGraph(); if (g) g.zoomToFit(400);
 });
 
@@ -1688,18 +1814,21 @@ document.getElementById('btn-table').addEventListener('click', () => {
   const canvasEl = document.getElementById('graph-canvas');
   const threeDEl = document.getElementById('graph-3d');
   const pillsEl  = document.getElementById('family-pills');
+  const legendEl = document.getElementById('graph-legend');
   const toolbarEl = document.getElementById('toolbar');
   const corpusEl = document.getElementById('corpus-wrap');
   if (isTableMode) {
     canvasEl.style.display = 'none';
     threeDEl.style.display = 'none';
     pillsEl.style.display  = 'none';
+    legendEl.style.display = 'none';
     toolbarEl.style.display = 'none';
     corpusEl.style.display = 'block';
     loadCorpusTable();
   } else {
     corpusEl.style.display  = 'none';
     pillsEl.style.display   = '';
+    legendEl.style.display  = '';
     toolbarEl.style.display = '';
     if (is3d) threeDEl.style.display = 'block';
     else canvasEl.style.display = 'block';
@@ -1789,6 +1918,7 @@ function corpusRowClick(sha256) {
   document.getElementById('btn-table').classList.remove('active');
   document.getElementById('corpus-wrap').style.display = 'none';
   document.getElementById('family-pills').style.display = '';
+  document.getElementById('graph-legend').style.display = '';
   document.getElementById('toolbar').style.display = '';
   if (is3d) document.getElementById('graph-3d').style.display = 'block';
   else document.getElementById('graph-canvas').style.display = 'block';
@@ -1843,8 +1973,8 @@ function loadRulesList() {
   div.innerHTML = '<div style="padding:6px 16px;color:var(--text-dim);font-size:11px">Loading…</div>';
   fetch('/api/rules').then(r => r.json()).then(data => {
     const rules = data.rules || [];
-    const tierOrder = { T3: 0, T2: 1, T1: 2 };
-    rules.sort((a,b) => (tierOrder[a.tier]||9) - (tierOrder[b.tier]||9));
+    const tierOrder = { T1: 0, T2: 1, T3: 2 };
+    rules.sort((a,b) => (tierOrder[a.tier] ?? 9) - (tierOrder[b.tier] ?? 9));
     div.innerHTML = rules.map(r => {
       const count = r.hit_count || 0;
       const badgeCls = count === 0 ? 'hit-badge zero' : r.tier === 'T3' ? 'hit-badge t3' : 'hit-badge';
@@ -2033,14 +2163,16 @@ function updateStats() {
 }
 
 function updateNodeCount(data) {
-  document.getElementById('node-count').textContent =
-    `${data.nodes.length} nodes · ${data.links.length} edges`;
+  const el = document.getElementById('node-count');
+  const empty = data.nodes.length === 0;
+  el.textContent = empty ? 'No matching nodes' : `${data.nodes.length} nodes · ${data.links.length} edges`;
+  el.style.color = empty ? 'var(--warn)' : '';
 }
 
 // ── Detail panel ──────────────────────────────────────────────────────────────
 function renderDetailPlaceholder() {
   document.getElementById('detail').innerHTML =
-    '<div class="detail-placeholder">Click any node to inspect it.</div>';
+    '<div class="state-message"><strong>No node selected</strong><br>Click a graph node to inspect its relationships and attributes.</div>';
 }
 
 function renderDetail(node) {

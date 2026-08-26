@@ -263,7 +263,11 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _serve_html(self) -> None:
         from cairn.explorer_ui import HTML
-        body = HTML.encode()
+        # The logo is commonly updated while Explorer is running.  Give the
+        # browser a new URL whenever the file changes so an existing cached
+        # image cannot mask the replacement.
+        logo_version = _LOGO_PATH.stat().st_mtime_ns if _LOGO_PATH.exists() else 0
+        body = HTML.replace('src="/logo.png"', f'src="/logo.png?v={logo_version}"').encode()
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -299,7 +303,7 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "image/png")
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "public, max-age=3600")
+        self.send_header("Cache-Control", "no-cache")
         self.end_headers()
         self.wfile.write(body)
 

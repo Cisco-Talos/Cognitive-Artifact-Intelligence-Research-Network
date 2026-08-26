@@ -502,7 +502,7 @@ rule T3-FRUITSHELL_PowerShell_AI_Decoy_ReverseShell
 {
     meta:
         description = "Detects FRUITSHELL-style PowerShell reverse shell with LLM/AI decoy prompt residue"
-        author = "Wintermute AI Artefactory"
+        author = "CAIRN"
         artifact_class = "prompt_residue_reverse_shell"
         artifact_type = "orchestration_logic"
         tier = "T3"
