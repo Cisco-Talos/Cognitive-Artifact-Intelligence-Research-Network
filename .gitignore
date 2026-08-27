@@ -8,7 +8,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .claude/settings.json
-cairn.egg-info/
+*.egg-info/
 data/*.db
 data/*.sqlite
 data/*.sqlite3
@@ -26,4 +26,3 @@ outputs/*.json
 outputs/*.md
 outputs/graphs/*.json
 outputs/graphs/*.html
-
