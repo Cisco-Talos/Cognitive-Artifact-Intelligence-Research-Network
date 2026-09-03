@@ -40,7 +40,9 @@ from cairn.graph import build_graph
 _CORPUS_PATH: Path | None = None
 _RULES_PATH    = PROJECT_ROOT / "config" / "yara_rules.yar"
 _FILTERS_PATH  = PROJECT_ROOT / "config" / "acquisition_filters.yaml"
-_LOGO_PATH     = PROJECT_ROOT / "config" / "logo.png"
+# Serve the compact mark through the existing endpoint.  Keep the other logo
+# assets untouched as source/alternate artwork.
+_LOGO_PATH     = PROJECT_ROOT / "config" / "logo_rock.png"
 _FAVICON_PATH  = PROJECT_ROOT / "config" / "favicon.png"
 _FAMILIES_DIR  = PROJECT_ROOT / "docs" / "families"
 
@@ -199,6 +201,298 @@ def _parse_yara_rules(text: str) -> list[dict[str, Any]]:
 
 
 # ---------------------------------------------------------------------------
+# Archetype / family maps for analytics
+# ---------------------------------------------------------------------------
+
+ARCHETYPE_MAP: dict[str, list[str]] = {
+    "A0":  ["ACELOADER", "VOZDYHAN", "XENORAT", "LUNAV2"],
+    "A1":  ["PROMPTFLUX", "PROMPTLOCK", "HONESTCUE"],
+    "A3":  ["FRUITSHELL", "PLOTSAFE", "HOLLOWCLAD", "MANTLEMAZE", "ROZESHELL", "GUARDBREAKER"],
+    "A4":  ["CLOSEDQUORUM", "WURM"],
+    "A5":  ["TEAMPCP"],
+    "A6":  ["PROMPTSTEAL", "QUIETVAULT", "KEYHARVEST", "ZER0TOOLS"],
+    "A7":  ["PANDORA", "TWINSPIN", "WEIBOSPIN", "QUARK", "SPECTRAL", "NEPTUNE", "LAMEHUG", "WURM"],
+    "A8":  ["QUIETVAULT"],
+    "A9":  ["WURM"],
+    "A10": ["LLMGATE"],
+    "A11": ["OFRADR"],
+}
+
+ARCHETYPE_NAMES: dict[str, str] = {
+    "A0": "No AI Content",
+    "A1": "AI-Themed Lure",
+    "A3": "AI-Powered Payload",
+    "A4": "AI C2 Channel",
+    "A5": "Backdoored AI Tool",
+    "A6": "AI Credential Theft",
+    "A7": "LLM API Abuse",
+    "A8": "AI Supply Chain",
+    "A9": "AI Worm / Self-Propagation",
+    "A10": "Weaponized AI Platform",
+    "A11": "Agentic AI Abuse Tool",
+}
+
+# Approximate T2 rule → archetype signal mapping
+_T2_ARCHETYPE_SIGNAL: dict[str, list[str]] = {
+    "T2-Multi_Model_Provider_Cooccurrence": ["A7"],
+    "T2-AI_Decoy_Prompt_In_Malware": ["A3"],
+    "T2-Telegram_LLM_C2": ["A4", "A7"],
+    "T2-Local_Inference_Deploy": ["A7"],
+    "T2-Local_Inference_Persistence": ["A7"],
+}
+
+GRAY_FAMILIES: set[str] = {"TWINSPIN", "WEIBOSPIN", "QUARK", "NEPTUNE", "OFRADR"}
+
+# Reverse lookup: family → archetype(s)
+_FAMILY_ARCHETYPES: dict[str, list[str]] = {}
+for _aid, _fams in ARCHETYPE_MAP.items():
+    for _f in _fams:
+        _FAMILY_ARCHETYPES.setdefault(_f, []).append(_aid)
+
+
+def _query_analytics(db: Path) -> dict[str, Any]:
+    """Run all analytics aggregation queries and return a single payload."""
+    result: dict[str, Any] = {}
+
+    with sqlite3.connect(db) as conn:
+        conn.row_factory = sqlite3.Row
+
+        # 1. Attribution funnel
+        total = conn.execute("SELECT COUNT(*) FROM samples").fetchone()[0]
+        t1_hits = conn.execute("SELECT COUNT(DISTINCT sample_sha256) FROM rule_matches WHERE tier='T1'").fetchone()[0]
+        t2_hits = conn.execute("SELECT COUNT(DISTINCT sample_sha256) FROM rule_matches WHERE tier='T2'").fetchone()[0]
+        t3_attributed = conn.execute("SELECT COUNT(DISTINCT sample_sha256) FROM rule_matches WHERE tier='T3'").fetchone()[0]
+        families_seeded = conn.execute("SELECT COUNT(DISTINCT family_name) FROM known_seeds").fetchone()[0]
+        seeds_count = conn.execute("SELECT COUNT(DISTINCT sha256) FROM known_seeds").fetchone()[0]
+        result["attribution_funnel"] = {
+            "total": total, "t1_hits": t1_hits, "t2_hits": t2_hits,
+            "t3_attributed": t3_attributed, "families_seeded": families_seeded,
+            "seeds_count": seeds_count,
+        }
+
+        # 2. Archetype distribution
+        # Get T3 sample counts per family (from rule names)
+        t3_family_counts: dict[str, int] = {}
+        for row in conn.execute(
+            "SELECT rule_name, COUNT(DISTINCT sample_sha256) AS cnt FROM rule_matches WHERE tier='T3' GROUP BY rule_name"
+        ).fetchall():
+            rn = row["rule_name"]
+            if rn.startswith("T3-") and "_" in rn:
+                fam = rn[3:].split("_")[0]
+                t3_family_counts[fam] = t3_family_counts.get(fam, 0) + row["cnt"]
+
+        # Get T2 signal counts per rule
+        t2_rule_counts: dict[str, int] = {}
+        for row in conn.execute(
+            "SELECT rule_name, COUNT(DISTINCT sample_sha256) AS cnt FROM rule_matches WHERE tier='T2' GROUP BY rule_name"
+        ).fetchall():
+            t2_rule_counts[row["rule_name"]] = row["cnt"]
+
+        archetypes = []
+        for aid in sorted(ARCHETYPE_MAP.keys(), key=lambda x: int(x[1:])):
+            families = ARCHETYPE_MAP[aid]
+            t3_confirmed = sum(t3_family_counts.get(f, 0) for f in families)
+            # Sum T2 signal for this archetype
+            t2_signal = 0
+            for rname, arch_list in _T2_ARCHETYPE_SIGNAL.items():
+                if aid in arch_list:
+                    t2_signal += t2_rule_counts.get(rname, 0)
+            archetypes.append({
+                "id": aid,
+                "name": ARCHETYPE_NAMES.get(aid, aid),
+                "families": families,
+                "family_count": len(families),
+                "t2_signal_samples": t2_signal,
+                "t3_confirmed_samples": t3_confirmed,
+            })
+        result["archetype_distribution"] = {"archetypes": archetypes}
+
+        # 3. Corpus timeline
+        months = []
+        for row in conn.execute("""
+            SELECT SUBSTR(first_seen, 1, 7) AS month,
+                   COUNT(*) AS total,
+                   SUM(CASE WHEN sha256 IN (SELECT DISTINCT sample_sha256 FROM rule_matches WHERE tier='T3') THEN 1 ELSE 0 END) AS attributed,
+                   SUM(CASE WHEN sha256 IN (SELECT DISTINCT sample_sha256 FROM rule_matches WHERE tier='T2') THEN 1 ELSE 0 END) AS t2_hits
+            FROM samples WHERE first_seen IS NOT NULL AND SUBSTR(first_seen, 1, 7) >= '2020-01'
+            GROUP BY month ORDER BY month
+        """).fetchall():
+            months.append({"month": row["month"], "total": row["total"],
+                           "attributed": row["attributed"], "t2_hits": row["t2_hits"]})
+        result["corpus_timeline"] = {"months": months}
+
+        # 4. Rule yield
+        rules = []
+        for row in conn.execute("""
+            SELECT rm.rule_name, rm.tier,
+                   COUNT(DISTINCT rm.sample_sha256) AS total_hits,
+                   SUM(CASE WHEN s.detections >= 10 THEN 1 ELSE 0 END) AS high_det,
+                   SUM(CASE WHEN s.detections BETWEEN 3 AND 9 THEN 1 ELSE 0 END) AS med_det,
+                   SUM(CASE WHEN s.detections < 3 THEN 1 ELSE 0 END) AS low_det
+            FROM rule_matches rm
+            JOIN samples s ON rm.sample_sha256 = s.sha256
+            GROUP BY rm.rule_name, rm.tier
+            ORDER BY rm.tier, total_hits DESC
+        """).fetchall():
+            rules.append({
+                "name": row["rule_name"], "tier": row["tier"],
+                "total_hits": row["total_hits"], "high_det": row["high_det"],
+                "med_det": row["med_det"], "low_det": row["low_det"],
+            })
+        result["rule_yield"] = {"rules": rules}
+
+        # 5. Detection distribution
+        bands = []
+        for row in conn.execute("""
+            SELECT CASE
+              WHEN detections = 0 THEN '0'
+              WHEN detections BETWEEN 1 AND 4 THEN '1-4'
+              WHEN detections BETWEEN 5 AND 9 THEN '5-9'
+              WHEN detections BETWEEN 10 AND 19 THEN '10-19'
+              WHEN detections BETWEEN 20 AND 39 THEN '20-39'
+              ELSE '40+' END AS band,
+              COUNT(*) AS count
+            FROM samples GROUP BY band ORDER BY MIN(detections)
+        """).fetchall():
+            bands.append({"band": row["band"], "count": row["count"]})
+        result["detection_distribution"] = {"bands": bands}
+
+        # 6. Family pipeline (from filesystem + DB)
+        # Get seed counts per family
+        seed_counts: dict[str, int] = {}
+        for row in conn.execute("SELECT family_name, COUNT(*) AS cnt FROM known_seeds GROUP BY family_name").fetchall():
+            seed_counts[row["family_name"]] = row["cnt"]
+
+        # 7. File type / platform distribution
+        platform_counts: dict[str, int] = {}
+        for row in conn.execute("SELECT file_type, raw_json FROM samples").fetchall():
+            ft = row["file_type"] or ""
+            platform = ft  # default to raw file_type
+            if ft in ("Win32 EXE", "Win32 DLL"):
+                try:
+                    raw = json.loads(row["raw_json"])
+                    attrs = raw.get("attributes") or {}
+                    pe = attrs.get("pe_info") or {}
+                    il = pe.get("import_list") or []
+                    libs = [str(e.get("library_name", "")).lower() for e in il if isinstance(e, dict)]
+                    if any("python" in l for l in libs):
+                        platform = "Python (PE)"
+                    elif attrs.get("dot_net_assembly"):
+                        platform = ".NET"
+                    elif attrs.get("goresym"):
+                        platform = "Go (PE)"
+                    else:
+                        platform = "Windows PE"
+                except (TypeError, ValueError):
+                    platform = "Windows PE"
+            elif ft == "ELF":
+                platform = "ELF"
+            elif ft == "Python":
+                platform = "Python"
+            elif ft == "Powershell":
+                platform = "PowerShell"
+            elif ft == "Android":
+                platform = "Android"
+            elif ft in ("JavaScript", "VBA", "Shell script", "Text"):
+                platform = ft
+            else:
+                platform = "Other"
+            platform_counts[platform] = platform_counts.get(platform, 0) + 1
+        result["file_type_distribution"] = {
+            "platforms": [{"platform": k, "count": v} for k, v in
+                          sorted(platform_counts.items(), key=lambda x: -x[1])]
+        }
+
+        # 8. Rule × month heatmap (T2+T3 only, last 36 months)
+        heatmap_rows = []
+        for row in conn.execute("""
+            SELECT rm.rule_name, rm.tier,
+                   SUBSTR(s.first_seen, 1, 7) AS month,
+                   COUNT(*) AS cnt
+            FROM rule_matches rm
+            JOIN samples s ON rm.sample_sha256 = s.sha256
+            WHERE s.first_seen IS NOT NULL AND rm.tier IN ('T2', 'T3')
+            GROUP BY rm.rule_name, month
+            ORDER BY rm.tier, rm.rule_name, month
+        """).fetchall():
+            heatmap_rows.append({
+                "rule": row["rule_name"], "tier": row["tier"],
+                "month": row["month"], "count": row["cnt"],
+            })
+        result["rule_time_heatmap"] = {"cells": heatmap_rows}
+
+        # 9. Sample scatter (detection × first_seen, max tier, family)
+        scatter_rows = []
+        for row in conn.execute("""
+            SELECT s.sha256, s.first_seen, s.detections, s.name,
+                   MAX(CASE WHEN rm.tier='T3' THEN 3 WHEN rm.tier='T2' THEN 2
+                            WHEN rm.tier='T1' THEN 1 ELSE 0 END) AS max_tier,
+                   GROUP_CONCAT(DISTINCT CASE WHEN rm.tier='T3' THEN
+                       SUBSTR(rm.rule_name, 4, INSTR(SUBSTR(rm.rule_name, 4), '_') - 1)
+                   END) AS family
+            FROM samples s
+            LEFT JOIN rule_matches rm ON s.sha256 = rm.sample_sha256
+            WHERE s.first_seen IS NOT NULL
+            GROUP BY s.sha256
+        """).fetchall():
+            scatter_rows.append({
+                "sha": row["sha256"][:12],
+                "fs": row["first_seen"][:10] if row["first_seen"] else None,
+                "det": row["detections"],
+                "tier": row["max_tier"],
+                "fam": row["family"],
+                "name": (row["name"] or "")[:40],
+            })
+        result["sample_scatter"] = {"samples": scatter_rows}
+
+    # Family report status is filesystem-backed in this project.
+    published = {p.stem for p in _FAMILIES_DIR.glob("*.md") if p.name != "A3_Trends.md"}
+    confirmed: set[str] = set()
+    pending_analysis: set[str] = set()
+    retracted: set[str] = set()
+
+    all_families = published | confirmed | pending_analysis | retracted
+
+    family_earliest: dict[str, str] = {}
+    with sqlite3.connect(db) as conn2:
+        conn2.row_factory = sqlite3.Row
+        for row in conn2.execute(
+            "SELECT ks.family_name, MIN(s.first_seen) AS earliest "
+            "FROM known_seeds ks JOIN samples s ON ks.sha256 = s.sha256 "
+            "WHERE s.first_seen IS NOT NULL GROUP BY ks.family_name"
+        ).fetchall():
+            family_earliest[row["family_name"]] = row["earliest"]
+
+    families_list = []
+    for name in sorted(all_families):
+        status = ("published" if name in published else
+                  "confirmed" if name in confirmed else
+                  "pending_re" if name in pending_analysis else "retracted")
+        archs = _FAMILY_ARCHETYPES.get(name, [])
+        families_list.append({
+            "name": name,
+            "status": status,
+            "archetype": ", ".join(archs) if archs else None,
+            "seeds": seed_counts.get(name, 0),
+            "t3_hits": t3_family_counts.get(name, 0),
+            "is_gray": name in GRAY_FAMILIES,
+            "earliest_seen": family_earliest.get(name),
+        })
+
+    result["family_pipeline"] = {
+        "families": families_list,
+        "published": len(published),
+        "confirmed": len(confirmed),
+        "pending_re": len(pending_analysis),
+        "retracted": len(retracted),
+        "total_seeds": sum(seed_counts.values()),
+    }
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+
 # HTTP request handler
 # ---------------------------------------------------------------------------
 
@@ -236,6 +530,8 @@ class _Handler(BaseHTTPRequestHandler):
             self._serve_json(self._get_rules())
         elif path == "/api/filters":
             self._serve_json(self._get_filters())
+        elif path == "/api/analytics":
+            self._serve_json(_query_analytics(_CORPUS_PATH or settings().database_path))
         elif path.startswith("/api/family/"):
             self._serve_family_report(path[len("/api/family/"):])
         else:

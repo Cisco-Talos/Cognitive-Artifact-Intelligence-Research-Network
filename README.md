@@ -261,6 +261,24 @@ cairn explorer                                        # launch local graph + UMA
 cairn explorer --port 8422 --no-browser               # custom port, no auto-open
 ```
 
+#### Corpus Analytics
+
+The Explorer includes a corpus analytics view backed by the same SQLite corpus used by the graph. To open it:
+
+1. Launch the Explorer with `cairn explorer`.
+2. Click the small line-chart orb in the upper-right of the sidebar header, over the CAIRN branding.
+3. Click the orb again to return to the graph. The `TABLE` view remains available separately from the graph and analytics views.
+
+The analytics dashboard includes:
+
+- Attribution funnel from total samples through T1, T2, T3, and seeded results
+- Family pipeline with publication status, archetype, first-seen date, seed count, and T3 hits
+- Archetype distribution and corpus timeline
+- Platform/file-type and detection distributions
+- Rule-yield matrix, detection-over-time scatter plot, and rule activity heatmap
+
+Charts support the existing dark interface styling and selected views provide cross-filtering by archetype, family, or platform. The dashboard reads from the local Explorer endpoint at `/api/analytics`; no separate configuration or API key is required beyond the corpus already used by the Explorer.
+
 ### Export and Reporting
 
 ```bash
