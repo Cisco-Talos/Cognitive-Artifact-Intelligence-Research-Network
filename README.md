@@ -137,7 +137,7 @@ Rules are organized into three tiers of increasing specificity:
 | **T2 — Behavioral Context** | Two or more co-occurring primitives in an operationally meaningful combination | `T2-AI_Decoy_Prompt_In_Malware`, `T2-Agentic_Offensive_Tasking` |
 | **T3 — Operational Families** | Family-level attribution anchored to confirmed seed hashes | `T3-TEAMPCP_Backdoored_LiteLLM_Proxy`, `T3-HONESTCUE_LLM_Probe_Loader` |
 
-Current rule counts: **9 T1 / 8 T2 / 8 T3** — 25 total.
+Current rule counts: **9 T1 / 8 T2 / 9 T3** — 26 total.
 
 ---
 
@@ -169,7 +169,7 @@ pip install -e ".[embed]"
 Verify the install:
 
 ```bash
-cairn validate-rules    # should report 44 rules, valid: true
+cairn validate-rules    # should report 26 rules, valid: true
 cairn filters           # should list all channels with enabled status
 ```
 
@@ -349,6 +349,8 @@ Individual technical reports for each confirmed family are in `docs/families/`, 
 | PROMPTLOCK | A1 — LLM payload generation | Go / Lua | [docs/families/PROMPTLOCK.md](docs/families/PROMPTLOCK.md) |
 | HONESTCUE | A1 — LLM payload generation | .NET | [docs/families/HONESTCUE.md](docs/families/HONESTCUE.md) |
 | FRUITSHELL | A3 — AI-analysis evasion | PowerShell | [docs/families/FRUITSHELL.md](docs/families/FRUITSHELL.md) |
+| GUARDBREAKER | A3 — AI-analysis evasion | VBScript | [docs/families/GUARDBREAKER.md](docs/families/GUARDBREAKER.md) |
+| CLOSEDQUORUM | A4 — Autonomous AI agent | Go | [docs/families/CLOSEDQUORUM.md](docs/families/CLOSEDQUORUM.md) |
 | TEAMPCP | A5 — LLM infrastructure supply chain | Python / npm | [docs/families/TEAMPCP.md](docs/families/TEAMPCP.md) |
 | LAMEHUG | A6 — AI credential harvester | Python | [docs/families/LAMEHUG.md](docs/families/LAMEHUG.md) |
 | PROMPTSTEAL | A6 — AI credential harvester | Python (PyInstaller) | [docs/families/PROMPTSTEAL.md](docs/families/PROMPTSTEAL.md) |
@@ -368,7 +370,7 @@ CAIRN/
 │
 ├── config/
 │   ├── acquisition_filters.yaml   27 named VT acquisition channels
-│   ├── yara_rules.yar             25 tiered cognitive artifact rules (T1/T2/T3)
+│   ├── yara_rules.yar             26 tiered cognitive artifact rules (T1/T2/T3)
 │   ├── exclusions.yaml            Corpus blocklist — hashes silently skipped on pull and removed by prune
 │   └── dead_end_hashes.txt        Cluster noise filter — known FP cluster members; suppressed by cluster-summary
 │
@@ -394,6 +396,8 @@ CAIRN/
 │   │   ├── PROMPTLOCK.md       Family report — Go/Lua LLM-directed ransomware (A1)
 │   │   ├── HONESTCUE.md        Family report — .NET LLM probe loader (A1)
 │   │   ├── FRUITSHELL.md       Family report — PowerShell reverse shell with AI-evasion (A3)
+│   │   ├── GUARDBREAKER.md     Family report — UAC-0099 VBS downloader with anti-AI guardrail trigger (A3)
+│   │   ├── CLOSEDQUORUM.md     Family report — Go autonomous AI agent (A4)
 │   │   ├── TEAMPCP.md          Family report — backdoored LiteLLM proxy (A5)
 │   │   ├── LAMEHUG.md          Family report — HuggingFace token abuser (A6)
 │   │   ├── PROMPTSTEAL.md      Family report — PyInstaller AI credential stealer (A6)

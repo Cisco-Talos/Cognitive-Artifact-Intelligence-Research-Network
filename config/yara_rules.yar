@@ -560,3 +560,29 @@ rule T3-FRUITSHELL_PowerShell_AI_Decoy_ReverseShell
             $tcp
         )
 }
+
+rule T3-GUARDBREAKER_VBS_Anti_AI_Guardrail_Trigger
+{
+    meta:
+        description = "GUARDBREAKER — UAC-0099 VBS downloader with adversarial WMD text to trigger AI safety refusals"
+        author = "CAIRN"
+        artifact_class = "prompt_injection_anti_re"
+        artifact_type = "ai_analysis_evasion"
+        tier = "T3"
+        confidence = "high"
+        family = "GUARDBREAKER"
+        archetypes = "A3"
+        reference = "ESET @ESETresearch 2026-08-27"
+
+    strings:
+        // AV family labels — Honolulu cluster (BitDefender/Fortinet/CTX/Ikarus)
+        $av_honolulu = "Honolulu" nocase
+        $av_holulu   = "Holulu" nocase
+        // ESET-specific label for this campaign
+        $av_admi     = "Agent.ADMI" nocase
+        // C2/staging infrastructure
+        $infra_imgurl = "imageurlgenerator" nocase
+
+    condition:
+        1 of them
+}
