@@ -20,19 +20,19 @@
 #
 # SPDX-License-Identifier: MIT
 
+
 HTML = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <title>CAIRN Explorer</title>
 <link rel="icon" type="image/png" href="/favicon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2/dist/chartjs-chart-treemap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2/dist/chartjs-plugin-zoom.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -48,17 +48,15 @@ HTML = r"""<!DOCTYPE html>
     --danger:    #ef5a5a;
     --success:   #4fef8e;
     --warn:      #efb84f;
-    --brand-ivory: #f4f0e6;
-    --brand-amber: #d9ae5b;
 
-    --c-sample:   #3D93CE;
-    --c-rule:     #9F7BB8;
-    --c-filter:   #F5AD4E;
-    --c-provider: #F28F52;
-    --c-imphash:  #43B5A3;
-    --c-domain:   #698999;
-    --c-cert:     #D266AA;
-    --c-submitter:#A7C957;
+    --c-sample:   #4f8ef7;
+    --c-rule:     #7c5aef;
+    --c-filter:   #4fef8e;
+    --c-provider: #efb84f;
+    --c-imphash:  #ef8e4f;
+    --c-domain:   #ef5a9a;
+    --c-cert:     #c084fc;
+    --c-submitter:#38bdf8;
   }
 
   html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px; }
@@ -104,30 +102,54 @@ HTML = r"""<!DOCTYPE html>
   #btn-collapse:hover { background: rgba(79,142,247,.15); }
   #layout.sidebar-hidden #btn-collapse { display: block; }
 
-  /* ── Corpus analytics orb ── */
-  #analytics-orb-wrap {
-    position: absolute; top: 8px; right: 8px; cursor: pointer; z-index: 3;
+  /* ── Orb stack — upper-right of sidebar header ── */
+  #orb-stack {
+    position: absolute; top: 8px; right: 8px; z-index: 3;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
   }
-  #btn-analytics {
-    width: 30px; height: 30px; padding: 0; border: none; border-radius: 50%;
-    background: rgba(19,22,30,.92);
-    box-shadow: 0 0 10px rgba(217,174,91,.16), inset 0 0 6px rgba(217,174,91,.08);
+  .orb-wrap { position: relative; cursor: pointer; }
+  .orb-btn {
+    width: 32px; height: 32px; padding: 0; border: none; border-radius: 50%;
+    background: rgba(19,22,30,.9);
+    box-shadow: 0 0 10px rgba(79,142,247,.15), inset 0 0 6px rgba(79,142,247,.08);
     cursor: pointer; position: relative; z-index: 2;
-    transition: box-shadow .3s, transform .15s;
+    transition: all .3s;
     display: flex; align-items: center; justify-content: center;
   }
-  #btn-analytics canvas { width: 21px; height: 21px; }
-  #btn-analytics:hover { transform: scale(1.06); box-shadow: 0 0 16px rgba(217,174,91,.35), inset 0 0 8px rgba(217,174,91,.15); }
-  #btn-analytics.active {
-    box-shadow: 0 0 20px rgba(217,174,91,.5), 0 0 40px rgba(217,174,91,.15), inset 0 0 8px rgba(217,174,91,.2);
+  .orb-btn canvas { width: 22px; height: 22px; }
+  .orb-btn:hover { box-shadow: 0 0 16px rgba(79,142,247,.35), inset 0 0 8px rgba(79,142,247,.15); }
+  .orb-btn.active {
+    box-shadow: 0 0 20px rgba(79,142,247,.5), 0 0 40px rgba(79,142,247,.15), inset 0 0 8px rgba(79,142,247,.2);
   }
-  #analytics-orb-glow {
+  .orb-glow {
     position: absolute; inset: -6px; border-radius: 50%; z-index: 1;
-    background: radial-gradient(circle, rgba(217,174,91,.12) 0%, transparent 70%);
-    pointer-events: none; transition: opacity .3s; opacity: .5;
+    background: radial-gradient(circle, rgba(79,142,247,.12) 0%, transparent 70%);
+    pointer-events: none; transition: opacity .3s; opacity: 0.5;
   }
-  #btn-analytics.active + #analytics-orb-glow { opacity: 1; }
+  .orb-btn.active + .orb-glow { opacity: 1; }
 
+  /* Orbit orb — amber accent */
+  #btn-demo {
+    box-shadow: 0 0 10px rgba(247,182,79,.15), inset 0 0 6px rgba(247,182,79,.08);
+  }
+  #btn-demo:hover { box-shadow: 0 0 16px rgba(247,182,79,.35), inset 0 0 8px rgba(247,182,79,.15); }
+  #btn-demo.active {
+    box-shadow: 0 0 20px rgba(247,182,79,.5), 0 0 40px rgba(247,182,79,.15), inset 0 0 8px rgba(247,182,79,.2);
+  }
+  #demo-orb-glow {
+    background: radial-gradient(circle, rgba(247,182,79,.12) 0%, transparent 70%);
+  }
+
+  /* Orbit mode — logo watermark over graph */
+  #demo-logo {
+    display: none; position: absolute; top: 24px; left: 24px; z-index: 6;
+    opacity: 0.25; pointer-events: none;
+    width: 220px; height: auto;
+    filter: grayscale(0.3);
+  }
+  #layout.sidebar-hidden #demo-logo.visible { display: block; }
+
+  /* ── Analytics chart cards ── */
   .scale-toggle {
     font-family: inherit; font-size: 9px; letter-spacing: .06em;
     padding: 2px 6px; border-radius: 3px; cursor: pointer;
@@ -138,64 +160,27 @@ HTML = r"""<!DOCTYPE html>
   .scale-toggle.active { border-color: var(--accent); color: var(--accent); background: rgba(79,142,247,.1); }
   .filter-badge {
     display: none; font-size: 9px; color: var(--accent); cursor: pointer;
-    padding: 2px 6px; border: 1px solid var(--accent); border-radius: 3px; margin-left: auto;
+    padding: 2px 6px; border: 1px solid var(--accent); border-radius: 3px;
+    margin-left: auto;
   }
   .filter-badge.visible { display: inline-block; }
 
   #sidebar-header {
-    padding: 12px 16px 11px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
-    display: block;
-    background: #151922;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
     position: relative;
   }
-  #brand-lockup {
-    display: flex; align-items: center; gap: 12px;
-    min-width: 0;
-  }
-  .brand-divider {
-    width: 1px; height: 48px; flex: 0 0 1px;
-    background: linear-gradient(180deg, transparent, #596272 22%, #596272 78%, transparent);
-    opacity: .75;
-  }
+
   #sidebar-header img {
-    width: 64px; height: 64px; flex: 0 0 64px; object-fit: contain; display: block;
-    opacity: .9;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .9)) drop-shadow(0 0 6px rgba(135, 190, 235, .15));
+    height: auto; object-fit: contain; display: block;
   }
 
-  #brand-copy { min-width: 0; }
-  #brand-name {
-    color: #e5e9f0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 32px; line-height: 1; font-weight: 400;
-    letter-spacing: .10em; white-space: nowrap;
-    background: linear-gradient(180deg, #eef2f6 0%, #c1c8d2 58%, #8b96a5 125%);
-    -webkit-background-clip: text; background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, .30),
-                 0 2px 2px rgba(0, 0, 0, .58),
-                 0 0 14px rgba(190, 205, 220, .18);
-  }
-  #brand-descriptor {
-    margin-top: 6px; color: #b8b9b2;
-    font-family: 'Avenir Next', 'Helvetica Neue', 'Segoe UI', sans-serif;
-    font-size: 10.5px; font-weight: 500; line-height: 1.35;
-    letter-spacing: .035em; max-width: 230px;
-  }
-  #brand-rule {
-    height: 1px; margin-top: 10px;
-    background: linear-gradient(90deg, rgba(217, 174, 91, .72), rgba(217, 174, 91, .16) 68%, transparent);
-  }
-
-  #stats {
-    display: flex; gap: 0; margin: 0; padding: 8px 16px 9px;
-    justify-content: space-between; border-bottom: 1px solid var(--border);
-    background: rgba(19, 22, 30, .28);
-  }
-  .stat { min-width: 42px; flex: 1; text-align: center; }
-  .stat .n { font-size: 18px; font-weight: 400; color: #e0e5f0; font-variant-numeric: tabular-nums; }
-  .stat .l { margin-top: 2px; font-size: 9px; color: #6e7688; letter-spacing: .1em; }
+  #stats { display: flex; gap: 12px; margin-top: 0; justify-content: center; }
+  .stat { text-align: center; }
+  .stat .n { font-size: 16px; color: var(--text); }
+  .stat .l { font-size: 10px; color: var(--text-dim); letter-spacing: .08em; }
 
   /* ── Controls ── */
   #controls {
@@ -205,36 +190,28 @@ HTML = r"""<!DOCTYPE html>
     display: flex; flex-direction: column; gap: 7px;
   }
 
-  .search-field { position: relative; }
-  .search-icon {
-    position: absolute; left: 11px; top: 50%; width: 10px; height: 10px;
-    border: 1.5px solid var(--text-dim); border-radius: 50%; transform: translateY(-65%);
-    pointer-events: none;
-  }
-  .search-icon::after { content: ''; position: absolute; width: 5px; height: 1.5px; right: -4px; bottom: -2px; background: var(--text-dim); transform: rotate(45deg); transform-origin: left center; }
   #search {
     background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); padding: 6px 10px 6px 30px; border-radius: 4px;
+    color: var(--text); padding: 6px 10px; border-radius: 4px;
     width: 100%; outline: none; font-family: inherit; font-size: 12px;
   }
-  #search:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(79,142,247,.18); }
+  #search:focus { border-color: var(--accent); }
 
   .toggle-row { display: flex; flex-wrap: wrap; gap: 5px; }
 
   .tog {
     padding: 3px 9px; border-radius: 3px; cursor: pointer;
     font-size: 10px; letter-spacing: .06em; border: 1px solid transparent;
-    transition: opacity .15s, transform .15s, box-shadow .15s;
+    transition: opacity .15s;
   }
-  .tog.active { opacity: 1; box-shadow: inset 0 -2px rgba(0,0,0,.48), 0 0 0 1px rgba(255,255,255,.16); }
+  .tog.active { opacity: 1; }
   .tog.inactive { opacity: .35; }
-  .tog:hover { transform: translateY(-1px); }
   .tog-sample   { background: var(--c-sample);   color: #000; }
-  .tog-rule     { background: var(--c-rule);     color: #000; }
+  .tog-rule     { background: var(--c-rule);     color: #fff; }
   .tog-filter   { background: var(--c-filter);   color: #000; }
   .tog-provider { background: var(--c-provider); color: #000; }
   .tog-imphash  { background: var(--c-imphash);  color: #000; }
-  .tog-domain   { background: var(--c-domain);   color: #000; }
+  .tog-domain   { background: var(--c-domain);   color: #fff; }
   .tog-cert      { background: var(--c-cert);      color: #000; }
   .tog-submitter { background: var(--c-submitter); color: #000; }
 
@@ -254,16 +231,27 @@ HTML = r"""<!DOCTYPE html>
   }
   #btn-clear-filters:hover { background: #272f3d; border-color: #47546a; color: var(--text); }
 
+  /* ── Graph legend ── */
+  #graph-legend {
+    position: absolute; bottom: 12px; left: 12px; z-index: 10;
+    max-width: 232px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px;
+    background: rgba(13,15,20,.82); color: var(--text-dim); font-size: 10px;
+    backdrop-filter: blur(4px);
+  }
+  #graph-legend summary { cursor: pointer; color: var(--text); letter-spacing: .06em; }
+  #graph-legend[open] summary { margin-bottom: 6px; }
+  .legend-grid { display: grid; grid-template-columns: repeat(2, max-content); gap: 4px 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+
   /* ── Editor sections (rules / filters / providers) ── */
   .editor-section {
-    border-bottom: 1px solid #30384a;
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
   .editor-section-header {
     padding: 9px 16px;
-    font-family: 'Avenir Next', 'Helvetica Neue', 'Segoe UI', sans-serif;
-    font-size: 10px; font-weight: 600; letter-spacing: .1em;
-    color: var(--text-dim); background: transparent;
+    font-size: 10px; letter-spacing: .12em; color: var(--text-dim);
     cursor: pointer; user-select: none;
     display: flex; justify-content: space-between; align-items: center;
   }
@@ -271,10 +259,16 @@ HTML = r"""<!DOCTYPE html>
   .chevron { font-size: 10px; transition: transform .2s; }
   .chevron.open { transform: rotate(90deg); }
   .editor-section-body {
-    overflow-y: auto; max-height: 100px;
+    overflow-y: auto; max-height: 200px;
     padding: 4px 0;
   }
 
+  .rule-tier-header {
+    padding: 6px 16px 3px; font-size: 10px; letter-spacing: .08em;
+    color: var(--accent); font-weight: 600; border-bottom: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  .rule-tier-header:first-child { margin-top: 0; }
   .rule-item, .filter-item, .provider-item {
     padding: 4px 16px; cursor: pointer; font-size: 11px;
     display: flex; align-items: center; gap: 7px;
@@ -301,14 +295,37 @@ HTML = r"""<!DOCTYPE html>
   .hit-badge.t3   { border-color: var(--accent); color: var(--accent); }
   .hit-badge.prov { border-color: var(--warn); color: var(--warn); }
 
-  /* ── Detail panel ── */
+  /* ── Floating detail panel (over graph) ── */
+  #detail-panel {
+    display: flex; position: absolute;
+    top: 50%; left: 12px;
+    max-height: calc(100% - 240px);
+    width: 340px; max-width: calc(100% - 24px);
+    background: rgba(19,22,30,.88); border: 1px solid var(--border);
+    border-radius: 6px; z-index: 11;
+    flex-direction: column; overflow: hidden;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 24px rgba(0,0,0,.5);
+    transform: translateY(-50%) translateX(-110%);
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+  }
+  #detail-panel.open { transform: translateY(-50%) translateX(0); }
+
+  #detail-header {
+    padding: 8px 12px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  #detail-title { font-size: 11px; color: var(--accent); letter-spacing: .1em; text-transform: uppercase; }
+  #detail-close {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 14px; padding: 2px 6px; line-height: 1;
+  }
+  #detail-close:hover { color: var(--text); }
+
   #detail {
     flex: 1; overflow-y: auto; padding: 14px 16px;
     min-height: 0;
-  }
-
-  .detail-placeholder {
-    color: var(--text-dim); font-size: 11px; margin-top: 20px; line-height: 1.7;
   }
 
   .detail-section { margin-bottom: 14px; }
@@ -366,6 +383,7 @@ HTML = r"""<!DOCTYPE html>
     flex: 1; position: relative; overflow: hidden;
     background: radial-gradient(ellipse at 60% 40%, #111420 0%, #0d0f14 70%);
     --report-width: min(480px, 50vw);
+    --detail-width: 340px;
     --overlay-gutter: 12px;
     --toolbar-clearance: var(--overlay-gutter);
     container-type: inline-size;
@@ -398,18 +416,6 @@ HTML = r"""<!DOCTYPE html>
   .fpill.fpill-all { border-color: var(--text-dim); color: var(--text-dim); }
   .fpill.fpill-all.active { border-color: var(--text); color: var(--text); }
 
-  #graph-legend {
-    position: absolute; bottom: 12px; left: 12px; z-index: 10;
-    max-width: 232px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px;
-    background: rgba(13,15,20,.82); color: var(--text-dim); font-size: 10px;
-    backdrop-filter: blur(4px);
-  }
-  #graph-legend summary { cursor: pointer; color: var(--text); letter-spacing: .06em; }
-  #graph-legend[open] summary { margin-bottom: 6px; }
-  .legend-grid { display: grid; grid-template-columns: repeat(2, max-content); gap: 4px 10px; }
-  .legend-item { display: flex; align-items: center; gap: 5px; }
-  .legend-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
-
   /* ── Toolbar ── */
   #toolbar {
     position: absolute; top: 12px; right: 14px;
@@ -425,7 +431,7 @@ HTML = r"""<!DOCTYPE html>
     color: var(--text); backdrop-filter: blur(4px);
     transition: border-color .15s;
   }
-  .tb-btn:hover { border-color: var(--accent); background: rgba(26,30,40,.92); }
+  .tb-btn:hover { border-color: var(--accent); }
   .tb-btn.active { border-color: var(--accent); color: var(--accent); }
 
   /* ── UMAP cluster controls bar (below canvas, not overlaid) ── */
@@ -468,8 +474,6 @@ HTML = r"""<!DOCTYPE html>
     animation: spin .8s linear infinite;
   }
   #loading p { color: var(--text-dim); font-size: 12px; }
-  .state-message { padding: 12px 16px; color: var(--text-dim); font-size: 11px; line-height: 1.6; }
-  .state-message strong { color: var(--text); font-weight: normal; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* ── Editor modal ── */
@@ -505,15 +509,6 @@ HTML = r"""<!DOCTYPE html>
   }
   #toast.visible { opacity: 1; }
   #toast.error { border-color: var(--danger); color: var(--danger); }
-
-  button:focus-visible, input:focus-visible, textarea:focus-visible,
-  [role="button"]:focus-visible, .fpill:focus-visible {
-    outline: 2px solid var(--accent); outline-offset: 2px;
-  }
-  #stats, .hit-badge, .det-count, #node-count, .kv-v { font-variant-numeric: tabular-nums; }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
-  }
 
   /* scrollbar */
   ::-webkit-scrollbar { width: 5px; }
@@ -567,6 +562,59 @@ HTML = r"""<!DOCTYPE html>
   #family-report-body li { margin: 2px 0; }
   #family-report-body blockquote { border-left: 3px solid var(--border); padding-left: 10px; color: var(--text-dim); margin: 8px 0; }
 
+  /* ── Analytics ── */
+  .analytics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    max-width: 1400px;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .chart-card h3 {
+    color: var(--accent);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 12px 0;
+    font-weight: 600;
+  }
+  #pipeline-summary {
+    display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;
+  }
+  #pipeline-summary .ps-item {
+    font-size: 11px; color: var(--text-dim);
+  }
+  #pipeline-summary .ps-item b {
+    font-weight: 600;
+  }
+  #pipeline-table {
+    max-height: 420px; overflow-y: auto;
+  }
+  #pipeline-table table {
+    width: 100%; border-collapse: collapse; font-size: 11px;
+  }
+  #pipeline-table th {
+    text-align: left; padding: 4px 8px; color: var(--text-dim); font-weight: normal;
+    border-bottom: 2px solid var(--border); cursor: pointer; white-space: nowrap;
+  }
+  #pipeline-table td {
+    padding: 4px 8px; border-bottom: 1px solid var(--border);
+  }
+  .status-pill {
+    display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 9px;
+    font-weight: 600; letter-spacing: .5px; text-transform: uppercase;
+  }
+  .status-published  { background: rgba(79,239,142,.15); color: #4fef8e; }
+  .status-confirmed  { background: rgba(79,142,247,.15); color: #4f8ef7; }
+  .status-pending_re { background: rgba(239,184,79,.15); color: #efb84f; }
+  .status-retracted  { background: rgba(239,90,90,.15);  color: #ef5a5a; }
+  .retracted-name { text-decoration: line-through; color: var(--text-dim); }
+
   /* Keep the graph overlays usable when the graph viewport is narrow. */
   @media (max-width: 560px) {
     #family-pills {
@@ -588,46 +636,6 @@ HTML = r"""<!DOCTYPE html>
       scrollbar-width: thin;
     }
   }
-
-  /* ── Corpus analytics surface ── */
-  #analytics-wrap { min-width: 0; min-height: 0; }
-  .analytics-grid {
-    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 16px; max-width: 1400px; min-width: 0;
-  }
-  .chart-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
-    padding: 16px; min-width: 0; overflow: hidden;
-  }
-  .chart-card canvas { max-width: 100%; }
-  .chart-card h3 {
-    color: var(--accent); font-size: 11px; text-transform: uppercase;
-    letter-spacing: 1px; margin: 0 0 12px; font-weight: 600;
-  }
-  #pipeline-summary { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-  #pipeline-summary .ps-item { font-size: 11px; color: var(--text-dim); }
-  #pipeline-summary .ps-item b { font-weight: 600; }
-  #pipeline-table { max-height: 420px; overflow-y: auto; }
-  #pipeline-table table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  #pipeline-table th {
-    text-align: left; padding: 4px 8px; color: var(--text-dim); font-weight: normal;
-    border-bottom: 2px solid var(--border); cursor: pointer; white-space: nowrap;
-  }
-  #pipeline-table td { padding: 4px 8px; border-bottom: 1px solid var(--border); }
-  .status-pill {
-    display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 9px;
-    font-weight: 600; letter-spacing: .5px; text-transform: uppercase;
-  }
-  .status-published { background: rgba(79,239,142,.15); color: #4fef8e; }
-  .status-confirmed { background: rgba(79,142,247,.15); color: #4f8ef7; }
-  .status-pending_re { background: rgba(239,184,79,.15); color: #efb84f; }
-  .status-retracted { background: rgba(239,90,90,.15); color: #ef5a5a; }
-  .retracted-name { text-decoration: line-through; color: var(--text-dim); }
-  @media (max-width: 760px) {
-    #analytics-wrap { padding: 14px !important; }
-    .analytics-grid { grid-template-columns: 1fr; gap: 12px; }
-    .chart-card[style*="grid-column"] { grid-column: auto !important; }
-  }
 </style>
 </head>
 <body>
@@ -636,43 +644,38 @@ HTML = r"""<!DOCTYPE html>
   <!-- ── Sidebar ── -->
   <div id="sidebar">
     <div id="sidebar-header">
-      <div id="brand-lockup">
-        <img src="/logo.png" alt="CAIRN mark" onerror="this.style.display='none'">
-        <span class="brand-divider" aria-hidden="true"></span>
-        <div id="brand-copy">
-          <div id="brand-name">CAIRN</div>
-          <div id="brand-descriptor">Cognitive Artifact Intelligence Research Network</div>
-        </div>
+      <div style="display:flex;align-items:center;width:100%;justify-content:center">
+        <img src="/logo.svg" alt="CAIRN" onerror="this.style.display='none'" style="width:75%;height:auto">
       </div>
-      <div id="brand-rule" aria-hidden="true"></div>
-      <span id="analytics-orb-wrap">
-        <button id="btn-analytics" type="button" title="Corpus analytics" aria-label="Toggle corpus analytics" aria-pressed="false">
-          <canvas id="orb-spark" width="21" height="21"></canvas>
-        </button>
-        <span id="analytics-orb-glow" aria-hidden="true"></span>
-      </span>
-    </div>
-    <div id="stats">
-      <div class="stat"><div class="n" id="stat-samples">—</div><div class="l">SAMPLES</div></div>
-      <div class="stat"><div class="n" id="stat-families">—</div><div class="l">FAMILIES</div></div>
-      <div class="stat"><div class="n" id="stat-rules">—</div><div class="l">RULES</div></div>
-      <div class="stat"><div class="n" id="stat-edges">—</div><div class="l">EDGES</div></div>
+      <div id="orb-stack">
+        <span class="orb-wrap">
+          <button class="orb-btn" id="btn-analytics" title="Analytics"><canvas id="orb-spark" width="22" height="22"></canvas></button>
+          <span class="orb-glow"></span>
+        </span>
+        <span class="orb-wrap">
+          <button class="orb-btn" id="btn-demo" title="Orbit mode"><canvas id="demo-orb-canvas" width="22" height="22"></canvas></button>
+          <span class="orb-glow" id="demo-orb-glow"></span>
+        </span>
+      </div>
+      <div id="stats">
+        <div class="stat"><div class="n" id="stat-samples">—</div><div class="l">SAMPLES</div></div>
+        <div class="stat"><div class="n" id="stat-families">—</div><div class="l">FAMILIES</div></div>
+        <div class="stat"><div class="n" id="stat-rules">—</div><div class="l">RULES</div></div>
+        <div class="stat"><div class="n" id="stat-edges">—</div><div class="l">EDGES</div></div>
+      </div>
     </div>
 
     <div id="controls">
-      <div class="search-field">
-        <span class="search-icon" aria-hidden="true"></span>
-        <input id="search" type="text" placeholder="Search SHA256, family, rule, domain…" autocomplete="off">
-      </div>
+      <input id="search" type="text" placeholder="Search SHA256, family, rule, domain…" autocomplete="off">
       <div class="toggle-row" id="type-toggles">
-        <div class="tog tog-sample active"   data-type="sample" role="button" tabindex="0" aria-pressed="true">SAMPLE</div>
-        <div class="tog tog-rule active"     data-type="yara_rule" role="button" tabindex="0" aria-pressed="true">RULE</div>
-        <div class="tog tog-filter active"   data-type="acquisition_filter" role="button" tabindex="0" aria-pressed="true">FILTER</div>
-        <div class="tog tog-provider active" data-type="provider" role="button" tabindex="0" aria-pressed="true">PROVIDER</div>
-        <div class="tog tog-imphash active"  data-type="imphash" role="button" tabindex="0" aria-pressed="true">IMPHASH</div>
-        <div class="tog tog-domain active"   data-type="domain" role="button" tabindex="0" aria-pressed="true">DOMAIN</div>
-        <div class="tog tog-cert active"      data-type="cert" role="button" tabindex="0" aria-pressed="true">CERT</div>
-        <div class="tog tog-submitter active" data-type="submitter" role="button" tabindex="0" aria-pressed="true">SUBMITTER</div>
+        <div class="tog tog-sample active"   data-type="sample">SAMPLE</div>
+        <div class="tog tog-rule active"     data-type="yara_rule">RULE</div>
+        <div class="tog tog-filter active"   data-type="acquisition_filter">FILTER</div>
+        <div class="tog tog-provider active" data-type="provider">PROVIDER</div>
+        <div class="tog tog-imphash active"  data-type="imphash">IMPHASH</div>
+        <div class="tog tog-domain active"   data-type="domain">DOMAIN</div>
+        <div class="tog tog-cert active"      data-type="cert">CERT</div>
+        <div class="tog tog-submitter active" data-type="submitter">SUBMITTER</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
         <label for="submitter-max" style="font-size:10px;color:var(--text-dim);white-space:nowrap;letter-spacing:.06em">SUBMITTER MAX</label>
@@ -727,19 +730,19 @@ HTML = r"""<!DOCTYPE html>
       </div>
     </div>
 
-    <div id="detail">
-      <div class="detail-placeholder">
-        Click any node to inspect it.<br><br>
-        Use the type toggles to show or hide node categories.<br><br>
-        Click a family pill on the graph, a YARA rule, or a provider to isolate that subgraph.<br><br>
-        <span style="color:var(--accent)">T3 ONLY</span> hides samples with no T3 rule match.
-      </div>
-    </div>
   </div>
 
   <!-- ── Graph area ── -->
   <div id="graph-wrap">
     <button id="btn-collapse" title="Toggle sidebar">◀</button>
+    <img id="demo-logo" src="/logo.svg" alt="">
+    <div id="detail-panel">
+      <div id="detail-header">
+        <span id="detail-title">Inspect</span>
+        <button id="detail-close">✕</button>
+      </div>
+      <div id="detail"></div>
+    </div>
     <div id="loading"><div class="spinner"></div><p>Loading graph…</p></div>
     <div id="graph-canvas"></div>
     <canvas id="umap-canvas" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
@@ -749,6 +752,7 @@ HTML = r"""<!DOCTYPE html>
     </div>
     <div id="umap-tooltip" style="display:none;position:fixed;background:var(--surface);border:1px solid var(--border);padding:4px 8px;font:11px monospace;pointer-events:none;z-index:30;max-width:320px;word-break:break-all;"></div>
     <div id="graph-3d"></div>
+    <div id="graph-3d-labels" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5;display:none"></div>
     <div id="family-pills"></div>
     <details id="graph-legend" open>
       <summary>LEGEND</summary>
@@ -780,48 +784,56 @@ HTML = r"""<!DOCTYPE html>
 
     <div id="corpus-wrap" style="display:none;position:absolute;inset:0;overflow-y:auto;background:var(--bg);padding:16px 20px;z-index:5"></div>
     <div id="analytics-wrap" style="display:none;position:absolute;inset:0;overflow-y:auto;background:var(--bg);padding:24px;z-index:5">
-      <div class="analytics-grid">
-        <div class="chart-card" id="card-funnel">
-          <h3>Attribution Funnel</h3>
-          <canvas id="chart-funnel"></canvas>
-        </div>
-        <div class="chart-card" id="card-pipeline">
-          <h3>Family Pipeline <span class="filter-badge" id="pipeline-filter-badge">✕ clear</span></h3>
-          <div id="pipeline-summary"></div>
-          <div id="pipeline-table"></div>
-        </div>
-        <div class="chart-card" id="card-archetype">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <h3 style="margin:0">Archetype Distribution</h3>
-            <button class="scale-toggle" id="arch-scale-toggle" type="button">LOG</button>
+        <div class="analytics-grid">
+          <div class="chart-card" id="card-funnel">
+            <h3>Attribution Funnel</h3>
+            <canvas id="chart-funnel"></canvas>
           </div>
-          <canvas id="chart-archetype"></canvas>
+          <div class="chart-card" id="card-pipeline">
+            <h3>Family Pipeline <span class="filter-badge" id="pipeline-filter-badge">✕ clear</span></h3>
+            <div id="pipeline-summary"></div>
+            <div id="pipeline-table"></div>
+          </div>
+          <div class="chart-card" id="card-archetype">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <h3 style="margin:0">Archetype Distribution</h3>
+              <button class="scale-toggle" id="arch-scale-toggle">LOG</button>
+            </div>
+            <canvas id="chart-archetype"></canvas>
+          </div>
+          <div class="chart-card" id="card-timeline">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <h3 style="margin:0">Corpus Timeline</h3>
+              <button class="scale-toggle" id="timeline-reset-zoom" style="display:none">RESET ZOOM</button>
+            </div>
+            <canvas id="chart-timeline"></canvas>
+            <div style="font-size:9px;color:var(--text-dim);margin-top:4px;letter-spacing:.04em">Click-drag to zoom · double-click to reset</div>
+          </div>
+          <div class="chart-card" id="card-filetype">
+            <h3>Platform / File Type</h3>
+            <canvas id="chart-filetype"></canvas>
+          </div>
+          <div class="chart-card" id="card-detection">
+            <h3>Detection Distribution</h3>
+            <canvas id="chart-detection"></canvas>
+          </div>
+          <div class="chart-card" id="card-yield" style="grid-column:span 2">
+            <h3>Rule Yield Matrix</h3>
+            <div id="yield-scroll" style="max-height:420px;overflow-y:auto"><canvas id="chart-yield"></canvas></div>
+          </div>
+          <div class="chart-card" id="card-scatter" style="grid-column:span 2">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <h3 style="margin:0">Detection × Time</h3>
+              <button class="scale-toggle" id="scatter-reset-zoom" style="display:none">RESET ZOOM</button>
+            </div>
+            <canvas id="chart-scatter"></canvas>
+            <div style="font-size:9px;color:var(--text-dim);margin-top:4px;letter-spacing:.04em">Click-drag to zoom · double-click to reset · click a point to filter pipeline</div>
+          </div>
+          <div class="chart-card" id="card-heatmap" style="grid-column:span 2">
+            <h3>Rule Activity Heatmap</h3>
+            <div style="overflow-x:auto"><canvas id="chart-heatmap"></canvas></div>
+          </div>
         </div>
-        <div class="chart-card" id="card-timeline">
-          <h3>Corpus Timeline</h3>
-          <canvas id="chart-timeline"></canvas>
-        </div>
-        <div class="chart-card" id="card-filetype">
-          <h3>Platform / File Type</h3>
-          <canvas id="chart-filetype"></canvas>
-        </div>
-        <div class="chart-card" id="card-detection">
-          <h3>Detection Distribution</h3>
-          <canvas id="chart-detection"></canvas>
-        </div>
-        <div class="chart-card" id="card-yield" style="grid-column:span 2">
-          <h3>Rule Yield Matrix</h3>
-          <div id="yield-scroll" style="max-height:420px;overflow-y:auto"><canvas id="chart-yield"></canvas></div>
-        </div>
-        <div class="chart-card" id="card-scatter" style="grid-column:span 2">
-          <h3>Detection × Time</h3>
-          <canvas id="chart-scatter"></canvas>
-        </div>
-        <div class="chart-card" id="card-heatmap" style="grid-column:span 2">
-          <h3>Rule Activity Heatmap</h3>
-          <div style="overflow-x:auto"><canvas id="chart-heatmap"></canvas></div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -850,14 +862,14 @@ HTML = r"""<!DOCTYPE html>
 <script>
 // ── Palette ──────────────────────────────────────────────────────────────────
 const NODE_COLOR = {
-  sample:             '#3D93CE',
-  yara_rule:          '#9F7BB8',
-  acquisition_filter: '#F5AD4E',
-  provider:           '#F28F52',
-  imphash:            '#43B5A3',
-  domain:             '#698999',
-  cert:               '#D266AA',
-  submitter:          '#A7C957',
+  sample:             '#4f8ef7',
+  yara_rule:          '#7c5aef',
+  acquisition_filter: '#4fef8e',
+  provider:           '#efb84f',
+  imphash:            '#ef8e4f',
+  domain:             '#ef5a9a',
+  cert:               '#c084fc',
+  submitter:          '#38bdf8',
 };
 
 // Derive a stable, visually-distinct family color from the family name.
@@ -876,13 +888,13 @@ function familyColorFromName(name) {
 }
 
 const EDGE_COLOR = {
-  matched_rule:       'rgba(159,123,184,.45)',
-  acquired_by:        'rgba(245,173,78,.30)',
-  references_provider:'rgba(242,143,82,.40)',
-  shares_imphash:     'rgba(67,181,163,.42)',
-  communicates_with:  'rgba(105,137,153,.35)',
-  shares_cert:        'rgba(210,102,170,.42)',
-  submitted_by:       'rgba(167,201,87,.40)',
+  matched_rule:       'rgba(124,90,239,.45)',
+  acquired_by:        'rgba(79,239,142,.3)',
+  references_provider:'rgba(239,184,79,.4)',
+  shares_imphash:     'rgba(239,142,79,.35)',
+  communicates_with:  'rgba(239,90,154,.3)',
+  shares_cert:        'rgba(192,132,252,.35)',
+  submitted_by:       'rgba(56,189,248,.35)',
 };
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -893,9 +905,6 @@ let activeTypes = new Set(['sample','yara_rule','acquisition_filter','provider',
 let familyColorMap = {};
 let highlightNodes = new Set();
 let highlightLinks = new Set();
-let hoverNodes = new Set();
-let hoverLinks = new Set();
-let suppressGraphHover = false;
 let selectedNode = null;
 let activeFamilyFilter = null;   // last-clicked (for report panel)
 let activeFamilyFilters = new Set(); // all active families
@@ -913,6 +922,8 @@ let umapRenderedPts = [];     // [{cx, cy, sha256, family, cluster_id}] for hit 
 let umapSelectedSha = null;   // sha256 of currently selected dot
 let isTableMode = false;
 let isAnalyticsMode = false;
+let isDemoMode = false;
+let demoState = null; // saved state before entering demo mode
 let analyticsCache = null;
 let analyticsCharts = {};
 let samplesCache = null;
@@ -935,10 +946,10 @@ fetch('/api/graph')
     renderFamilyPills();
   })
   .catch(e => {
-    document.getElementById('loading').innerHTML = `<div class="state-message"><strong style="color:var(--danger)">Graph unavailable</strong><br>${esc(e)}</div>`;
+    document.getElementById('loading').innerHTML = `<p style="color:var(--danger)">Failed to load graph: ${e}</p>`;
   });
 
-// Prefetch the compact timeline used by the analytics orb without delaying graph load.
+// Prefetch analytics in background for orb sparkline (non-blocking)
 fetch('/api/analytics').then(r => r.json()).then(data => {
   analyticsCache = data;
   renderOrbSparkline(data.corpus_timeline);
@@ -992,7 +1003,6 @@ function processGraph(raw) {
 
 // ── 2D graph ─────────────────────────────────────────────────────────────────
 function initGraph2d() {
-  suppressInitialGraphHover();
   const filtered = filteredData();
   graph2d = ForceGraph()(document.getElementById('graph-canvas'))
     .graphData(filtered)
@@ -1007,7 +1017,6 @@ function initGraph2d() {
     .linkDirectionalParticleWidth(2)
     .linkDirectionalParticleColor(l => l._color)
     .onNodeClick(onNodeClick)
-    .onNodeHover(onNodeHover)
     .onBackgroundClick(() => clearHighlight())
     .backgroundColor('#0d0f14')
     .width(document.getElementById('graph-wrap').clientWidth)
@@ -1018,7 +1027,6 @@ function initGraph2d() {
 
 // ── 3D graph ─────────────────────────────────────────────────────────────────
 function initGraph3d() {
-  suppressInitialGraphHover();
   const filtered = filteredData();
   const el = document.getElementById('graph-3d');
   el.style.display = 'block';
@@ -1030,63 +1038,116 @@ function initGraph3d() {
     .nodeColor(nodeColorFn)
     .nodeRelSize(4)
     .nodeVal(nodeValFn)
-    .linkColor(linkColor3dFn)
-    .linkWidth(linkWidth3dFn)
+    .linkColor(linkColorFn)
+    .linkWidth(linkWidthFn)
+    .linkOpacity(0.8)
     .linkDirectionalParticles(linkParticlesFn)
     .linkDirectionalParticleWidth(2)
     .linkDirectionalParticleColor(l => l._color)
     .onNodeClick(onNodeClick)
-    .onNodeHover(onNodeHover)
     .onBackgroundClick(() => clearHighlight())
     .backgroundColor('#0d0f14')
     .width(el.clientWidth)
-    .height(el.clientHeight);
+    .height(el.clientHeight)
+    .onEngineStop(() => compute3dFamilyCentroids());
   updateNodeCount(filtered);
+  setTimeout(() => compute3dFamilyCentroids(), 3000);
+  start3dLabelLoop();
+}
+
+let _3dLabelData = []; // [{family, cx, cy, cz, color}]
+let _3dLabelLoopRunning = false;
+
+function compute3dFamilyCentroids() {
+  _3dLabelData = [];
+  if (!graph3d || !is3d) return;
+  const data = graph3d.graphData();
+  if (!data || !data.nodes) return;
+
+  const familyNodes = {};
+  data.nodes.forEach(n => {
+    if (n.family && n.x != null) {
+      if (!familyNodes[n.family]) familyNodes[n.family] = [];
+      familyNodes[n.family].push(n);
+    }
+  });
+
+  for (const [family, nodes] of Object.entries(familyNodes)) {
+    if (nodes.length < 2) continue;
+    const cx = nodes.reduce((s, n) => s + (n.x||0), 0) / nodes.length;
+    const cz = nodes.reduce((s, n) => s + (n.z||0), 0) / nodes.length;
+    const maxY = Math.max(...nodes.map(n => n.y||0));
+    const color = familyColorMap[family] || '#8890a0';
+    _3dLabelData.push({ family, cx, cy: maxY + 25, cz, color });
+  }
+}
+
+function start3dLabelLoop() {
+  if (_3dLabelLoopRunning) return;
+  _3dLabelLoopRunning = true;
+  const container = document.getElementById('graph-3d-labels');
+  container.style.display = '';
+
+  function tick() {
+    if (!is3d || !graph3d) {
+      container.style.display = 'none';
+      container.innerHTML = '';
+      _3dLabelLoopRunning = false;
+      return;
+    }
+    // Rebuild label divs each frame (cheap — typically <30 families)
+    container.innerHTML = '';
+    const rect = container.getBoundingClientRect();
+    for (const d of _3dLabelData) {
+      const screen = graph3d.graph2ScreenCoords(d.cx, d.cy, d.cz);
+      if (!screen) continue;
+      const sx = screen.x, sy = screen.y;
+      // Skip if off-screen
+      if (sx < -50 || sx > rect.width + 50 || sy < -20 || sy > rect.height + 20) continue;
+      const lbl = document.createElement('div');
+      lbl.textContent = d.family;
+      lbl.style.cssText = `position:absolute;left:${sx}px;top:${sy}px;transform:translate(-50%,-50%);`
+        + `font:600 11px Inter,system-ui,sans-serif;color:${d.color};`
+        + `text-shadow:0 0 6px rgba(0,0,0,.8),0 0 2px rgba(0,0,0,.9);`
+        + `white-space:nowrap;letter-spacing:.06em;opacity:0.9;`;
+      container.appendChild(lbl);
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 
 // ── Node / link accessor fns ──────────────────────────────────────────────────
 function nodeColorFn(n) {
   if (highlightNodes.size && !highlightNodes.has(n.id)) return 'rgba(80,85,110,.4)';
-  if (hoverNodes.has(n.id)) return '#ffffff';
   return n._color;
 }
 function nodeValFn(n) {
-  const emphasis = hoverNodes.has(n.id) ? 1.28 : 1;
-  if (n.type === 'sample') return Math.max(1, Math.log2((n.detections || 1) + 1)) * emphasis;
-  if (n.type === 'yara_rule') return 3 * emphasis;
-  if (n.type === 'submitter') return Math.max(1, Math.log2((n.corpus_sample_count || 1) + 1)) * emphasis;
-  return 2 * emphasis;
+  if (n.type === 'sample') return Math.max(1, Math.log2((n.detections || 1) + 1));
+  if (n.type === 'yara_rule') return 3;
+  if (n.type === 'submitter') return Math.max(1, Math.log2((n.corpus_sample_count || 1) + 1));
+  return 2;
 }
 function linkColorFn(l) {
-  if (highlightLinks.size && !highlightLinks.has(l)) return 'rgba(255,255,255,.04)';
-  if (hoverLinks.has(l)) return 'rgba(255,255,255,.82)';
+  if (highlightLinks.size && !highlightLinks.has(l)) return is3d ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)';
+  if (is3d) return boostAlpha(l._color, 1.8);
   return l._color;
 }
-function linkWidthFn(l) { return highlightLinks.has(l) ? 2 : hoverLinks.has(l) ? 1.35 : 0.5; }
-const EDGE_COLOR_3D = {
-  matched_rule:        'rgba(190,160,220,.62)',
-  acquired_by:         'rgba(255,190,100,.52)',
-  references_provider: 'rgba(255,164,105,.60)',
-  shares_imphash:      'rgba(105,220,198,.58)',
-  communicates_with:   'rgba(130,170,190,.52)',
-  shares_cert:         'rgba(230,135,190,.56)',
-  submitted_by:        'rgba(190,225,125,.54)',
-};
-function linkColor3dFn(l) {
-  if (highlightLinks.size && !highlightLinks.has(l)) return 'rgba(255,255,255,.08)';
-  if (hoverLinks.has(l)) return 'rgba(255,255,255,.92)';
-  return EDGE_COLOR_3D[l.type] || 'rgba(220,230,245,.36)';
+function boostAlpha(rgba, factor) {
+  const m = rgba.match(/rgba?\(([^)]+)\)/);
+  if (!m) return rgba;
+  const parts = m[1].split(',').map(s => s.trim());
+  if (parts.length === 4) parts[3] = Math.min(1, parseFloat(parts[3]) * factor);
+  return `rgba(${parts.join(',')})`;
 }
-function linkWidth3dFn(l) { return highlightLinks.has(l) ? 2.4 : hoverLinks.has(l) ? 1.65 : 0.78; }
-function linkParticlesFn(l) { return highlightLinks.has(l) ? 4 : hoverLinks.has(l) ? 2 : 0; }
+function linkWidthFn(l) { return highlightLinks.has(l) ? (is3d ? 3 : 2) : (is3d ? 1.2 : 0.5); }
+function linkParticlesFn(l) { return highlightLinks.has(l) ? 4 : 0; }
 
 function refreshGraphAccessors() {
   const g = currentGraph();
   if (!g) return;
-  const colorFn = is3d ? linkColor3dFn : linkColorFn;
-  const widthFn = is3d ? linkWidth3dFn : linkWidthFn;
-  g.nodeColor(nodeColorFn).nodeVal(nodeValFn).linkColor(colorFn)
-   .linkWidth(widthFn).linkDirectionalParticles(linkParticlesFn);
+  g.nodeColor(nodeColorFn).linkColor(linkColorFn)
+   .linkWidth(linkWidthFn).linkDirectionalParticles(linkParticlesFn);
 }
 
 // ── Family hull overlay ───────────────────────────────────────────────────────
@@ -1386,39 +1447,6 @@ function renderUmap() {
 }
 
 // ── Highlight / selection ─────────────────────────────────────────────────────
-function suppressInitialGraphHover() {
-  suppressGraphHover = true;
-  hoverNodes.clear();
-  hoverLinks.clear();
-  window.setTimeout(() => {
-    suppressGraphHover = false;
-    hoverNodes.clear();
-    hoverLinks.clear();
-    refreshGraphAccessors();
-  }, 3500);
-}
-
-function onNodeHover(node) {
-  hoverNodes.clear();
-  hoverLinks.clear();
-  if (suppressGraphHover) node = null;
-  if (node) {
-    hoverNodes.add(node.id);
-    const g = currentGraph();
-    if (g) (g.graphData().links || []).forEach(l => {
-      const sid = typeof l.source === 'object' ? l.source.id : l.source;
-      const tid = typeof l.target === 'object' ? l.target.id : l.target;
-      if (sid === node.id || tid === node.id) {
-        hoverLinks.add(l);
-        hoverNodes.add(sid);
-        hoverNodes.add(tid);
-      }
-    });
-  }
-  document.getElementById('graph-wrap').style.cursor = node ? 'pointer' : '';
-  refreshGraphAccessors();
-}
-
 function onNodeClick(node) {
   selectedNode = node;
   highlightNodes.clear();
@@ -1440,13 +1468,12 @@ function onNodeClick(node) {
   document.getElementById('btn-focus').style.display = 'block';
   if (focusMode) { focusNodeId = node.id; applyFilter(); }
   renderDetail(node);
+  centerOnNode(node);
 }
 
 function clearHighlight() {
   highlightNodes.clear();
   highlightLinks.clear();
-  hoverNodes.clear();
-  hoverLinks.clear();
   selectedNode = null;
   refreshGraphAccessors();
   renderDetailPlaceholder();
@@ -1465,6 +1492,7 @@ function stableGraphData(g, data, { zoom = false } = {}) {
   requestAnimationFrame(() => {
     g.cooldownTicks(Infinity); // restore for Reheat btn
     if (zoom) g.zoomToFit(400, 40);
+    if (is3d) compute3dFamilyCentroids();
   });
 }
 
@@ -1549,22 +1577,13 @@ function renderFamilyPills() {
 
   const allPill = document.createElement('div');
   allPill.className = 'fpill fpill-all active';
-  allPill.setAttribute('role', 'button');
-  allPill.tabIndex = 0;
-  allPill.setAttribute('aria-pressed', 'true');
   allPill.textContent = 'ALL';
   allPill.addEventListener('click', () => setFamilyFilter(null));
   wrap.appendChild(allPill);
 
-  const sortedFamilies = Object.entries(familyColorMap).sort(([a], [b]) =>
-    a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true })
-  );
-  for (const [fam, color] of sortedFamilies) {
+  for (const [fam, color] of Object.entries(familyColorMap).sort(([a], [b]) => a.localeCompare(b))) {
     const p = document.createElement('div');
     p.className = 'fpill inactive';
-    p.setAttribute('role', 'button');
-    p.tabIndex = 0;
-    p.setAttribute('aria-pressed', 'false');
     p.textContent = fam;
     p.style.borderColor = color;
     p.style.color = color;
@@ -1611,12 +1630,10 @@ function setFamilyFilter(family, multi = false) {
     if (p.classList.contains('fpill-all')) {
       p.classList.toggle('active', !anyActive);
       p.classList.toggle('inactive', anyActive);
-      p.setAttribute('aria-pressed', String(!anyActive));
     } else {
       const active = activeFamilyFilters.has(p.dataset.family);
       p.classList.toggle('active', active);
       p.classList.toggle('inactive', !active);
-      p.setAttribute('aria-pressed', String(active));
     }
   });
 
@@ -1635,12 +1652,14 @@ function showFamilyReport(family) {
   panel.classList.add('open');
   reportPanelOpen = true;
   document.getElementById('graph-wrap').classList.add('report-open');
-  syncGraphOverlayClearance();
   fetch('/api/family/' + encodeURIComponent(family))
     .then(r => r.json())
     .then(d => {
       if (d.exists && d.markdown) {
-        body.innerHTML = marked.parse(d.markdown);
+        const tierBadge = d.tier && d.tier !== 'published'
+          ? `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:4px 8px;margin-bottom:10px;font-size:10px;color:var(--warn);letter-spacing:.05em">${d.tier.toUpperCase()} REPORT — not yet published</div>`
+          : '';
+        body.innerHTML = tierBadge + marked.parse(d.markdown);
       } else {
         body.innerHTML = '<div style="color:var(--text-dim);padding:20px 0">No report available for ' + esc(family) + '</div>';
       }
@@ -1654,7 +1673,6 @@ function hideFamilyReport() {
   document.getElementById('family-report-panel').classList.remove('open');
   reportPanelOpen = false;
   document.getElementById('graph-wrap').classList.remove('report-open');
-  syncGraphOverlayClearance();
 }
 
 function applyFamilyFilter() {
@@ -1796,33 +1814,19 @@ function _clearProviderItemActive() {
 }
 function _resetFamilyPills() {
   document.querySelectorAll('.fpill').forEach(p => {
-    const isAll = p.classList.contains('fpill-all');
-    p.classList.toggle('active', isAll);
-    p.classList.toggle('inactive', !isAll);
-    p.setAttribute('aria-pressed', String(isAll));
+    p.classList.toggle('active', p.classList.contains('fpill-all'));
+    p.classList.toggle('inactive', !p.classList.contains('fpill-all'));
   });
 }
 
 // ── Controls ──────────────────────────────────────────────────────────────────
-function toggleNodeType(el) {
+document.querySelectorAll('.tog').forEach(el => {
+  el.addEventListener('click', () => {
     const t = el.dataset.type;
     if (activeTypes.has(t)) { activeTypes.delete(t); el.classList.replace('active','inactive'); }
     else                    { activeTypes.add(t);    el.classList.replace('inactive','active'); }
-    el.setAttribute('aria-pressed', String(activeTypes.has(t)));
     applyFilter();
-}
-
-document.querySelectorAll('.tog').forEach(el => {
-  el.addEventListener('click', () => toggleNodeType(el));
-  el.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleNodeType(el); }
   });
-});
-
-document.addEventListener('keydown', e => {
-  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.fpill')) {
-    e.preventDefault(); e.target.click();
-  }
 });
 
 document.getElementById('submitter-max').addEventListener('input', e => {
@@ -1832,15 +1836,6 @@ document.getElementById('submitter-max').addEventListener('input', e => {
 });
 
 function clearActiveFilters() {
-  activeTypes = new Set(['sample','yara_rule','acquisition_filter','provider','imphash','domain','cert','submitter']);
-  document.querySelectorAll('.tog').forEach(el => {
-    el.classList.remove('inactive');
-    el.classList.add('active');
-    el.setAttribute('aria-pressed', 'true');
-  });
-  document.getElementById('search').value = '';
-  document.getElementById('submitter-max').value = '';
-  submitterMaxCount = Infinity;
   activeFamilyFilter = null;
   activeFamilyFilters.clear();
   activeRuleFilter = null;
@@ -1906,9 +1901,11 @@ document.getElementById('btn-umap').addEventListener('click', () => {
   const graph3dEl = document.getElementById('graph-3d');
   const umapCanvas = document.getElementById('umap-canvas');
   const umapControls = document.getElementById('umap-controls');
+  const legendEl = document.getElementById('graph-legend');
   if (isUmapMode) {
     graphCanvas.style.display = 'none';
     graph3dEl.style.display = 'none';
+    legendEl.style.display = 'none';
     umapCanvas.style.display = '';
     umapCanvas.style.height = 'calc(100% - 34px)';
     umapControls.classList.add('umap-visible');
@@ -1917,6 +1914,7 @@ document.getElementById('btn-umap').addEventListener('click', () => {
     umapCanvas.style.display = 'none';
     umapCanvas.style.height = '100%';
     umapControls.classList.remove('umap-visible');
+    legendEl.style.display = '';
     umapHighlightCluster = null;
     umapViewScale = 1; umapViewOffX = 0; umapViewOffY = 0;
     document.getElementById('umap-cluster-input').value = '';
@@ -2072,6 +2070,12 @@ document.getElementById('btn-focus').addEventListener('click', () => {
 document.getElementById('btn-table').addEventListener('click', () => {
   isTableMode = !isTableMode;
   document.getElementById('btn-table').classList.toggle('active', isTableMode);
+  // Deactivate analytics mode if active
+  if (isTableMode && isAnalyticsMode) {
+    isAnalyticsMode = false;
+    document.getElementById('btn-analytics').classList.remove('active');
+    document.getElementById('analytics-wrap').style.display = 'none';
+  }
   const canvasEl = document.getElementById('graph-canvas');
   const threeDEl = document.getElementById('graph-3d');
   const pillsEl  = document.getElementById('family-pills');
@@ -2079,17 +2083,12 @@ document.getElementById('btn-table').addEventListener('click', () => {
   const toolbarEl = document.getElementById('toolbar');
   const corpusEl = document.getElementById('corpus-wrap');
   if (isTableMode) {
-    if (isAnalyticsMode) {
-      isAnalyticsMode = false;
-      document.getElementById('btn-analytics').classList.remove('active');
-      document.getElementById('btn-analytics').setAttribute('aria-pressed', 'false');
-      document.getElementById('analytics-wrap').style.display = 'none';
-    }
     canvasEl.style.display = 'none';
     threeDEl.style.display = 'none';
     pillsEl.style.display  = 'none';
     legendEl.style.display = 'none';
     toolbarEl.style.display = 'none';
+    setDetailOpen(false);
     corpusEl.style.display = 'block';
     loadCorpusTable();
   } else {
@@ -2099,6 +2098,8 @@ document.getElementById('btn-table').addEventListener('click', () => {
     toolbarEl.style.display = '';
     if (is3d) threeDEl.style.display = 'block';
     else canvasEl.style.display = 'block';
+    setDetailOpen(!!selectedNode);
+    requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
   }
 });
 
@@ -2185,14 +2186,13 @@ function corpusRowClick(sha256) {
   isAnalyticsMode = false;
   document.getElementById('btn-table').classList.remove('active');
   document.getElementById('btn-analytics').classList.remove('active');
-  document.getElementById('btn-analytics').setAttribute('aria-pressed', 'false');
   document.getElementById('corpus-wrap').style.display = 'none';
   document.getElementById('analytics-wrap').style.display = 'none';
   document.getElementById('family-pills').style.display = '';
-  document.getElementById('graph-legend').style.display = '';
   document.getElementById('toolbar').style.display = '';
   if (is3d) document.getElementById('graph-3d').style.display = 'block';
   else document.getElementById('graph-canvas').style.display = 'block';
+  requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
   const node = gData.nodes.find(n => n.id === 'sample:' + sha256);
   if (node) onNodeClick(node);
 }
@@ -2201,7 +2201,6 @@ function corpusRowClick(sha256) {
 document.getElementById('btn-analytics').addEventListener('click', () => {
   isAnalyticsMode = !isAnalyticsMode;
   document.getElementById('btn-analytics').classList.toggle('active', isAnalyticsMode);
-  document.getElementById('btn-analytics').setAttribute('aria-pressed', String(isAnalyticsMode));
   const canvasEl = document.getElementById('graph-canvas');
   const threeDEl = document.getElementById('graph-3d');
   const pillsEl  = document.getElementById('family-pills');
@@ -2221,6 +2220,7 @@ document.getElementById('btn-analytics').addEventListener('click', () => {
     pillsEl.style.display  = 'none';
     legendEl.style.display = 'none';
     toolbarEl.style.display = 'none';
+    setDetailOpen(false);
     analyticsEl.style.display = 'block';
     loadAnalytics();
   } else {
@@ -2230,6 +2230,161 @@ document.getElementById('btn-analytics').addEventListener('click', () => {
     toolbarEl.style.display = '';
     if (is3d) threeDEl.style.display = 'block';
     else canvasEl.style.display = 'block';
+    setDetailOpen(!!selectedNode);
+    requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+  }
+});
+
+// ── Orbit mode ───────────────────────────────────────────────────────────
+function drawDemoOrb() {
+  const canvas = document.getElementById('demo-orb-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const S = 22;
+  canvas.width = S * dpr;
+  canvas.height = S * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, S, S);
+  const cx = S / 2, cy = S / 2, r = S * 0.32;
+  // Rotating ring segments
+  const t = Date.now() / 2000;
+  ctx.lineWidth = 1.4;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 3; i++) {
+    const a = t + (i * Math.PI * 2 / 3);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, a, a + 1.2);
+    ctx.strokeStyle = `hsla(${38 + i * 12}, 80%, ${60 + i * 5}%, ${isDemoMode ? 0.9 : 0.5})`;
+    ctx.stroke();
+  }
+  // Center dot
+  ctx.beginPath();
+  ctx.arc(cx, cy, 1.5, 0, Math.PI * 2);
+  ctx.fillStyle = isDemoMode ? '#f7b64f' : 'rgba(247,182,79,.5)';
+  ctx.fill();
+}
+setInterval(drawDemoOrb, 50);
+requestAnimationFrame(drawDemoOrb);
+
+let _demoOrbitRaf = null;
+function startDemoOrbit() {
+  if (_demoOrbitRaf) return;
+  const dist = graph3d ? graph3d.cameraPosition().z || 600 : 600;
+  let angle = 0;
+  function tick() {
+    if (!isDemoMode || !graph3d) { _demoOrbitRaf = null; return; }
+    angle += 0.0012;
+    const x = dist * Math.sin(angle);
+    const z = dist * Math.cos(angle);
+    const y = dist * 0.35 * Math.sin(angle * 0.25);
+    graph3d.cameraPosition({ x, y, z }, { x: 0, y: 0, z: 0 }, 0);
+    _demoOrbitRaf = requestAnimationFrame(tick);
+  }
+  _demoOrbitRaf = requestAnimationFrame(tick);
+}
+function stopDemoOrbit() {
+  if (_demoOrbitRaf) { cancelAnimationFrame(_demoOrbitRaf); _demoOrbitRaf = null; }
+}
+
+document.getElementById('btn-demo').addEventListener('click', () => {
+  if (!isDemoMode) {
+    // Save state to restore later
+    demoState = {
+      sidebarHidden: document.getElementById('layout').classList.contains('sidebar-hidden'),
+      was3d: is3d,
+      wasT3: t3OnlyMode,
+      wasSubstrate: substrateMode,
+    };
+    isDemoMode = true;
+    document.getElementById('btn-demo').classList.add('active');
+
+    // Hide sidebar
+    if (!demoState.sidebarHidden) {
+      document.getElementById('layout').classList.add('sidebar-hidden');
+    }
+    // Hide detail panel, pills, legend, toolbar
+    setDetailOpen(false);
+    document.getElementById('family-pills').style.display = 'none';
+    document.getElementById('graph-legend').style.display = 'none';
+    document.getElementById('toolbar').style.display = 'none';
+
+    // Enable T3 + Substrate if not already
+    if (!t3OnlyMode) {
+      t3OnlyMode = true;
+      document.getElementById('btn-t3').classList.add('active');
+    }
+    if (!substrateMode) {
+      substrateMode = true;
+      document.getElementById('btn-substrate').classList.add('active');
+    }
+    applyFilter();
+
+    // Switch to 3D
+    if (!is3d) {
+      is3d = true;
+      document.getElementById('btn-3d').textContent = '2D';
+      document.getElementById('btn-3d').classList.add('active');
+      if (!graph3d) initGraph3d();
+      else {
+        document.getElementById('graph-3d').style.display = 'block';
+        document.getElementById('graph-canvas').style.display = 'none';
+        compute3dFamilyCentroids();
+        start3dLabelLoop();
+      }
+    }
+
+    // Show logo watermark
+    document.getElementById('demo-logo').classList.add('visible');
+
+    // Start 3D orbit
+    startDemoOrbit();
+
+    // Resize after sidebar transition
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 260);
+
+  } else {
+    // Exit demo mode
+    isDemoMode = false;
+    document.getElementById('btn-demo').classList.remove('active');
+    document.getElementById('demo-logo').classList.remove('visible');
+
+    // Stop orbit
+    stopDemoOrbit();
+
+    // Restore sidebar
+    if (demoState && !demoState.sidebarHidden) {
+      document.getElementById('layout').classList.remove('sidebar-hidden');
+    }
+
+    // Restore filters
+    if (demoState && !demoState.wasT3) {
+      t3OnlyMode = false;
+      document.getElementById('btn-t3').classList.remove('active');
+    }
+    if (demoState && !demoState.wasSubstrate) {
+      substrateMode = false;
+      document.getElementById('btn-substrate').classList.remove('active');
+    }
+    applyFilter();
+
+    // Restore 2D if it wasn't 3D before
+    if (demoState && !demoState.was3d) {
+      is3d = false;
+      document.getElementById('btn-3d').textContent = '3D';
+      document.getElementById('btn-3d').classList.remove('active');
+      document.getElementById('graph-3d').style.display = 'none';
+      document.getElementById('graph-3d-labels').style.display = 'none';
+      document.getElementById('graph-canvas').style.display = 'block';
+    }
+
+    // Restore chrome
+    document.getElementById('family-pills').style.display = '';
+    document.getElementById('graph-legend').style.display = '';
+    document.getElementById('toolbar').style.display = '';
+
+    demoState = null;
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 260);
   }
 });
 
@@ -2241,7 +2396,7 @@ function loadAnalytics() {
     document.getElementById('analytics-wrap').querySelector('.analytics-grid').style.opacity = '1';
     renderAnalytics(data);
   }).catch(e => {
-    document.getElementById('analytics-wrap').innerHTML = `<div style="color:var(--danger);padding:20px">Failed: ${e}</div>`;
+    document.getElementById('analytics-wrap').querySelector('.analytics-grid').innerHTML = `<div style="color:var(--danger);padding:20px">Failed: ${e}</div>`;
   });
 }
 
@@ -2431,6 +2586,20 @@ function renderTimelineChart(d) {
       responsive: true,
       plugins: {
         legend: { position: 'top', labels: { boxWidth: 12, padding: 12 } },
+        zoom: {
+          zoom: {
+            drag: { enabled: true, backgroundColor: 'rgba(79,142,247,0.15)', borderColor: '#4f8ef7', borderWidth: 1 },
+            mode: 'x',
+            onZoom: () => { document.getElementById('timeline-reset-zoom').style.display = ''; },
+          },
+          pan: {
+            enabled: true,
+            mode: 'x',
+          },
+          limits: {
+            x: { minRange: 2 },
+          },
+        },
       },
       scales: {
         x: {
@@ -2440,6 +2609,15 @@ function renderTimelineChart(d) {
         y: { grid: { color: '#1a1e28' }, beginAtZero: true }
       }
     }
+  });
+
+  document.getElementById('timeline-reset-zoom').addEventListener('click', () => {
+    analyticsCharts.timeline.resetZoom();
+    document.getElementById('timeline-reset-zoom').style.display = 'none';
+  });
+  ctx.addEventListener('dblclick', () => {
+    analyticsCharts.timeline.resetZoom();
+    document.getElementById('timeline-reset-zoom').style.display = 'none';
   });
 }
 
@@ -2631,7 +2809,15 @@ function renderScatterPlot(d) {
               return `${date}  det: ${d.y}`;
             }
           }
-        }
+        },
+        zoom: {
+          zoom: {
+            drag: { enabled: true, backgroundColor: 'rgba(79,142,247,0.15)', borderColor: '#4f8ef7', borderWidth: 1, threshold: 8 },
+            mode: 'xy',
+            onZoom: () => { document.getElementById('scatter-reset-zoom').style.display = ''; },
+          },
+          pan: { enabled: false },
+        },
       },
       scales: {
         x: {
@@ -2656,6 +2842,15 @@ function renderScatterPlot(d) {
         }
       }
     }
+  });
+
+  document.getElementById('scatter-reset-zoom').addEventListener('click', () => {
+    analyticsCharts.scatter.resetZoom();
+    document.getElementById('scatter-reset-zoom').style.display = 'none';
+  });
+  ctx.addEventListener('dblclick', () => {
+    analyticsCharts.scatter.resetZoom();
+    document.getElementById('scatter-reset-zoom').style.display = 'none';
   });
 }
 
@@ -2759,10 +2954,11 @@ function renderOrbSparkline(timelineData) {
   if (!canvas || !timelineData?.months?.length) return;
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = 20 * dpr;
-  canvas.height = 20 * dpr;
+  const S = 22;
+  canvas.width = S * dpr;
+  canvas.height = S * dpr;
   ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, 20, 20);
+  ctx.clearRect(0, 0, S, S);
 
   const vals = timelineData.months.slice(-8).map(m => m.total);
   if (vals.length < 2) return;
@@ -2770,7 +2966,7 @@ function renderOrbSparkline(timelineData) {
   const min = Math.min(...vals, 0);
   const range = max - min || 1;
   const pad = 3;
-  const w = 20 - pad * 2, h = 20 - pad * 2;
+  const w = S - pad * 2, h = S - pad * 2;
 
   ctx.beginPath();
   ctx.strokeStyle = '#4f8ef7';
@@ -2877,7 +3073,6 @@ function renderPipelineTable(d) {
   render();
 }
 
-
 document.getElementById('btn-3d').addEventListener('click', () => {
   is3d = !is3d;
   const btn = document.getElementById('btn-3d');
@@ -2885,9 +3080,15 @@ document.getElementById('btn-3d').addEventListener('click', () => {
   btn.classList.toggle('active', is3d);
   if (is3d) {
     if (!graph3d) initGraph3d();
-    else { document.getElementById('graph-3d').style.display = 'block'; document.getElementById('graph-canvas').style.display = 'none'; }
+    else {
+      document.getElementById('graph-3d').style.display = 'block';
+      document.getElementById('graph-canvas').style.display = 'none';
+      compute3dFamilyCentroids();
+      start3dLabelLoop();
+    }
   } else {
     document.getElementById('graph-3d').style.display = 'none';
+    document.getElementById('graph-3d-labels').style.display = 'none';
     document.getElementById('graph-canvas').style.display = 'block';
   }
 });
@@ -2926,22 +3127,31 @@ function loadRulesList() {
   fetch('/api/rules').then(r => r.json()).then(data => {
     const rules = data.rules || [];
     const tierOrder = { T1: 0, T2: 1, T3: 2 };
-    rules.sort((a,b) => (tierOrder[a.tier] ?? 9) - (tierOrder[b.tier] ?? 9));
-    div.innerHTML = rules.map(r => {
-      const count = r.hit_count || 0;
-      const badgeCls = count === 0 ? 'hit-badge zero' : r.tier === 'T3' ? 'hit-badge t3' : 'hit-badge';
-      const shortName = r.name.replace(/^T[123]-/, '');
-      const seedDot = r.seed_status === 'pass'
-        ? `<span class="enabled-dot on" title="${r.seed_count} seed(s): all pass"></span>`
-        : r.seed_status === 'fail'
-        ? `<span class="enabled-dot" style="background:var(--danger)" title="Seeds: fail"></span>`
-        : '';
-      return `<div class="rule-item" data-name="${esc(r.name)}" title="${esc(r.description)}">
-        <span class="pill pill-${r.tier.toLowerCase()}">${esc(r.tier)}</span>
-        <span class="rname">${esc(shortName)}</span>${seedDot}
-        <span class="${badgeCls}">${count}</span>
-      </div>`;
-    }).join('');
+    rules.sort((a,b) => (tierOrder[a.tier]||9) - (tierOrder[b.tier]||9));
+    const grouped = { T1: [], T2: [], T3: [] };
+    rules.forEach(r => { (grouped[r.tier] = grouped[r.tier] || []).push(r); });
+    let html = '';
+    for (const tier of ['T1', 'T2', 'T3']) {
+      const items = grouped[tier] || [];
+      if (!items.length) continue;
+      html += `<div class="rule-tier-header">${tier} <span style="color:var(--text-dim)">(${items.length})</span></div>`;
+      html += items.map(r => {
+        const count = r.hit_count || 0;
+        const badgeCls = count === 0 ? 'hit-badge zero' : r.tier === 'T3' ? 'hit-badge t3' : 'hit-badge';
+        const shortName = r.name.replace(/^T[123]-/, '');
+        const seedDot = r.seed_status === 'pass'
+          ? `<span class="enabled-dot on" title="${r.seed_count} seed(s): all pass"></span>`
+          : r.seed_status === 'fail'
+          ? `<span class="enabled-dot" style="background:var(--danger)" title="Seeds: fail"></span>`
+          : '';
+        return `<div class="rule-item" data-name="${esc(r.name)}" title="${esc(r.description)}">
+          <span class="pill pill-${r.tier.toLowerCase()}">${esc(r.tier)}</span>
+          <span class="rname">${esc(shortName)}</span>${seedDot}
+          <span class="${badgeCls}">${count}</span>
+        </div>`;
+      }).join('');
+    }
+    div.innerHTML = html;
     div.querySelectorAll('.rule-item').forEach(el => {
       el.addEventListener('click', () => setRuleFilter(el.dataset.name));
       el.addEventListener('dblclick', e => {
@@ -3149,9 +3359,33 @@ if (graphOverlayObserver) {
 syncGraphOverlayClearance();
 
 // ── Detail panel ──────────────────────────────────────────────────────────────
+function setDetailOpen(open) {
+  document.getElementById('detail-panel').classList.toggle('open', open);
+  document.getElementById('graph-wrap').classList.toggle('detail-open', open);
+}
+
+function centerOnNode(node) {
+  const panelW = 340;
+  if (is3d) {
+    if (!graph3d) return;
+    const cam = graph3d.cameraPosition();
+    const dist = Math.sqrt(cam.x**2 + cam.y**2 + cam.z**2) || 600;
+    graph3d.cameraPosition(
+      { x: node.x, y: node.y, z: node.z + dist },
+      node,
+      800
+    );
+  } else {
+    if (!graph2d) return;
+    const zoom = graph2d.zoom();
+    const offsetGU = (panelW / 2) / zoom;
+    graph2d.centerAt(node.x - offsetGU, node.y, 600);
+  }
+}
+
 function renderDetailPlaceholder() {
-  document.getElementById('detail').innerHTML =
-    '<div class="state-message"><strong>No node selected</strong><br>Click a graph node to inspect its relationships and attributes.</div>';
+  document.getElementById('detail').innerHTML = '';
+  setDetailOpen(false);
 }
 
 function renderDetail(node) {
@@ -3207,6 +3441,27 @@ function renderSampleDetail(d) {
     html += `</div>`;
   }
 
+  if (d.telemetry) {
+    const t = d.telemetry;
+    html += `<div class="detail-section"><h3>Google Insights</h3><div class="kv-grid">`;
+    if (t.organizations_count != null) html += `<span class="kv-k">Orgs impacted</span><span class="kv-v">${t.organizations_count}</span>`;
+    if (t.first_seen_itw) html += `<span class="kv-k">First seen ITW</span><span class="kv-v">${esc(t.first_seen_itw)}</span>`;
+    if (t.last_seen_itw) html += `<span class="kv-k">Last seen ITW</span><span class="kv-v">${esc(t.last_seen_itw)}</span>`;
+    if (t.prevalence) html += `<span class="kv-k">Prevalence</span><span class="kv-v">${esc(t.prevalence)}</span>`;
+    html += `</div>`;
+    if (t.industries && Object.keys(t.industries).length) {
+      html += `<div style="margin-top:6px"><span class="kv-k" style="display:block;margin-bottom:3px">Industries</span>`;
+      Object.entries(t.industries).slice(0,8).forEach(([k,v]) => { html += `<span class="tag" style="border-color:var(--accent)">${esc(k)}: ${v}</span>`; });
+      html += `</div>`;
+    }
+    if (t.regions && Object.keys(t.regions).length) {
+      html += `<div style="margin-top:6px"><span class="kv-k" style="display:block;margin-bottom:3px">Regions</span>`;
+      Object.entries(t.regions).slice(0,8).forEach(([k,v]) => { html += `<span class="tag" style="border-color:var(--success)">${esc(k)}: ${v}</span>`; });
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+
   if (d.embedded_urls && d.embedded_urls.length) {
     html += `<div class="detail-section"><h3>Embedded URLs (${d.embedded_urls.length})</h3><div class="url-list">`;
     d.embedded_urls.slice(0,20).forEach(u => { html += `<div>${esc(u.id || u.url || JSON.stringify(u))}</div>`; });
@@ -3234,6 +3489,7 @@ function renderSampleDetail(d) {
   }
 
   document.getElementById('detail').innerHTML = html;
+  setDetailOpen(true);
 }
 
 function renderNodeDetail(node) {
@@ -3285,6 +3541,7 @@ function renderNodeDetail(node) {
 
   html += `</div>`;
   document.getElementById('detail').innerHTML = html;
+  setDetailOpen(true);
 }
 
 function esc(s) {
@@ -3292,9 +3549,16 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ── Detail panel close ────────────────────────────────────────────────────────
+document.getElementById('detail-close').addEventListener('click', () => clearHighlight());
+
 // ── Family report panel controls ─────────────────────────────────────────────
 document.getElementById('family-report-close').addEventListener('click', () => setFamilyFilter(null));
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && reportPanelOpen) setFamilyFilter(null); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && isDemoMode) document.getElementById('btn-demo').click();
+  else if (e.key === 'Escape' && reportPanelOpen) setFamilyFilter(null);
+  else if (e.key === 'Escape' && selectedNode) clearHighlight();
+});
 
 // ── Resize ────────────────────────────────────────────────────────────────────
 // Save and restore viewport so the D3 zoom transform (stored in absolute pixels)

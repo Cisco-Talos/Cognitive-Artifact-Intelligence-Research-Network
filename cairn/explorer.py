@@ -40,9 +40,7 @@ from cairn.graph import build_graph
 _CORPUS_PATH: Path | None = None
 _RULES_PATH    = PROJECT_ROOT / "config" / "yara_rules.yar"
 _FILTERS_PATH  = PROJECT_ROOT / "config" / "acquisition_filters.yaml"
-# Serve the compact mark through the existing endpoint.  Keep the other logo
-# assets untouched as source/alternate artwork.
-_LOGO_PATH     = PROJECT_ROOT / "config" / "logo_rock.png"
+_LOGO_PATH     = PROJECT_ROOT / "config" / "logo.svg"
 _FAVICON_PATH  = PROJECT_ROOT / "config" / "favicon.png"
 _FAMILIES_DIR  = PROJECT_ROOT / "docs" / "families"
 
@@ -513,7 +511,7 @@ class _Handler(BaseHTTPRequestHandler):
 
         if path == "/":
             self._serve_html()
-        elif path == "/logo.png":
+        elif path == "/logo.svg":
             self._serve_logo()
         elif path == "/favicon.png":
             self._serve_favicon()
@@ -559,11 +557,12 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _serve_html(self) -> None:
         from cairn.explorer_ui import HTML
-        # The logo is commonly updated while Explorer is running.  Give the
-        # browser a new URL whenever the file changes so an existing cached
-        # image cannot mask the replacement.
-        logo_version = _LOGO_PATH.stat().st_mtime_ns if _LOGO_PATH.exists() else 0
-        body = HTML.replace('src="/logo.png"', f'src="/logo.png?v={logo_version}"').encode()
+        import hashlib
+        # Cache-bust the logo URL so switching between project instances shows the right logo
+        logo_hash = ""
+        if _LOGO_PATH.exists():
+            logo_hash = hashlib.md5(_LOGO_PATH.read_bytes()).hexdigest()[:8]
+        body = HTML.replace('/logo.svg"', f'/logo.svg?v={logo_hash}"').encode()
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -597,7 +596,7 @@ class _Handler(BaseHTTPRequestHandler):
             return
         body = _LOGO_PATH.read_bytes()
         self.send_response(200)
-        self.send_header("Content-Type", "image/png")
+        self.send_header("Content-Type", "image/svg+xml")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-cache")
         self.end_headers()
