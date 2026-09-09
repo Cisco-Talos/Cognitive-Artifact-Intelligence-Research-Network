@@ -77,7 +77,7 @@ flowchart LR
         REPORT(["📄 Findings report\nCSV + markdown"])
         GRAPH(["🕸️ Relationship graph\nJSON"])
         FAMILY(["📋 Family report\ndocs/FAMILY.md"])
-        SOA(["🗂️ Archetype taxonomy\ndocs/SOA.md"])
+        SOA(["🗂️ Archetype taxonomy\nREADME.md"])
     end
 
     %% ── Secondary input ──────────────────────────────────────────
@@ -208,6 +208,7 @@ cairn pull --filter <slug> --limit 25                 # pull one filter
 cairn pull --filter <slug> --limit 25 --deep          # include sandbox behaviours
 cairn pull --filter <slug> --date-clause "fs:7d+"     # restrict by first-seen date
 cairn pull-enabled --limit 50                         # pull all enabled filters
+cairn pull-status                                      # last run date per filter
 ```
 
 ### Corpus and Refresh
@@ -300,37 +301,37 @@ Twenty-seven named channels in `config/acquisition_filters.yaml` (three disabled
 | Slug | Category | File Types | Min Det. | Notes |
 |---|---|---|---|---|
 | `broad-discovery` | discovery | peexe, pedll | 5 | High-recall sweep for any AI/LLM reference |
-| `prompt-residue` | prompt | peexe, pedll | 5 | Role markers, jailbreak strings, task-instruction residue |
-| `agentic-tooling` | agentic | peexe, pedll, ps1, py, js | 5 | Named agent framework references and orchestration terms |
+| `prompt-residue` | prompt | peexe, pedll | 5 | Role markers and task-instruction residue |
+| `agentic-tooling` | agentic | peexe, pedll, ps1, tag:python, js | 5 | Named agent framework references and orchestration terms |
 | `local-llm-runtime` | runtime | peexe, pedll | 5 | Local or open-weight inference runtime references |
-| `provider-api-integration` | api | peexe, pedll | 5 | Hosted LLM provider endpoints and SDK call signatures |
-| `ai-analysis-evasion` | evasion | peexe, pedll | 5 | Strings designed to suppress AI-assisted analysis |
+| `provider-api-integration` | api | peexe, pedll, vba | 5 | Hosted LLM provider endpoints and SDK call signatures |
+| `ai-analysis-evasion` | evasion | peexe, pedll, vba | 5 | Strings designed to suppress AI-assisted analysis |
 | `offensive-co-occurrence` | offensive | peexe, pedll | 5 | AI terminology co-occurring with offensive tradecraft |
-| `powershell-ai-scripts` | script | ps1 | 3 | PowerShell with LLM API calls or prompt strings |
+| `powershell-ai-scripts` | script | ps1, vba | 3 | PowerShell and VBA with LLM API calls or prompt strings |
 | `python-ai-scripts` | script | tag:python | 3 | Python scripts with LLM API imports or embedded prompts |
-| `codegen-residue` | prompt | peexe, pedll, ps1 | 3 | LLM-generated code assistant phrases as literal strings |
+| `codegen-residue` | prompt | peexe, pedll, ps1, vba | 3 | LLM-generated code assistant phrases as literal strings |
 | `chinese-llm-apis` | api | peexe, pedll, ps1, py | 3 | Chinese LLM provider endpoints: BigModel/ChatGLM, Moonshot/Kimi, Qwen/Dashscope, Baidu ERNIE |
 | `llmgate-hunt` | hunt | peexe | 3 | Targeted LLMGATE Gen1/2 variant hunt (TechSoft/AceSoft/sysupdsvc) |
 | `llmgate-gen3-hunt` | hunt | peexe | 3 | LLMGATE Gen3 variants with rotated cover names (sysmntsvc, wupdmgr) |
 | `promptlock-hunt` | hunt | peexe, pedll, lua | 3 | Targeted PROMPTLOCK ransomware variant hunt |
 | `honestcue-hunt` | hunt | peexe, pedll | 3 | HONESTCUE .NET LLM probe loader |
-| `airefusal-hunt-a` | hunt | peexe | 3 | HOLLOWCLAD — copyright-framed LLM-refusal + prompt-injection strings |
-| `airefusal-hunt-b` | hunt | peexe | 3 | MANTLEMAZE — simulated multi-turn LLM refusal dialogue in PE string table |
-| `local-model-hunt` | hunt | peexe | 2 | Local model runtime binaries (GGUF, Ollama, llama.cpp) |
-| `local-inference-deploy-hunt` | hunt | peexe, pedll, ps1, py, elf | 2 | Deployment-level signals: ollama serve/pull, llama-server, localhost:11434, HF model downloads |
+| `airefusal-hunt-a` | hunt | peexe, pedll | 3 | HOLLOWCLAD — copyright-framed LLM-refusal + prompt-injection strings |
+| `airefusal-hunt-b` | hunt | peexe, pedll | 3 | MANTLEMAZE — simulated multi-turn LLM refusal dialogue in PE string table |
+| `local-model-hunt` | hunt | tag:python | 2 | Python malware interacting with locally-hosted inference servers |
+| `local-inference-deploy-hunt` | hunt | peexe, pedll, ps1, elf, tag:python | 2 | Deployment-level signals: ollama serve/pull, llama-server, localhost:11434, HF model downloads |
 | `vozdyhan-hunt` | hunt | peexe | 2 | Targeted WebRAT variant hunt |
 | `convagent-hunt` | hunt | peexe | 2 | **Retracted** — disabled; all query arms match benign software |
-| `plotsafe-hunt` | hunt | peexe, pedll | 2 | Targeted PLOTSAFE GoKrypt ACRStealer (plotsafe.icu C2) |
-| `jobradar-hunt` | hunt | peexe | 2 | Targeted Wails Go AI lure + Midie credential stealer |
+| `plotsafe-hunt` | hunt | pedll | 2 | Targeted PLOTSAFE GoKrypt ACRStealer (plotsafe.icu C2) |
+| `jobradar-hunt` | hunt | peexe | 2 | Targeted JOBRADAR Wails Go desktop app hunt |
 | `vibearound-hunt` | hunt | peexe | 2 | **Retracted** — disabled; VibeAround is benign software |
-| `jadepuffer-hunt` | hunt | elf, sh | 1 | Langflow-themed ransomware (CVE-2025-3248); C2 45.131.66.106 |
-| `cagdasgpt-hunt` | hunt | peexe, py | 1 | Turkish PyInstaller AI tool with date-gate sandbox evasion |
+| `jadepuffer-hunt` | hunt | shell, elf, ps1, tag:linux | 1 | Langflow-themed ransomware (CVE-2025-3248); C2 45.131.66.106 |
+| `cagdasgpt-hunt` | hunt | peexe | 1 | Turkish PyInstaller AI tool with date-gate sandbox evasion |
 
 ---
 
 ## AI-Malware Archetype Taxonomy
 
-Each archetype represents a distinct way an adversary uses AI in the attack chain. A single family can instantiate multiple archetypes. Full taxonomy and progression notes are in `docs/SOA.md`.
+Each archetype represents a distinct way an adversary uses AI in the attack chain. A single family can instantiate multiple archetypes.
 
 | ID | Archetype | Description | Published Families |
 |---|---|---|---|
@@ -347,28 +348,20 @@ Each archetype represents a distinct way an adversary uses AI in the attack chai
 | A10 | **AI-Domain Decoy Traffic** | Malware issues unauthenticated requests to AI provider endpoints as decoy traffic to misdirect sandbox analysis. | — |
 | A11 | **Agentic AI Abuse Tool** | The LLM-driven autonomous agent loop is the product's core capability, and the product exists for an abusive purpose. | — |
 
-> LAMEHUG spans A6 and A7 by variant — the packed variant collects credentials from the victim host (A6); the bare script only spends a pre-stolen token pool (A7). See the family report for details.
-
-> QUIETVAULT spans A6 and A8 — it is both a credential harvester and a malicious npm package.
-
----
-
-## Published Family Reports
-
-Individual technical reports are in `docs/families/`. Additional families are confirmed but withheld pending publication.
+Individual technical reports for published families are in `docs/families/`. Additional families are confirmed but withheld pending publication. LAMEHUG spans A6 and A7 by variant; QUIETVAULT spans A6 and A8.
 
 | Family | Archetype | Platform | Report |
 |---|---|---|---|
-| PROMPTLOCK | A1 | Go / Lua | [docs/families/PROMPTLOCK.md](docs/families/PROMPTLOCK.md) |
-| HONESTCUE | A1 | .NET | [docs/families/HONESTCUE.md](docs/families/HONESTCUE.md) |
-| PROMPTFLUX | A1 | VBScript | [docs/families/PROMPTFLUX.md](docs/families/PROMPTFLUX.md) |
-| FRUITSHELL | A3 | PowerShell | [docs/families/FRUITSHELL.md](docs/families/FRUITSHELL.md) |
-| GUARDBREAKER | A3 | VBScript | [docs/families/GUARDBREAKER.md](docs/families/GUARDBREAKER.md) |
-| CLOSEDQUORUM | A4 | Go | [docs/families/CLOSEDQUORUM.md](docs/families/CLOSEDQUORUM.md) |
-| TEAMPCP | A5 | Python / npm | [docs/families/TEAMPCP.md](docs/families/TEAMPCP.md) |
-| LAMEHUG | A6 / A7 | Python | [docs/families/LAMEHUG.md](docs/families/LAMEHUG.md) |
-| PROMPTSTEAL | A6 | Python (PyInstaller) | [docs/families/PROMPTSTEAL.md](docs/families/PROMPTSTEAL.md) |
-| QUIETVAULT | A6 + A8 | JavaScript / npm | [docs/families/QUIETVAULT.md](docs/families/QUIETVAULT.md) |
+| PROMPTLOCK | A1 | Go / Lua | [PROMPTLOCK.md](docs/families/PROMPTLOCK.md) |
+| HONESTCUE | A1 | .NET | [HONESTCUE.md](docs/families/HONESTCUE.md) |
+| PROMPTFLUX | A1 | VBScript | [PROMPTFLUX.md](docs/families/PROMPTFLUX.md) |
+| FRUITSHELL | A3 | PowerShell | [FRUITSHELL.md](docs/families/FRUITSHELL.md) |
+| GUARDBREAKER | A3 | VBScript | [GUARDBREAKER.md](docs/families/GUARDBREAKER.md) |
+| CLOSEDQUORUM | A4 | Go | [CLOSEDQUORUM.md](docs/families/CLOSEDQUORUM.md) |
+| TEAMPCP | A5 | Python / npm | [TEAMPCP.md](docs/families/TEAMPCP.md) |
+| LAMEHUG | A6 / A7 | Python | [LAMEHUG.md](docs/families/LAMEHUG.md) |
+| PROMPTSTEAL | A6 | Python (PyInstaller) | [PROMPTSTEAL.md](docs/families/PROMPTSTEAL.md) |
+| QUIETVAULT | A6 + A8 | JavaScript / npm | [QUIETVAULT.md](docs/families/QUIETVAULT.md) |
 
 
 ---
@@ -401,21 +394,19 @@ CAIRN/
 │   └── reporting.py            CSV and markdown report export
 │
 ├── docs/
-│   ├── SOA.md                  AI-malware archetype taxonomy and YARA ontology reference
 │   ├── SOP.md                  Full CLI reference and research loop procedures
-│   ├── report.md               Pilot research report (living document)
-│   ├── families/
-│   │   ├── PROMPTLOCK.md       Family report — Go/Lua LLM-directed ransomware (A1)
-│   │   ├── HONESTCUE.md        Family report — .NET LLM probe loader (A1)
-│   │   ├── FRUITSHELL.md       Family report — PowerShell reverse shell with AI-evasion (A3)
-│   │   ├── GUARDBREAKER.md     Family report — UAC-0099 VBS downloader with anti-AI guardrail trigger (A3)
-│   │   ├── CLOSEDQUORUM.md     Family report — Go autonomous AI agent (A4)
-│   │   ├── TEAMPCP.md          Family report — backdoored LiteLLM proxy (A5)
-│   │   ├── LAMEHUG.md          Family report — HuggingFace token abuser (A6)
-│   │   ├── PROMPTSTEAL.md      Family report — PyInstaller AI credential stealer (A6)
-│   │   ├── QUIETVAULT.md       Family report — npm telemetry spy / malicious SDK (A6+A8)
-│   │   ├── PROMPTFLUX.md       Family report — VBScript dropper (archetype pending)
-│   └── corpus-schema.md        SQLite schema documentation
+│   ├── corpus-schema.md        SQLite schema documentation
+│   └── families/
+│       ├── PROMPTLOCK.md       Family report — Go/Lua LLM-directed ransomware (A1)
+│       ├── HONESTCUE.md        Family report — .NET LLM probe loader (A1)
+│       ├── PROMPTFLUX.md       Family report — VBScript LLM-directed dropper (A1)
+│       ├── FRUITSHELL.md       Family report — PowerShell reverse shell with AI-evasion (A3)
+│       ├── GUARDBREAKER.md     Family report — UAC-0099 VBS downloader with anti-AI guardrail trigger (A3)
+│       ├── CLOSEDQUORUM.md     Family report — Go autonomous AI agent (A4)
+│       ├── TEAMPCP.md          Family report — backdoored LiteLLM proxy (A5)
+│       ├── LAMEHUG.md          Family report — HuggingFace token abuser (A6/A7)
+│       ├── PROMPTSTEAL.md      Family report — PyInstaller AI credential stealer (A6)
+│       └── QUIETVAULT.md       Family report — npm telemetry spy / malicious SDK (A6+A8)
 │
 ├── data/                       SQLite corpus (gitignored)
 ├── outputs/                    Graph and report exports (gitignored)
@@ -445,6 +436,8 @@ CAIRN is designed to operate without touching malware directly:
 - No scheduled automatic pulls
 - Stores only: VT metadata, string/content snippets, hashes, relationship objects, and analyst notes
 
+While CAIRN's acquisition and rule-matching pipeline is metadata-only, all family attributions and archetype assignments published in this repo are first confirmed through hands-on reverse engineering by Cisco Talos. No family report is published on metadata evidence alone.
+
 ---
 
 ## Contributing
@@ -454,7 +447,7 @@ Contributions welcome. Before opening a pull request:
 1. Run `cairn validate-rules` and `cairn validate-seeds` — both must pass
 2. New T3 rules require at least one confirmed seed hash
 3. Family reports follow the template in `.claude/skills/new-family-report/`
-4. Update `docs/SOA.md` archetype table when adding a new family
+4. Update the archetype taxonomy table in this README when adding a new family
 
 ---
 
