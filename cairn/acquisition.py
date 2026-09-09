@@ -28,7 +28,7 @@ from cairn.config import load_acquisition_filters, load_exclusions, load_rules_t
 from cairn.corpus import Corpus
 from cairn.models import AcquisitionFilter, AcquisitionRunSummary
 from cairn.rules import parse_yara_rules, run_yara_rules
-from cairn.vt import VirusTotalClient, VirusTotalError, detect_seed_type, provider_references, row_to_sample, scan_text_from_vt_row
+from cairn.vt import VirusTotalClient, VirusTotalError, detect_seed_type, provider_references_from_row, row_to_sample, scan_text_from_vt_row
 
 
 def get_filter(slug: str, *, config_path: Path | None = None) -> AcquisitionFilter:
@@ -124,7 +124,7 @@ async def pull_filter(
                     source_row.raw["snippets"] = fragments
         scan_text = scan_text_from_vt_row(source_row)
         matches = run_yara_rules(scan_text, rules)
-        refs = provider_references(scan_text)
+        refs = provider_references_from_row(source_row)
         if refs:
             source_row.raw.setdefault("cairn", {})["provider_references"] = refs
         # Rebuild sample from source_row so upsert_sample serializes the correct
@@ -239,7 +239,7 @@ async def refresh_samples(
             vt_row.raw.setdefault("cairn", {})["submitter_keys"] = sub_keys
             scan_text = scan_text_from_vt_row(vt_row)
             matches = run_yara_rules(scan_text, rules)
-            refs = provider_references(scan_text)
+            refs = provider_references_from_row(vt_row)
             if refs:
                 vt_row.raw.setdefault("cairn", {})["provider_references"] = refs
             corpus.update_sample_raw_and_matches(sha256, vt_row.raw, matches, sample=sample)
@@ -371,7 +371,7 @@ async def pivot_from_seed(
                     source_row = row
             scan_text = scan_text_from_vt_row(source_row)
             matches = run_yara_rules(scan_text, rules)
-            refs = provider_references(scan_text)
+            refs = provider_references_from_row(source_row)
             if refs:
                 source_row.raw.setdefault("cairn", {})["provider_references"] = refs
             is_new = corpus.record_pivot_sample(

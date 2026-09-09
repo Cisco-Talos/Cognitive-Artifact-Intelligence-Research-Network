@@ -28,6 +28,10 @@ from typing import Any
 from cairn.models import RuleMatch, RuleStringHit, YaraRule, YaraString
 
 RULE_HEADER_RE = re.compile(r"\brule\s+([^\s{]+)\s*\{", re.IGNORECASE)
+# Comments are legal YARA anywhere, including inside condition:. Left in place they
+# survive into _condition_matches, fail its safety fullmatch, and make the rule
+# silently evaluate False — a dead rule that validate-rules still calls valid.
+COMMENT_RE = re.compile(r"/\*.*?\*/|//[^\n]*", re.DOTALL)
 STRING_RE = re.compile(r"^\s*(\$\w+)\s*=\s*\"((?:\\.|[^\"])*)\"(.*)$")
 META_RE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+?)\s*$")
 
@@ -39,7 +43,7 @@ def parse_yara_rules(rules_text: str) -> tuple[list[YaraRule], list[str]]:
         try:
             meta_body = _section(body, "meta:", "strings:")
             strings_body = _section(body, "strings:", "condition:")
-            condition = _section(body, "condition:", None).strip()
+            condition = _strip_comments(_section(body, "condition:", None)).strip()
             strings = _parse_strings(strings_body)
             if not strings:
                 errors.append(f"{name}: no strings parsed")
@@ -149,6 +153,16 @@ def _parse_strings(strings_body: str) -> list[YaraString]:
             )
         )
     return strings
+
+
+def _strip_comments(text: str) -> str:
+    """Remove YARA // and /* */ comments.
+
+    Only applied to the condition body — string definitions are parsed line-wise by
+    STRING_RE, which already ignores comment lines, and a `//` inside a quoted
+    pattern (e.g. "https://api.openai.com") must survive untouched.
+    """
+    return COMMENT_RE.sub(" ", text)
 
 
 def _decode_yara_string(value: str) -> str:

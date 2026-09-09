@@ -37,6 +37,15 @@ VT_SNIPPET_URL = "https://www.virustotal.com/api/v3/intelligence/search/snippets
 VT_FILE_LOOKUP = "https://www.virustotal.com/api/v3/files/{sha256}"
 VT_URL_LOOKUP = "https://www.virustotal.com/api/v3/urls/{url_id}"
 VT_BEHAVIOURS_URL = "https://www.virustotal.com/api/v3/files/{sha256}/behaviours"
+
+# Network relationships requested on every file-returning lookup. These are the only
+# infrastructure anchors reachable from CAIRN's synthesized scan text (PE resource
+# hashes are not — see _pe_info_summary), so a C2 literal is only expressible as a
+# rule if these are stored. Requested on the intelligence-search path as well as the
+# per-file path: VT honours the parameter on both and it costs no extra API call.
+# Omitting it here is what left 94.4% of the corpus without relationship data,
+# silently capping every infrastructure-keyed rule.
+VT_FILE_RELATIONSHIPS = "contacted_urls,contacted_domains,contacted_ips,embedded_urls"
 CONTENT_MODIFIER_RE = re.compile(r'content:("[^"]+"|\S+)', re.IGNORECASE)
 
 _HEX64_RE = re.compile(r'^[0-9a-f]{64}$', re.IGNORECASE)
@@ -75,7 +84,11 @@ class VirusTotalClient:
     async def search_intelligence(self, query: str, *, limit: int = 100) -> list[VTRow]:
         payload = await self._get_json(
             VT_INTELLIGENCE_SEARCH,
-            params={"query": query, "limit": max(1, min(100, limit))},
+            params={
+                "query": query,
+                "limit": max(1, min(100, limit)),
+                "relationships": VT_FILE_RELATIONSHIPS,
+            },
         )
         rows = payload.get("data") or []
         return [_vt_row(row) for row in rows if isinstance(row, dict)]
@@ -112,7 +125,7 @@ class VirusTotalClient:
     async def lookup_file(self, sha256: str) -> VTRow:
         payload = await self._get_json(
             VT_FILE_LOOKUP.format(sha256=sha256),
-            params={"relationships": "contacted_urls,contacted_domains,contacted_ips,embedded_urls"},
+            params={"relationships": VT_FILE_RELATIONSHIPS},
         )
         data = payload.get("data") or {}
         if not isinstance(data, dict):
@@ -262,7 +275,15 @@ def row_to_sample(row: VTRow) -> SampleRecord:
     )
 
 
-def scan_text_from_vt_row(row: VTRow) -> str:
+def scan_text_from_vt_row(row: VTRow, *, include_ids_rule_text: bool = True) -> str:
+    """Flatten a VT row into text for YARA scanning.
+
+    Set `include_ids_rule_text=False` to omit `crowdsourced_ids_results`, whose
+    `rule_msg`/`rule_raw` fields carry a *signature author's prose about* the traffic
+    (e.g. `ET INFO OpenAI API Domain in DNS Lookup (api .openai .com)`) rather than any
+    property of the file. Substring detectors that scan this field attribute the
+    signature's vocabulary to the sample — see `provider_references`.
+    """
     attrs = row.attributes
     useful = {
         "meaningful_name": attrs.get("meaningful_name"),
@@ -276,16 +297,27 @@ def scan_text_from_vt_row(row: VTRow) -> str:
         "magic": attrs.get("magic"),
         "capabilities_tags": attrs.get("capabilities_tags"),
         "sigma_analysis_results": attrs.get("sigma_analysis_results"),
-        "crowdsourced_ids_results": attrs.get("crowdsourced_ids_results"),
+        "crowdsourced_ids_results": attrs.get("crowdsourced_ids_results") if include_ids_rule_text else None,
         "exiftool": attrs.get("exiftool"),
         "pe_info": _pe_info_summary(attrs.get("pe_info")),
         "av_detection_names": _av_detection_names(attrs.get("last_analysis_results")),
         "behaviours": row.raw.get("behaviours"),
         "content_snippets": _decode_vt_snippets(row.raw.get("snippets")),
         "goresym": _goresym_summary(attrs.get("goresym")),
+        "dot_net_assembly": _dot_net_summary(attrs.get("dot_net_assembly")),
     }
     relationship_values = _relationship_values(row.relationships)
     return "\n".join([str(useful), str(relationship_values)])
+
+
+def provider_references_from_row(row: VTRow) -> list[str]:
+    """Provider names referenced by the sample, excluding IDS signature prose.
+
+    Prefer this over `provider_references(scan_text)`. An IDS rule's `rule_msg` names
+    the provider it watches for, so scanning it makes any sample that merely triggered
+    `ET INFO OpenAI API Domain in DNS Lookup` look like it references OpenAI.
+    """
+    return provider_references(scan_text_from_vt_row(row, include_ids_rule_text=False))
 
 
 def provider_references(text: str) -> list[str]:
@@ -363,40 +395,127 @@ def _pe_info_summary(pe_info: dict[str, Any] | None) -> dict[str, Any] | None:
     """Extract the string-bearing fields from pe_info that are useful for YARA matching.
 
     Full pe_info can be megabytes of section/resource data. We want:
-    - imports: DLL names (reveals python3.dll, onnxruntime.dll, etc.)
+    - imports: DLL names and imported function names (reveals python3.dll, onnxruntime.dll,
+      CredUIPromptForCredentials, etc.)
     - exports: exported symbol names
     - compiler_product_versions: build toolchain hints
     - resource_details file types (can reveal embedded scripts)
+
+    Note on `import_list`: VT's field is `import_list` (a list of
+    `{library_name, imported_functions}`), *not* `imports`. This helper previously read
+    `imports`, so no import name ever reached a rule — 0 of 4816 corpus samples
+    carried `pe_info.imports` while 4403 carried `import_list`. Do not "simplify" the
+    key back.
     """
     if not pe_info or not isinstance(pe_info, dict):
         return None
-    imports = pe_info.get("imports") or []
     exports = pe_info.get("exports") or []
+    libraries: list[str] = []
+    functions: list[str] = []
+    import_list = pe_info.get("import_list")
+    if isinstance(import_list, list):
+        for entry in import_list:
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("library_name"):
+                libraries.append(str(entry["library_name"]))
+            imported = entry.get("imported_functions")
+            if isinstance(imported, list):
+                functions.extend(str(f) for f in imported)
     return {
-        "imports": [str(i) for i in imports[:200]] if isinstance(imports, list) else [],
+        "imports": libraries[:100],
+        "imported_functions": functions[:400],
         "exports": [str(e) for e in exports[:200]] if isinstance(exports, list) else [],
         "compiler_product_versions": pe_info.get("compiler_product_versions"),
+        "resource_details": _resource_details_summary(pe_info.get("resource_details")),
     }
 
 
-def _goresym_summary(goresym: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Extract build settings from GoReSym analysis (present on Go binaries analysed by VT).
+def _resource_details_summary(resource_details: Any) -> dict[str, list[str]] | None:
+    """Distinct resource types and detected file types from pe_info.resource_details."""
+    if not isinstance(resource_details, list):
+        return None
+    types: list[str] = []
+    filetypes: list[str] = []
+    for entry in resource_details:
+        if not isinstance(entry, dict):
+            continue
+        rtype = entry.get("type")
+        if rtype and str(rtype) not in types:
+            types.append(str(rtype))
+        ftype = entry.get("filetype")
+        if ftype and str(ftype) not in filetypes:
+            filetypes.append(str(ftype))
+    if not types and not filetypes:
+        return None
+    return {"types": types[:40], "filetypes": filetypes[:40]}
 
-    Specifically surfaces the -ldflags build setting, which developers sometimes
-    forget to strip — leaking hardcoded API keys injected via `-X main.VarName=value`.
+
+def _goresym_summary(goresym: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Extract build provenance from GoReSym analysis (present on Go binaries VT analysed).
+
+    Surfaces:
+    - the -ldflags build setting, which developers sometimes forget to strip — leaking
+      hardcoded API keys injected via `-X main.VarName=value`
+    - `module_path` and `deps`, which are the strongest benign-hypothesis evidence
+      reachable without a download: the module path is the author's own name for the
+      program and the dependency list describes what it actually links.
+
+    The Go version key is `goVersion` (lower g) in VT's payload; this helper read
+    `GoVersion` until 2026-08-05 and returned None for all samples that had one.
+    Both spellings are accepted now.
     """
     if not goresym or not isinstance(goresym, dict):
         return None
     preview = goresym.get("report_preview") or {}
     build_info = preview.get("buildInfo") or {}
     settings = build_info.get("settings") or []
+    deps = build_info.get("deps") or []
     return {
-        "GoVersion": build_info.get("GoVersion"),
+        "GoVersion": build_info.get("goVersion") or build_info.get("GoVersion"),
+        "module_path": build_info.get("path"),
+        "deps": [
+            str(d.get("path")) for d in deps[:80]
+            if isinstance(d, dict) and d.get("path")
+        ],
         "build_settings": [
             {"key": s.get("key"), "value": s.get("value")}
             for s in settings
             if isinstance(s, dict) and s.get("value") and s.get("value") != "None"
         ],
+    }
+
+
+def _dot_net_summary(dot_net: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Extract the provenance-bearing fields from a .NET assembly's VT metadata.
+
+    Surfaces manifest_resource names, type_definition_list (namespace + type names),
+    external_assemblies, assembly_name, and clr_version. Numeric layout fields
+    (streams, tables_rows_map, RVAs) are dropped — they carry no strings to match.
+    """
+    if not dot_net or not isinstance(dot_net, dict):
+        return None
+    namespaces: list[str] = []
+    types: list[str] = []
+    type_defs = dot_net.get("type_definition_list")
+    if isinstance(type_defs, list):
+        for entry in type_defs:
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("namespace"):
+                namespaces.append(str(entry["namespace"]))
+            defs = entry.get("type_definitions")
+            if isinstance(defs, list):
+                types.extend(str(t) for t in defs)
+    manifest = dot_net.get("manifest_resource")
+    external = dot_net.get("external_assemblies")
+    return {
+        "assembly_name": dot_net.get("assembly_name"),
+        "manifest_resource": [str(m) for m in manifest[:40]] if isinstance(manifest, list) else None,
+        "external_assemblies": sorted(external)[:80] if isinstance(external, dict) else None,
+        "namespaces": namespaces[:80],
+        "type_definitions": types[:300],
+        "clr_version": dot_net.get("clr_version"),
     }
 
 
