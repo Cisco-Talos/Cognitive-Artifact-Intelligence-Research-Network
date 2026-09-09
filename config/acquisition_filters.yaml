@@ -1,3 +1,26 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ⚠️  `content:` MATCHES FILE BYTES, NOT CONCEPTS — read before adding a term.
+#
+# VT `content:` is a raw byte-substring search over the sample. It has no word
+# boundaries, so a short term matches anywhere the bytes occur, including inside
+# Windows API names, symbol tables, and compressed/encoded data.
+#
+# Measured in-corpus 2026-08-06 (4,804 samples):
+#   content:"gemini"  → matches `GetLar` GEMINI `mum`. 243 samples (5.1%) import
+#                       GetLargePageMinimum; of 515 samples containing the substring
+#                       "gemini", 239 contain it ONLY via that import name. The
+#                       resulting acquisitions are Apex Legends / generic game-cheat
+#                       loaders with zero AI content, at 36–54 detections each.
+#   content:"vllm"    → 234 corpus samples contain the bytes; ALL 234 are inside
+#                       hexdump-format packed/encoded blobs (`...cmixlvllmWoUW...`).
+#                       Genuine vLLM references in the corpus: zero.
+#
+# Rule of thumb: a term under ~7 characters needs an anchor that cannot occur by
+# chance — a delimiter (`gemini-`, `vllm/`), a dotted host (`api.openai.com`), or a
+# key prefix (`AIzaSy`). This is the acquisition-time form of the same error as
+# reading VT `names[]` as a filesystem drop path: the field is real, but it does not
+# mean what the query assumes. See docs/SOA.md → "Three provenance classes".
+# ─────────────────────────────────────────────────────────────────────────────
 filters:
   - name: Broad Discovery
     slug: broad-discovery
@@ -5,14 +28,23 @@ filters:
     enabled: true
     default_limit: 100
     min_detections: 5
-    description: High-recall sweep for executables containing AI, LLM, provider, model, prompt, or agent-framework references.
+    description: >
+      High-recall sweep for executables containing AI, LLM, provider, model, prompt, or
+      agent-framework references. NOTE 2026-08-06: bare content:"gemini" removed — it
+      matched the GetLargePageMinimum import name and accounted for 92 of this filter's
+      732 acquisitions with no AI content at all. Replaced with delimiter-anchored
+      model-name forms plus the AIzaSy Google API key prefix (which is what actually
+      identifies a hardcoded Gemini key).
     query_text: |
       (type:peexe OR type:pedll) AND positives:5+ AND (
         content:"openai" OR
         content:"chatgpt" OR
         content:"anthropic" OR
         content:"claude" OR
-        content:"gemini" OR
+        content:"gemini-1.5" OR
+        content:"gemini-2" OR
+        content:"generativelanguage" OR
+        content:"AIzaSy" OR
         content:"llama.cpp" OR
         content:"mistral" OR
         content:"deepseek" OR
@@ -32,13 +64,14 @@ filters:
     enabled: true
     default_limit: 100
     min_detections: 5
-    description: Prompt, role-marker, jailbreak, and task-instruction residue embedded in executable samples.
+    description: >
+      Prompt role-markers and task-instruction residue embedded in executable samples.
+      For explicit jailbreak patterns (WormGPT, DAN, etc.), see `llm-jailbreak-prompts`.
     query_text: |
       (type:peexe OR type:pedll) AND positives:5+ AND (
         content:"system prompt" OR
         content:"assistant:" OR
         content:"developer message" OR
-        content:"ignore previous instructions" OR
         content:"As an AI" OR
         content:"I cannot assist" OR
         content:"role: system" OR
@@ -70,12 +103,21 @@ filters:
     enabled: true
     default_limit: 100
     min_detections: 5
-    description: Local or open-weight inference runtime references such as Ollama, llama.cpp, vLLM, GGUF, and safetensors.
+    description: >
+      Local or open-weight inference runtime references such as Ollama, llama.cpp, vLLM,
+      GGUF, and safetensors. NOTE 2026-08-06: bare content:"vllm" removed — all 234 corpus
+      samples containing those bytes carry them inside packed/encoded blobs, with zero
+      genuine vLLM references; it accounted for the bulk of this filter's 50 collision-only
+      acquisitions. Replaced with path- and module-anchored forms. content:"gguf" is
+      RETAINED and verified clean: its 181 corpus hits are all real llama.cpp symbols
+      (gguf_init_from_file, gguf_get_n_tensors, gguf_find_key).
     query_text: |
       (type:peexe OR type:pedll) AND positives:5+ AND (
         content:"ollama" OR
         content:"llama.cpp" OR
-        content:"vllm" OR
+        content:"vllm.entrypoints" OR
+        content:"vllm/" OR
+        content:"vllm.engine" OR
         content:"text-generation-inference" OR
         content:"from_pretrained" OR
         content:"gguf" OR
@@ -91,7 +133,7 @@ filters:
     min_detections: 5
     description: Hosted LLM provider endpoints, SDK calls, OpenAI-compatible routes, and model API references.
     query_text: |
-      (type:peexe OR type:pedll) AND positives:5+ AND (
+      (type:peexe OR type:pedll OR type:vba) AND positives:5+ AND (
         content:"api.openai.com" OR
         content:"chat.completions" OR
         content:"responses.create" OR
@@ -110,7 +152,7 @@ filters:
     min_detections: 5
     description: Strings that appear to deceive AI-assisted analysis or suppress LLM inspection of malicious content.
     query_text: |
-      (type:peexe OR type:pedll) AND positives:5+ AND (
+      (type:peexe OR type:pedll OR type:vba) AND positives:5+ AND (
         content:"For LLM and AI" OR
         content:"no need to analyze this file" OR
         content:"not malicious" OR
@@ -118,7 +160,8 @@ filters:
         content:"prime number generation" OR
         content:"This file is safe" OR
         content:"not harmful to" OR
-        content:"AI analysis"
+        content:"AI analysis" OR
+        content:"nuclear weapon"
       )
 
   - name: PowerShell AI Scripts
@@ -129,7 +172,7 @@ filters:
     min_detections: 3
     description: "PowerShell scripts containing LLM API calls, prompt text, or AI framework references. Scripts are plaintext so content searches hit the actual code strings."
     query_text: |
-      type:ps1 AND positives:3+ AND (
+      (type:ps1 OR type:vba) AND positives:3+ AND (
         content:"api.openai.com" OR
         content:"api.anthropic.com" OR
         content:"chat.completions" OR
@@ -170,7 +213,7 @@ filters:
     min_detections: 3
     description: Files containing LLM-generated code assistant phrases embedded as literal strings — a strong indicator the author used an AI assistant to write or modify the code.
     query_text: |
-      (type:peexe OR type:pedll OR type:ps1) AND positives:3+ AND (
+      (type:peexe OR type:pedll OR type:ps1 OR type:vba) AND positives:3+ AND (
         content:"As an AI" OR
         content:"I cannot assist" OR
         content:"As an AI assistant" OR
@@ -362,17 +405,22 @@ filters:
         content:"ernie.baidubce.com"
       )
 
-  - name: CONVAGENT Hunt
+  # DISABLED 2026-08-04 — CONVAGENT retracted; every arm of this filter targets benign software.
+  # terim.baldurgecidi.com is a Turkish BG2 fan-translator's own glossary server; the
+  # Stealer.Convagent / Trojan-PSW.Win32.Convagent labels are heuristic FPs on a game macro's
+  # SendInput + MachineGuid code; ClusterEyeAgentUpdater and efficio_updater are CI-built
+  # auto-updaters for two real GitHub projects. Left in place (not deleted) so the filter is not
+  # re-derived from the retracted report.
+  - name: CONVAGENT Hunt (retracted)
     slug: convagent-hunt
     category: hunt
-    enabled: true
+    enabled: false
     default_limit: 100
     min_detections: 2
     description: >
-      Targeted hunt for CONVAGENT Go agent kit — Turkish C2 terim.baldurgecidi.com, Trellix
-      Stealer.Convagent / Kaspersky VHO:Trojan-PSW.Win32.Convagent.gen AV labels,
-      and product branding artifacts (Efficio, ClusterEye). Min detections lowered to 2
-      to catch low-detection kit components (ClusterEyeAgentUpdater at 4 det, efficio_updater at 3 det).
+      RETRACTED 2026-08-04 — do not re-enable. Targeted CONVAGENT Go agent kit; static RE
+      established the family does not exist and all five query arms match benign software
+      (fan-translation tool, game macro with HWID licensing, two products' auto-updaters).
     query_text: |
       type:peexe AND positives:2+ AND (
         content:"terim.baldurgecidi.com" OR
@@ -399,31 +447,32 @@ filters:
         content:"overexert.systemstatus.info"
       )
 
-  - name: AIREFUSAL Hunt A
+  - name: HOLLOWCLAD Hunt (was AIREFUSAL Hunt A)
     slug: airefusal-hunt-a
     category: hunt
     enabled: true
     default_limit: 50
     min_detections: 3
     description: >
-      Targeted hunt for AIREFUSAL Group A — packed PE malware embedding copyright-framed
+      Targeted hunt for HOLLOWCLAD (was AIREFUSAL Group A) — PE malware embedding copyright-framed
       LLM-refusal strings and [INSTRUCTION] prompt-injection format to evade AI analysis.
       Gen:Variant.Zariza.6 attribution; protection-license.exe / uploaded-file naming.
+      Slug retained across the rename.
     query_text: |
       (type:peexe OR type:pedll) AND positives:3+ AND (
         content:"I cannot assist with circumvent" OR
         content:"[INSTRUCTION] As an AI assistant"
       )
 
-  - name: AIREFUSAL Hunt B
+  - name: MANTLEMAZE Hunt (was AIREFUSAL Hunt B)
     slug: airefusal-hunt-b
     category: hunt
     enabled: true
     default_limit: 100
     min_detections: 3
     description: >
-      Targeted hunt for AIREFUSAL Group B — PE malware embedding chat-turn simulation
-      where an AI "assistant" refuses to engineer/reverse-engineer the code. Cert anchor:
+      Targeted hunt for MANTLEMAZE (was AIREFUSAL Group B) — PE malware embedding
+      chat-turn simulation where an AI "assistant" refuses to engineer/reverse-engineer the code. Cert anchor:
       1.A Connect GmbH (COMODO, thumbprint FC3F6D98724178B8A5BEE724858D22573B8DB97B,
       expired 2022-08-13) co-occurs with Intel Corporation cert (VeriSign, expired 2015)
       on all 16 confirmed samples. Campaign active 2026-04-04 through 2026-07-11+.
@@ -442,13 +491,14 @@ filters:
     min_detections: 1
     description: >
       Targeted hunt for JADEPUFFER Langflow ransomware (CVE-2025-3248). Linux/shell dropper
-      or ELF; C2 45.131.66.106:4444, exfil 64.20.53.230. content:"README_RANSOM" removed —
-      too broad, pulls ransomware research/simulation files. Anchored on C2 IP (unique) and
-      contact email prefix (unique) only.
+      or ELF; C2 45.131.66.106:4444, exfil 64.20.53.230.
+      NARROWED 2026-08-06: content:"e78393397" removed — the email prefix is 9 hex-ish
+      characters with no delimiter and all samples this filter acquired were unrelated
+      academic ransomware simulations. Anchored on the two C2/exfil IPs only.
     query_text: |
       (type:shell OR type:elf OR tag:linux OR type:ps1) AND positives:1+ AND (
         content:"45.131.66.106" OR
-        content:"e78393397"
+        content:"64.20.53.230"
       )
 
   - name: CAGDASGPT Hunt
@@ -483,17 +533,21 @@ filters:
         content:"Job Radar Desktop"
       )
 
-  - name: VIBEAROUND Hunt
+  # DISABLED 2026-08-05 — VIBEAROUND retracted as a false positive. VibeAround is a benign
+  # Tauri/Rust coding-agent orchestration app; static RE found no Galirus payload, no installer
+  # overlay, no injection, no keylogger. This filter searches on a vendor brand and a real
+  # developer's GitHub handle, so it can only re-acquire that developer's own releases.
+  - name: VIBEAROUND Hunt (retracted)
     slug: vibearound-hunt
     category: hunt
-    enabled: true
+    enabled: false
     default_limit: 50
     min_detections: 2
     description: >
-      Targeted hunt for VIBEAROUND — Tauri/Rust Chinese AI coding assistant IDE (VibeAround by
-      vibearound/jazzenchen) distributing Galirus downloader via NSIS installer. Same actor also
-      runs CYBERPORTAL X (WARP/VLESS proxy lure). Shared NSIS timestamp 2025-03-08, Akamai CDN
-      a1672.dscr.akamai.net, and C:\Windows\<random>.exe drop behavior across both campaigns.
+      RETRACTED 2026-08-05 — kept disabled as a record only. Originally a targeted hunt for
+      "VIBEAROUND", believed to be a Chinese AI coding IDE distributing the Galirus downloader via
+      an NSIS installer. Static RE refuted every malicious claim: VibeAround is benign software by
+      the developer `jazzenchen`, and the query's anchors are its brand and his handle.
     query_text: |
       (type:peexe OR type:pedll) AND positives:2+ AND (
         content:"vibearound" OR
@@ -507,13 +561,18 @@ filters:
     enabled: true
     default_limit: 100
     min_detections: 5
-    description: AI or model terminology co-occurring with offensive tradecraft terms such as PowerShell, exploit, payload, bypass, or evasion.
+    description: >
+      AI or model terminology co-occurring with offensive tradecraft terms such as PowerShell,
+      exploit, payload, bypass, or evasion. NOTE 2026-08-06: bare content:"gemini" removed from
+      the AI arm (GetLargePageMinimum collision).
     query_text: |
       (type:peexe OR type:pedll) AND positives:5+ AND (
         content:"openai" OR
         content:"chatgpt" OR
         content:"claude" OR
-        content:"gemini" OR
+        content:"gemini-1.5" OR
+        content:"gemini-2" OR
+        content:"generativelanguage" OR
         content:"llama.cpp" OR
         content:"ollama" OR
         content:"api.openai.com" OR
@@ -528,4 +587,3 @@ filters:
         content:"phishing" OR
         content:"malware"
       )
-

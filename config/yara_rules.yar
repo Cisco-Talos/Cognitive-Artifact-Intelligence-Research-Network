@@ -23,7 +23,7 @@ rule T1-LLM_API_Endpoint {
 
 rule T1-Chinese_LLM_Provider {
   meta:
-    description = "Primitive Chinese LLM provider API endpoint residue — BigModel/ChatGLM, Moonshot/Kimi, MiniMax, Z.ai, Alibaba Qwen/DashScope, Yi, Baidu ERNIE"
+    description = "Primitive Chinese LLM provider API endpoint residue — BigModel/ChatGLM, Moonshot/Kimi, MiniMax, Z.ai, Alibaba Qwen/DashScope, Yi, Baidu ERNIE, iFlytek Xinghuo/Spark, ChatAnywhere"
     artifact_type = "api_key_pattern"
     artifact_class = "llm_api_endpoint"
     tier = "T1"
@@ -38,6 +38,8 @@ rule T1-Chinese_LLM_Provider {
     $zai         = "api.z.ai" nocase
     $minimax     = "api.minimax.io" nocase
     $minimaxi    = "api.minimaxi.com" nocase
+    $xinghuo     = "spark-api-open.xf-yun.com" nocase
+    $chatanywhere = "api.chatanywhere.tech" nocase
   condition:
     any of them
 }

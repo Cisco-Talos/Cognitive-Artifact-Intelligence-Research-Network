@@ -263,21 +263,9 @@ cairn explorer --port 8422 --no-browser               # custom port, no auto-ope
 
 #### Corpus Analytics
 
-The Explorer includes a corpus analytics view backed by the same SQLite corpus used by the graph. To open it:
+The Explorer includes a corpus analytics dashboard — attribution funnel, family pipeline, archetype distribution, corpus timeline, platform and detection breakdowns — accessible via the line-chart orb in the sidebar header.
 
-1. Launch the Explorer with `cairn explorer`.
-2. Click the small line-chart orb in the upper-right of the sidebar header, over the CAIRN branding.
-3. Click the orb again to return to the graph. The `TABLE` view remains available separately from the graph and analytics views.
-
-The analytics dashboard includes:
-
-- Attribution funnel from total samples through T1, T2, T3, and seeded results
-- Family pipeline with publication status, archetype, first-seen date, seed count, and T3 hits
-- Archetype distribution and corpus timeline
-- Platform/file-type and detection distributions
-- Rule-yield matrix, detection-over-time scatter plot, and rule activity heatmap
-
-Charts support the existing dark interface styling and selected views provide cross-filtering by archetype, family, or platform. The dashboard reads from the local Explorer endpoint at `/api/analytics`; no separate configuration or API key is required beyond the corpus already used by the Explorer.
+<p align="center"><img src="config/analytics.png" alt="CAIRN Explorer corpus analytics dashboard" width="1280"/></p>
 
 ### Export and Reporting
 
@@ -307,7 +295,7 @@ cairn sync-promptintel --all                           # print all stored IOCs
 
 ## Acquisition Channels
 
-Twenty-seven named channels in `config/acquisition_filters.yaml` (one disabled). Each represents a separate hypothesis and measures yield independently.
+Twenty-seven named channels in `config/acquisition_filters.yaml` (three disabled). Each represents a separate hypothesis and measures yield independently.
 
 | Slug | Category | File Types | Min Det. | Notes |
 |---|---|---|---|---|
@@ -326,37 +314,61 @@ Twenty-seven named channels in `config/acquisition_filters.yaml` (one disabled).
 | `llmgate-gen3-hunt` | hunt | peexe | 3 | LLMGATE Gen3 variants with rotated cover names (sysmntsvc, wupdmgr) |
 | `promptlock-hunt` | hunt | peexe, pedll, lua | 3 | Targeted PROMPTLOCK ransomware variant hunt |
 | `honestcue-hunt` | hunt | peexe, pedll | 3 | HONESTCUE .NET LLM probe loader |
-| `airefusal-hunt-a` | hunt | peexe | 3 | copyright-framed LLM-refusal + prompt-injection strings |
-| `airefusal-hunt-b` | hunt | peexe | 3 | simulated multi-turn LLM refusal dialogue in PE string table |
+| `airefusal-hunt-a` | hunt | peexe | 3 | HOLLOWCLAD — copyright-framed LLM-refusal + prompt-injection strings |
+| `airefusal-hunt-b` | hunt | peexe | 3 | MANTLEMAZE — simulated multi-turn LLM refusal dialogue in PE string table |
 | `local-model-hunt` | hunt | peexe | 2 | Local model runtime binaries (GGUF, Ollama, llama.cpp) |
 | `local-inference-deploy-hunt` | hunt | peexe, pedll, ps1, py, elf | 2 | Deployment-level signals: ollama serve/pull, llama-server, localhost:11434, HF model downloads |
 | `vozdyhan-hunt` | hunt | peexe | 2 | Targeted WebRAT variant hunt |
-| `convagent-hunt` | hunt | peexe | 2 | Targeted Go agent kit (Turkish C2, Efficio/ClusterEye branding) |
+| `convagent-hunt` | hunt | peexe | 2 | **Retracted** — disabled; all query arms match benign software |
 | `plotsafe-hunt` | hunt | peexe, pedll | 2 | Targeted PLOTSAFE GoKrypt ACRStealer (plotsafe.icu C2) |
 | `jobradar-hunt` | hunt | peexe | 2 | Targeted Wails Go AI lure + Midie credential stealer |
-| `vibearound-hunt` | hunt | peexe | 2 | Targeted Tauri/Rust Chinese AI coding IDE distributing Galirus downloader |
+| `vibearound-hunt` | hunt | peexe | 2 | **Retracted** — disabled; VibeAround is benign software |
 | `jadepuffer-hunt` | hunt | elf, sh | 1 | Langflow-themed ransomware (CVE-2025-3248); C2 45.131.66.106 |
 | `cagdasgpt-hunt` | hunt | peexe, py | 1 | Turkish PyInstaller AI tool with date-gate sandbox evasion |
 
 ---
 
-## Confirmed Families
+## AI-Malware Archetype Taxonomy
 
-Individual technical reports for each confirmed family are in `docs/families/`, only previously publicly-released reports are provided at the initial repo launch:
+Each archetype represents a distinct way an adversary uses AI in the attack chain. A single family can instantiate multiple archetypes. Full taxonomy and progression notes are in `docs/SOA.md`.
+
+| ID | Archetype | Description | Published Families |
+|---|---|---|---|
+| A0 | **No AI Content** | Family discovered by CAIRN that carries no AI or LLM component; retained for campaign-level attribution with an AI-bearing family. | — |
+| A1 | **LLM-Directed Payload Generation** | Malware sends a hard-coded prompt to a hosted LLM at runtime to generate executable code, scripts, or encryption logic. | PROMPTLOCK, HONESTCUE, PROMPTFLUX |
+| A2 | **LLM API Routing / Proxying Backdoor** | A service silently routes LLM API traffic through the victim, exfiltrating keys and billing inference to the host. | — |
+| A3 | **AI-Analysis Evasion** | Malware embeds natural-language instructions addressed to AI analysis systems to suppress classification or redirect analyst attention. | FRUITSHELL, GUARDBREAKER |
+| A4 | **LLM-Tasked C2** | An implant uses a hosted LLM as a live tasking channel, receiving operator instructions or autonomous attack orchestration via model responses. | CLOSEDQUORUM |
+| A5 | **LLM Infrastructure Supply Chain** | The actor backdoors a component of the victim's LLM infrastructure layer (proxy, SDK, gateway) to harvest all provider API keys. | TEAMPCP |
+| A6 | **AI Credential Harvester** | Malware specifically targets LLM API keys, HuggingFace tokens, or AI service credentials belonging to the victim. | PROMPTSTEAL, QUIETVAULT, LAMEHUG |
+| A7 | **LLM-Augmented Offensive Tool** | A conventional offensive tool augments its workflow with an LLM API call for content generation, OSINT, or recon tasking. | LAMEHUG |
+| A8 | **Malicious AI SDK / Package** | A fake or backdoored package on npm/PyPI presents itself as an AI service SDK; activates on install. | QUIETVAULT |
+| A9 | **LLM-Assisted Worm** | Combines classical network worm propagation with LLM-directed tasking and asynchronous C2 exfiltration. | — |
+| A10 | **AI-Domain Decoy Traffic** | Malware issues unauthenticated requests to AI provider endpoints as decoy traffic to misdirect sandbox analysis. | — |
+| A11 | **Agentic AI Abuse Tool** | The LLM-driven autonomous agent loop is the product's core capability, and the product exists for an abusive purpose. | — |
+
+> LAMEHUG spans A6 and A7 by variant — the packed variant collects credentials from the victim host (A6); the bare script only spends a pre-stolen token pool (A7). See the family report for details.
+
+> QUIETVAULT spans A6 and A8 — it is both a credential harvester and a malicious npm package.
+
+---
+
+## Published Family Reports
+
+Individual technical reports are in `docs/families/`. Additional families are confirmed but withheld pending publication.
 
 | Family | Archetype | Platform | Report |
 |---|---|---|---|
-| PROMPTLOCK | A1 — LLM payload generation | Go / Lua | [docs/families/PROMPTLOCK.md](docs/families/PROMPTLOCK.md) |
-| HONESTCUE | A1 — LLM payload generation | .NET | [docs/families/HONESTCUE.md](docs/families/HONESTCUE.md) |
-| FRUITSHELL | A3 — AI-analysis evasion | PowerShell | [docs/families/FRUITSHELL.md](docs/families/FRUITSHELL.md) |
-| GUARDBREAKER | A3 — AI-analysis evasion | VBScript | [docs/families/GUARDBREAKER.md](docs/families/GUARDBREAKER.md) |
-| CLOSEDQUORUM | A4 — Autonomous AI agent | Go | [docs/families/CLOSEDQUORUM.md](docs/families/CLOSEDQUORUM.md) |
-| TEAMPCP | A5 — LLM infrastructure supply chain | Python / npm | [docs/families/TEAMPCP.md](docs/families/TEAMPCP.md) |
-| LAMEHUG | A6 — AI credential harvester | Python | [docs/families/LAMEHUG.md](docs/families/LAMEHUG.md) |
-| PROMPTSTEAL | A6 — AI credential harvester | Python (PyInstaller) | [docs/families/PROMPTSTEAL.md](docs/families/PROMPTSTEAL.md) |
-| QUIETVAULT | A6+A8 — AI credential harvester / malicious SDK | JavaScript / npm | [docs/families/QUIETVAULT.md](docs/families/QUIETVAULT.md) |
-| PROMPTFLUX | archetype pending (dropper; payload not recovered) | VBScript | [docs/families/PROMPTFLUX.md](docs/families/PROMPTFLUX.md) |
-| **AI-adjacent** | | | |
+| PROMPTLOCK | A1 | Go / Lua | [docs/families/PROMPTLOCK.md](docs/families/PROMPTLOCK.md) |
+| HONESTCUE | A1 | .NET | [docs/families/HONESTCUE.md](docs/families/HONESTCUE.md) |
+| PROMPTFLUX | A1 | VBScript | [docs/families/PROMPTFLUX.md](docs/families/PROMPTFLUX.md) |
+| FRUITSHELL | A3 | PowerShell | [docs/families/FRUITSHELL.md](docs/families/FRUITSHELL.md) |
+| GUARDBREAKER | A3 | VBScript | [docs/families/GUARDBREAKER.md](docs/families/GUARDBREAKER.md) |
+| CLOSEDQUORUM | A4 | Go | [docs/families/CLOSEDQUORUM.md](docs/families/CLOSEDQUORUM.md) |
+| TEAMPCP | A5 | Python / npm | [docs/families/TEAMPCP.md](docs/families/TEAMPCP.md) |
+| LAMEHUG | A6 / A7 | Python | [docs/families/LAMEHUG.md](docs/families/LAMEHUG.md) |
+| PROMPTSTEAL | A6 | Python (PyInstaller) | [docs/families/PROMPTSTEAL.md](docs/families/PROMPTSTEAL.md) |
+| QUIETVAULT | A6 + A8 | JavaScript / npm | [docs/families/QUIETVAULT.md](docs/families/QUIETVAULT.md) |
 
 
 ---
