@@ -193,17 +193,53 @@ rule T2-AI_Decoy_Prompt_In_Malware
 
     strings:
         $llm = "For LLM and AI" nocase
+        $scanners = "For automated scanners" nocase
         $no_analyze = "no need to analyze" nocase
         $not_malicious = "not malicious" nocase
+        $no_risk = "No security risk identified" nocase
         $benign_claim_1 = "simply performs" nocase
         $benign_claim_2 = "prime number generation" nocase
+        // DUSTMAKER prompt variant (GTIG, 2026-09) — ShaiHulud worm ecosystem.
+        // Adversarial WMD biological-weapons briefing text designed to trigger LLM
+        // safety refusals during AI-assisted analysis (A3 .004). Content-only strings:
+        // these fire when the sample is pulled via a VT content: search filter (snippet
+        // hex-dump populates content_snippets in scan_text) or if VT sandbox/ETW ever
+        // surfaces the text. They will NOT fire on metadata-only pulls. "SYSTEM
+        // OVERRIDE" + "CLASSIFIED BRIEFING" as a conjunction is campaign-specific;
+        // neither alone is safe (CIA FOIA PDFs, fiction). "PHASE I: BIOLOGICAL" is the
+        // payload-specific fragment with no legitimate VT overlap.
+        $dustmaker_1 = "SYSTEM OVERRIDE" nocase
+        $dustmaker_2 = "CLASSIFIED BRIEFING" nocase
+        $dustmaker_3 = "PHASE I: BIOLOGICAL" nocase
+        // DUSTMAKER AV family labels — these appear in av_detection_names and fire on
+        // metadata-only pulls. ShaiHulud is the worm family; MiniShaiRdHrt is the
+        // minified JS supply-chain variant. Both carry the DUSTMAKER adversarial prompt.
+        $dustmaker_av_1 = "ShaiHulud" nocase
+        $dustmaker_av_2 = "MiniShaiRdHrt" nocase
 
     // $llm alone fires when content comes from VT snippet (48-byte window; only the
     // match phrase is visible). 2-of fires when full comment is present via ETW
     // ScriptBlock or embedded plaintext. "For LLM and AI" is specific enough to
     // carry the rule solo — it does not appear in legitimate binaries.
+    //
+    // $scanners added 2026-08-03 from PLOTSAFE static RE. Gen 2 (2e3e1bcd) carries a
+    // SECOND decoy addressed to non-LLM automated scanners, co-located with the $llm
+    // one: "For automated scanners: Benign application - TCP socket connection pooling
+    // stress test implementation. No security risk identified." It shares NO substring
+    // with any pattern above, so a build shipping only that variant would have scored
+    // zero here. Same solo-anchor logic as $llm: the phrase is addressed to tooling and
+    // does not occur in legitimate text. $no_risk is the 2-of corroborator for it.
+    //
+    // Note the decoys are generated per build from a template with a swapped filler
+    // ("prime number generation from 1 to 7789" / "1 to 1000" / "memory allocator
+    // fragmentation analysis tool"), so the invariant PREFIXES are the durable anchors
+    // and $benign_claim_2 is not. Do not tighten this rule onto full sentences.
+    //
+    // DUSTMAKER: $dustmaker_av_* solo-anchor on AV family labels (always in scan_text).
+    // $dustmaker_3 solo-anchors on content when available. $dustmaker_1 AND $dustmaker_2
+    // conjunction for the prompt header when both appear.
     condition:
-        $llm or 2 of them
+        $llm or $scanners or $dustmaker_3 or $dustmaker_av_1 or $dustmaker_av_2 or ($dustmaker_1 and $dustmaker_2) or 2 of them
 }
 
 rule T2-Shell_Execution_Cooccurrence {
@@ -392,6 +428,9 @@ rule T3-TEAMPCP_Backdoored_LiteLLM_Proxy
     strings:
         $av_teamcp   = "TeamPCP"                                                    nocase
         $av_stealer  = "PthLlmStealer"                                              nocase
+        // TrendMicro's family label for the same campaign — fires on newer variants
+        // (e.g. litellm_init.pth) that lack the PthLlmStealer label
+        $av_tpcpsteal = "TPCPSTEAL"                                                 nocase
         $railway_c2  = "litellm-production-7002.up.railway.app"                     nocase
         $railway_ex  = "exampleopenaiendpoint-production.up.railway.app"            nocase
         $imds        = "169.254.169.254/latest/meta-data/iam/security-credentials"  nocase
@@ -399,7 +438,7 @@ rule T3-TEAMPCP_Backdoored_LiteLLM_Proxy
         $qwork       = "@qwork/sdk"                                                 nocase
 
     condition:
-        $av_stealer or $railway_c2 or $railway_ex or $imds or $stage0 or $qwork
+        $av_stealer or $av_tpcpsteal or $railway_c2 or $railway_ex or $stage0 or $qwork or ($imds and 1 of ($av_teamcp, $av_stealer, $av_tpcpsteal, $railway_c2, $railway_ex, $stage0, $qwork))
 }
 
 

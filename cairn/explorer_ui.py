@@ -3085,11 +3085,13 @@ document.getElementById('btn-3d').addEventListener('click', () => {
       document.getElementById('graph-canvas').style.display = 'none';
       compute3dFamilyCentroids();
       start3dLabelLoop();
+      applyFilter();
     }
   } else {
     document.getElementById('graph-3d').style.display = 'none';
     document.getElementById('graph-3d-labels').style.display = 'none';
     document.getElementById('graph-canvas').style.display = 'block';
+    applyFilter();
   }
 });
 
