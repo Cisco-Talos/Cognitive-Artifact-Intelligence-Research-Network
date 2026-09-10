@@ -46,6 +46,75 @@ _FAMILIES_DIR  = PROJECT_ROOT / "docs" / "families"
 
 
 # ---------------------------------------------------------------------------
+# Imphash framework classifier
+# ---------------------------------------------------------------------------
+
+# Static overrides for known imphashes where heuristics are ambiguous.
+_IMPHASH_OVERRIDES: dict[str, tuple[str, str]] = {
+    # (label, evidence)
+    "5f7ebf9b9c24d6aab5a3ded5026639a1": ("Delphi (ASProtect)", "ASProtect-packed Delphi stub"),
+}
+
+
+def _classify_imphash(pe_info: dict[str, Any], tags: list[str]) -> tuple[str, str] | None:
+    """Derive a framework label from PE import list and VT tags.
+
+    Returns (label, evidence) or None if unclassifiable.
+    """
+    imphash = pe_info.get("imphash", "")
+    if imphash in _IMPHASH_OVERRIDES:
+        return _IMPHASH_OVERRIDES[imphash]
+
+    import_list = pe_info.get("import_list") or []
+    dlls = sorted({(e.get("library_name") or "").lower() for e in import_list} - {""})
+    tag_set = {t.lower() for t in tags}
+
+    # .NET — only imports mscoree.dll (CLR bootstrap stub)
+    if dlls == ["mscoree.dll"]:
+        return (".NET", "single mscoree.dll import")
+
+    # Go — single kernel32.dll import, typically 64-bit with overlay
+    if dlls == ["kernel32.dll"] and ("64bits" in tag_set or "overlay" in tag_set):
+        return ("Go", "single kernel32.dll + 64-bit/overlay")
+
+    # PyInstaller — imports python3x.dll
+    py_dlls = [d for d in dlls if d.startswith("python3") and d.endswith(".dll")]
+    if py_dlls:
+        return ("PyInstaller", f"imports {py_dlls[0]}")
+
+    # AutoIt — imports autoit or au3
+    if any("autoit" in d or "au3" in d for d in dlls):
+        return ("AutoIt", "AutoIt runtime DLL")
+
+    # Electron / NSIS — characteristic DLL set for Chromium-based desktop apps
+    if {"user32.dll", "comctl32.dll", "kernel32.dll", "advapi32.dll", "gdi32.dll"} <= set(dlls) and len(dlls) <= 6:
+        return ("Electron/NSIS", "Chromium desktop installer DLL set")
+
+    # VB6 — imports msvbvm60.dll (Visual Basic 6 runtime)
+    if "msvbvm60.dll" in dlls:
+        return ("VB6", "msvbvm60.dll runtime")
+
+    # UCRT / modern MSVC — heavy api-ms-win-crt-* imports
+    ucrt_count = sum(1 for d in dlls if d.startswith("api-ms-win-crt-"))
+    if ucrt_count >= 3:
+        return ("MSVC/UCRT", f"{ucrt_count} api-ms-win-crt-* imports")
+
+    # NSIS installer — ole32+shell32+comctl32 with moderate DLL count
+    if {"ole32.dll", "shell32.dll", "comctl32.dll"} <= set(dlls) and len(dlls) <= 8:
+        return ("NSIS", "ole32+shell32+comctl32 installer DLL set")
+
+    # UPX-packed — note the packer (often Go or Rust underneath)
+    if "upx" in tag_set and len(dlls) <= 5:
+        return ("UPX-packed", "UPX tag + minimal imports")
+
+    # Rust — imports bcryptprimitives.dll with minimal other DLLs
+    if "bcryptprimitives.dll" in dlls and len(dlls) <= 6:
+        return ("Rust", "bcryptprimitives.dll + minimal imports")
+
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Graph builder (enriched with imphash + domain nodes)
 # ---------------------------------------------------------------------------
 
@@ -114,11 +183,17 @@ def build_explorer_graph(corpus_path: Path) -> dict[str, list[dict[str, Any]]]:
         rels = raw.get("relationships") or {}
 
         # Imphash node
-        imphash = (attrs.get("pe_info") or {}).get("imphash")
+        pe_info = attrs.get("pe_info") or {}
+        imphash = pe_info.get("imphash")
         if imphash:
             ih_id = f"imphash:{imphash}"
             if ih_id not in nodes:
-                nodes[ih_id] = {"id": ih_id, "label": imphash[:12], "type": "imphash", "full": imphash}
+                fw = _classify_imphash(pe_info, attrs.get("tags") or [])
+                if fw:
+                    label = f"{fw[0]}  {imphash[:8]}"
+                    nodes[ih_id] = {"id": ih_id, "label": label, "type": "imphash", "full": imphash, "framework": fw[0], "fw_evidence": fw[1]}
+                else:
+                    nodes[ih_id] = {"id": ih_id, "label": imphash[:12], "type": "imphash", "full": imphash}
             edges.append({"source": sample_id, "target": ih_id, "type": "shares_imphash", "weight": 1, "evidence": imphash})
 
         # Domain nodes from embedded_urls and contacted_domains

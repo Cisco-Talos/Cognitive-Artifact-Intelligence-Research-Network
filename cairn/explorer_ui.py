@@ -3503,6 +3503,8 @@ function renderNodeDetail(node) {
   if (node.confidence)  html += `<span class="kv-k">Confidence</span><span class="kv-v">${esc(node.confidence)}</span>`;
   if (node.slug)        html += `<span class="kv-k">Slug</span><span class="kv-v">${esc(node.slug)}</span>`;
   if (node.full)        html += `<span class="kv-k">Full</span><span class="kv-v" style="font-size:10px">${esc(node.full)}</span>`;
+  if (node.framework)   html += `<span class="kv-k">Framework</span><span class="kv-v" style="color:var(--accent)">${esc(node.framework)}</span>`;
+  if (node.fw_evidence) html += `<span class="kv-k">Evidence</span><span class="kv-v" style="font-size:10px;color:var(--text-dim)">${esc(node.fw_evidence)}</span>`;
 
   // Hit count for rule nodes
   if (node.type === 'yara_rule') {
