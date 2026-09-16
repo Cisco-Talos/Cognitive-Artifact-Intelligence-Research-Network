@@ -10,8 +10,8 @@ CAIRN combines a tiered YARA ontology over structured VT scan text with embeddin
 
 ---
 
-- Launch blog: [Talos Tech Blog]
-- CLOSEDQUORUM: [Link to CQ Blog]
+- Launch blog: <a href="https://blog.talosintelligence.com/introducing-cairn-frontier-tracking-for-ai-integrated-malware "> Introducing CAIRN: Frontier tracking for AI-integrated malware</a>
+- CLOSEDQUORUM: <a href="https://blog.talosintelligence.com/the-closed-quorum-inside-the-first-reported-autonomous-ai-c2-implant"> The Closed Quorum: Inside the first reported autonomous AI C2 implant </a>
 
 ---
 
