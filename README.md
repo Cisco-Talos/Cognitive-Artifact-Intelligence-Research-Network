@@ -217,6 +217,7 @@ cairn pull-status                                      # last run date per filte
 cairn summary                                          # corpus stats and rule hit counts
 cairn refresh --sha256 <sha256>                       # re-fetch VT data, re-run YARA
 cairn refresh --sha256 <sha256> --behaviours          # also pull sandbox data
+cairn refresh --sha256 <sha256> --telemetry           # also fetch Google Insights telemetry
 ```
 
 ### Pivot
@@ -274,6 +275,19 @@ The Explorer includes a corpus analytics dashboard — attribution funnel, famil
 cairn report                                           # CSV + markdown findings draft
 cairn graph                                            # relationship graph JSON
 cairn graph --output outputs/graphs/cairn_graph.json
+```
+
+### Provenance and Triage
+
+```bash
+cairn audit-provenance                                 # flag rule hits resting on sandbox-memory evidence only
+cairn audit-provenance --min-tier T3                  # T3 (family attribution) hits only
+cairn audit-provenance --min-tier T3 --summary-only   # counts only, no per-finding list
+cairn triage-gap                                       # surface high-detection samples with no/weak rule signal
+cairn refresh-batch --category t1-only-high-det       # refresh T1-only/high-det samples in bulk
+cairn refresh-batch --category seeds-missing-behaviours --behaviours
+cairn telemetry <sha256>                               # fetch Google Insights telemetry for a sample
+cairn telemetry --corpus                               # summarise telemetry stored across all samples
 ```
 
 ### Corpus Maintenance

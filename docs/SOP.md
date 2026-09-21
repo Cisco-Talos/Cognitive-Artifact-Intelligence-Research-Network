@@ -140,6 +140,9 @@ cairn refresh --sha256 <sha256> --sha256 <sha256>
 
 # Also pull sandbox behavioural data (one extra API call per hash)
 cairn refresh --sha256 <sha256> --behaviours
+
+# Also fetch Google Insights telemetry (one extra API call per hash)
+cairn refresh --sha256 <sha256> --telemetry
 ```
 
 ---
@@ -190,6 +193,82 @@ cairn summary
 # Resolve all embedded_url relationship objects for a stored sample
 # (read-only — does not import anything)
 cairn pivot-urls <sha256>
+```
+
+---
+
+## 6a. Provenance Audit
+
+Flags rule matches that rely exclusively on VT sandbox-memory evidence (`memory_pattern_urls/domains/ips`). A memory-only hit is not necessarily wrong, but the report must say "observed in sandbox memory" rather than "hardcoded in binary". No API calls.
+
+```bash
+# Audit all rule hits — flag memory-only and mixed-evidence matches
+cairn audit-provenance
+
+# Only report T3 hits (family attribution claims)
+cairn audit-provenance --min-tier T3
+
+# Print summary counts only, no per-finding list
+cairn audit-provenance --min-tier T3 --summary-only
+```
+
+---
+
+## 6b. Triage Gap
+
+Surfaces high-detection samples with no or weak rule signal — the cases most likely to be missed by the standard hunt loop.
+
+```bash
+# Show T1-only samples, no-rules/high-detection samples, and content-filter misses
+cairn triage-gap
+```
+
+Output sections:
+- **t1_only** — samples with T1 hits but no T2/T3 attribution, sorted by detection count
+- **no_rules_high_det** — samples with ≥15 detections and zero rule hits
+- **content_filter_no_rules** — samples acquired via `content:` filters with no rule hits
+- **metadata_stats** — relationship and behaviour coverage across the corpus
+
+---
+
+## 6c. Refresh Batch
+
+Refreshes a targeted batch of samples identified by a triage-gap category. Use after `cairn triage-gap` to backfill VT data on the highest-priority gaps.
+
+```bash
+# Preview what would be refreshed (no API calls)
+cairn refresh-batch --category t1-only-high-det --dry-run
+
+# Refresh up to 50 T1-only/high-detection samples
+cairn refresh-batch --category t1-only-high-det --limit 50
+
+# Also pull sandbox behavioural data
+cairn refresh-batch --category seeds-missing-behaviours --behaviours
+```
+
+Available categories:
+
+| Category | What it targets |
+|---|---|
+| `t1-only-high-det` | T1 hits, no T2/T3, ≥10 detections |
+| `no-rules-high-det` | Zero rule hits, ≥15 detections |
+| `content-filter-no-rules` | Acquired via `content:` filter, no rule hits |
+| `seeds-missing-behaviours` | Known seeds without sandbox behavioural data |
+| `go-no-rules` | Go binaries (goresym present), ≥10 detections, no rule hits |
+| `go-t1-only` | Go binaries with T1 hits only, no T2/T3 |
+
+---
+
+## 6d. Google Insights Telemetry
+
+Fetches in-the-wild prevalence data for a sample from the VT Google Insights endpoint. Requires a VirusTotal Intelligence tier that includes GTI access.
+
+```bash
+# Fetch telemetry for a specific hash (caches result in raw_json)
+cairn telemetry <sha256>
+
+# Show telemetry already stored across all corpus samples
+cairn telemetry --corpus
 ```
 
 ---
@@ -439,7 +518,7 @@ cairn explorer                         # open UMAP view to inspect clusters visu
 |---|---|
 | `config/acquisition_filters.yaml` | Named VT acquisition channels (17 filters) |
 | `config/exclusions.yaml` | SHA256 blocklist — skipped on pull/pivot, removed by `cairn prune` |
-| `config/yara_rules.yar` | YARA rule definitions (T1/T2/T3; 30 rules) |
+| `config/yara_rules.yar` | YARA rule definitions (T1/T2/T3; 26 rules) |
 | `data/cairn.sqlite` | SQLite corpus (gitignored) |
 | `outputs/` | Graph and report exports (gitignored) |
 | `docs/SOA.md` | AI-malware archetype taxonomy and YARA ontology reference |
