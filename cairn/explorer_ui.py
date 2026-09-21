@@ -139,6 +139,17 @@ HTML = r"""<!DOCTYPE html>
   #demo-orb-glow {
     background: radial-gradient(circle, rgba(247,182,79,.12) 0%, transparent 70%);
   }
+  /* Table orb — muted teal accent */
+  #btn-table.orb-btn {
+    box-shadow: 0 0 6px rgba(79,247,182,.08), inset 0 0 4px rgba(79,247,182,.04);
+  }
+  #btn-table.orb-btn:hover { box-shadow: 0 0 10px rgba(79,247,182,.18), inset 0 0 6px rgba(79,247,182,.08); }
+  #btn-table.orb-btn.active {
+    box-shadow: 0 0 14px rgba(79,247,182,.3), 0 0 28px rgba(79,247,182,.08), inset 0 0 6px rgba(79,247,182,.12);
+  }
+  #table-orb-glow {
+    background: radial-gradient(circle, rgba(79,247,182,.06) 0%, transparent 70%);
+  }
 
   /* Orbit mode — logo watermark over graph */
   #demo-logo {
@@ -649,12 +660,16 @@ HTML = r"""<!DOCTYPE html>
       </div>
       <div id="orb-stack">
         <span class="orb-wrap">
-          <button class="orb-btn" id="btn-analytics" title="Analytics"><canvas id="orb-spark" width="22" height="22"></canvas></button>
+          <button class="orb-btn" id="btn-analytics" title="Analytics"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="8" width="3" height="6" rx="0.5" fill="#4f8ef7"/><rect x="4" y="4" width="3" height="10" rx="0.5" fill="#4f8ef7"/><rect x="8" y="1" width="3" height="13" rx="0.5" fill="#4f8ef7"/><rect x="0" y="13.5" width="11" height="0.5" fill="#4f8ef7" opacity="0.4"/></svg></button>
           <span class="orb-glow"></span>
         </span>
         <span class="orb-wrap">
           <button class="orb-btn" id="btn-demo" title="Orbit mode"><canvas id="demo-orb-canvas" width="22" height="22"></canvas></button>
           <span class="orb-glow" id="demo-orb-glow"></span>
+        </span>
+        <span class="orb-wrap">
+          <button class="orb-btn" id="btn-table" title="Data table"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="0.5" width="13" height="13" rx="1.5" stroke="#4ff7b6" stroke-opacity="0.5"/><line x1="0.5" y1="4.5" x2="13.5" y2="4.5" stroke="#4ff7b6" stroke-opacity="0.4"/><line x1="0.5" y1="8.5" x2="13.5" y2="8.5" stroke="#4ff7b6" stroke-opacity="0.3"/><line x1="4.5" y1="4.5" x2="4.5" y2="13.5" stroke="#4ff7b6" stroke-opacity="0.3"/></svg></button>
+          <span class="orb-glow" id="table-orb-glow"></span>
         </span>
       </div>
       <div id="stats">
@@ -693,8 +708,8 @@ HTML = r"""<!DOCTYPE html>
         <button class="btn" id="btn-reset">Reset</button>
         <button class="btn" id="btn-3d">3D</button>
         <button class="btn" id="btn-reheat">Reheat</button>
+        <button class="btn" id="btn-flat">FLAT</button>
         <button class="btn" id="btn-umap">UMAP</button>
-        <button class="btn" id="btn-table">TABLE</button>
       </div>
       <button class="btn" id="btn-clear-filters">CLEAR FILTERS</button>
       <button id="btn-sidebar-hide">◀ HIDE PANEL</button>
@@ -911,6 +926,7 @@ let activeFamilyFilters = new Set(); // all active families
 let activeRuleFilter = null;
 let activeProviderFilter = null;
 let t3OnlyMode = false;
+let flatMode = false;
 let substrateMode = false;
 let focusMode = false;
 let focusNodeId = null;
@@ -949,10 +965,9 @@ fetch('/api/graph')
     document.getElementById('loading').innerHTML = `<p style="color:var(--danger)">Failed to load graph: ${e}</p>`;
   });
 
-// Prefetch analytics in background for orb sparkline (non-blocking)
+// Prefetch analytics in background (non-blocking)
 fetch('/api/analytics').then(r => r.json()).then(data => {
   analyticsCache = data;
-  renderOrbSparkline(data.corpus_timeline);
 }).catch(() => {});
 
 function processGraph(raw) {
@@ -1023,6 +1038,7 @@ function initGraph2d() {
     .height(document.getElementById('graph-wrap').clientHeight)
     .onRenderFramePost(drawFamilyHulls);
   updateNodeCount(filtered);
+  if (flatMode) applyForceLayout();
 }
 
 // ── 3D graph ─────────────────────────────────────────────────────────────────
@@ -1051,8 +1067,22 @@ function initGraph3d() {
     .height(el.clientHeight)
     .onEngineStop(() => compute3dFamilyCentroids());
   updateNodeCount(filtered);
+  if (flatMode) applyForceLayout();
   setTimeout(() => compute3dFamilyCentroids(), 3000);
   start3dLabelLoop();
+}
+
+function applyForceLayout() {
+  const g = currentGraph();
+  if (!g) return;
+  if (flatMode) {
+    if (g.d3Force('charge')) g.d3Force('charge').strength(-300);
+    if (g.d3Force('link'))   g.d3Force('link').distance(120).strength(0.3);
+  } else {
+    if (g.d3Force('charge')) g.d3Force('charge').strength(-30);
+    if (g.d3Force('link'))   g.d3Force('link').distance(30);
+  }
+  if (g.d3ReheatSimulation) g.d3ReheatSimulation();
 }
 
 let _3dLabelData = []; // [{family, cx, cy, cz, color}]
@@ -1889,6 +1919,12 @@ document.getElementById('btn-reheat').addEventListener('click', () => {
   const g = currentGraph(); if (g && g.d3ReheatSimulation) g.d3ReheatSimulation();
 });
 
+document.getElementById('btn-flat').addEventListener('click', () => {
+  flatMode = !flatMode;
+  document.getElementById('btn-flat').classList.toggle('active', flatMode);
+  applyForceLayout();
+});
+
 document.getElementById('btn-hull').addEventListener('click', () => {
   hullVisible = !hullVisible;
   document.getElementById('btn-hull').classList.toggle('active', hullVisible);
@@ -2433,7 +2469,6 @@ function renderAnalytics(data) {
   renderScatterPlot(data.sample_scatter);
   renderHeatmap(data.rule_time_heatmap);
   renderPipelineTable(data.family_pipeline);
-  renderOrbSparkline(data.corpus_timeline);
 }
 
 function renderFunnelChart(d) {
@@ -2948,45 +2983,6 @@ document.getElementById('arch-scale-toggle').addEventListener('click', () => {
   btn.classList.toggle('active', archLogScale);
   if (analyticsCache) renderArchetypeChart(analyticsCache.archetype_distribution);
 });
-
-function renderOrbSparkline(timelineData) {
-  const canvas = document.getElementById('orb-spark');
-  if (!canvas || !timelineData?.months?.length) return;
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const S = 22;
-  canvas.width = S * dpr;
-  canvas.height = S * dpr;
-  ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, S, S);
-
-  const vals = timelineData.months.slice(-8).map(m => m.total);
-  if (vals.length < 2) return;
-  const max = Math.max(...vals, 1);
-  const min = Math.min(...vals, 0);
-  const range = max - min || 1;
-  const pad = 3;
-  const w = S - pad * 2, h = S - pad * 2;
-
-  ctx.beginPath();
-  ctx.strokeStyle = '#4f8ef7';
-  ctx.lineWidth = 1.2;
-  ctx.lineJoin = 'round';
-  vals.forEach((v, i) => {
-    const x = pad + (i / (vals.length - 1)) * w;
-    const y = pad + h - ((v - min) / range) * h;
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  });
-  ctx.stroke();
-
-  // Glow dot on last point
-  const lastX = pad + w;
-  const lastY = pad + h - ((vals[vals.length - 1] - min) / range) * h;
-  ctx.beginPath();
-  ctx.arc(lastX, lastY, 1.5, 0, Math.PI * 2);
-  ctx.fillStyle = '#4fef8e';
-  ctx.fill();
-}
 
 function renderPipelineTable(d) {
   const sumEl = document.getElementById('pipeline-summary');

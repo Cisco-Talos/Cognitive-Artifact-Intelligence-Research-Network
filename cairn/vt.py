@@ -37,6 +37,7 @@ VT_SNIPPET_URL = "https://www.virustotal.com/api/v3/intelligence/search/snippets
 VT_FILE_LOOKUP = "https://www.virustotal.com/api/v3/files/{sha256}"
 VT_URL_LOOKUP = "https://www.virustotal.com/api/v3/urls/{url_id}"
 VT_BEHAVIOURS_URL = "https://www.virustotal.com/api/v3/files/{sha256}/behaviours"
+VT_TELEMETRY_URL = "https://www.virustotal.com/api/v3/gti/indicators/file/{sha256}/telemetry"
 
 # Network relationships requested on every file-returning lookup. These are the only
 # infrastructure anchors reachable from CAIRN's synthesized scan text (PE resource
@@ -187,6 +188,21 @@ class VirusTotalClient:
         if not isinstance(sandboxes, list):
             return {}
         return _behaviours_summary(sandboxes)
+
+    async def lookup_telemetry(self, sha256: str) -> dict[str, Any] | None:
+        """Fetch Google Insights telemetry (in-the-wild prevalence) for a file.
+
+        Returns the raw response dict on success, or None on 404/403 (endpoint
+        unavailable or insufficient tier). The response schema is not yet fully
+        documented — callers should store the raw result.
+        """
+        try:
+            payload = await self._get_json(VT_TELEMETRY_URL.format(sha256=sha256))
+        except VirusTotalError as exc:
+            if exc.status in ("not_found", "auth_failed"):
+                return None
+            raise
+        return payload.get("data") if isinstance(payload.get("data"), dict) else payload
 
     async def fetch_snippet(self, snippet_id: str) -> list[str]:
         """Fetch the content-match fragments for one snippet ID.

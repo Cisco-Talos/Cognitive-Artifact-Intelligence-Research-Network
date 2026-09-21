@@ -370,6 +370,18 @@ class Corpus:
                 )
         return not bool(existed)
 
+    def audit_provenance(self, rules_text: str, *, min_tier: str = "T1") -> dict[str, Any]:
+        """Classify rule matches by evidence provenance — static file vs. sandbox memory.
+
+        Answers "would this hit survive if memory_pattern_* evidence were removed?"
+        See cairn/provenance.py and docs/SOA.md lessons 14 and 16. No API calls.
+        """
+        from cairn.provenance import audit_corpus
+
+        with self.connect() as conn:
+            rows = conn.execute("SELECT sha256, raw_json FROM samples ORDER BY sha256").fetchall()
+        return audit_corpus([(row["sha256"], row["raw_json"]) for row in rows], rules_text, min_tier=min_tier)
+
     def rescan_samples(self, rules_text: str) -> dict[str, Any]:
         """Re-run YARA rules against all stored sample scan_text without making API calls.
 
@@ -1156,6 +1168,120 @@ class Corpus:
             d["reference_urls"] = json.loads(d.pop("reference_urls_json", "[]"))
             result.append(d)
         return result
+
+
+    def triage_gap(self) -> dict[str, Any]:
+        """Identify samples that slipped through triage — high detection with no/weak rule signal.
+
+        Returns categories:
+        - t1_only: samples with T1 hits but no T2/T3, sorted by detection count
+        - no_rules_high_det: samples with det>=15 and zero rule hits
+        - metadata_stats: relationship and behaviour coverage
+        - content_filter_no_rules: samples acquired via content-search filters with no rule hits
+        """
+        with self.connect() as conn:
+            # --- T1-only samples (no T2/T3) ---
+            t1_only_rows = conn.execute("""
+                SELECT DISTINCT s.sha256, s.name, s.detections, s.file_type,
+                       GROUP_CONCAT(DISTINCT rm.rule_name) AS t1_rules
+                FROM samples s
+                INNER JOIN rule_matches rm ON s.sha256 = rm.sample_sha256
+                WHERE rm.tier = 'T1'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM rule_matches rm2
+                      WHERE rm2.sample_sha256 = s.sha256 AND rm2.tier IN ('T2', 'T3')
+                  )
+                GROUP BY s.sha256
+                ORDER BY s.detections DESC
+            """).fetchall()
+
+            # --- No rules, high detection (det>=15) ---
+            no_rules_rows = conn.execute("""
+                SELECT s.sha256, s.name, s.detections, s.file_type
+                FROM samples s
+                WHERE s.detections >= 15
+                  AND NOT EXISTS (
+                      SELECT 1 FROM rule_matches rm WHERE rm.sample_sha256 = s.sha256
+                  )
+                ORDER BY s.detections DESC
+            """).fetchall()
+
+            # --- Metadata completeness ---
+            total = conn.execute("SELECT COUNT(*) FROM samples").fetchone()[0]
+            has_rels = conn.execute("""
+                SELECT COUNT(*) FROM samples
+                WHERE json_extract(raw_json, '$.relationships') IS NOT NULL
+                  AND json_extract(raw_json, '$.relationships') <> '{}'
+            """).fetchone()[0]
+            has_behaviours = conn.execute("""
+                SELECT COUNT(*) FROM samples
+                WHERE json_extract(raw_json, '$.behaviours') IS NOT NULL
+                  AND json_extract(raw_json, '$.behaviours') <> '{}'
+            """).fetchone()[0]
+
+            # --- Content-filter acquired samples with no rule hits ---
+            # Filters using content: modifiers in their query
+            content_filter_rows = conn.execute("""
+                SELECT sf.filter_slug, sf.filter_name, s.sha256, s.name, s.detections
+                FROM sample_filters sf
+                INNER JOIN samples s ON sf.sample_sha256 = s.sha256
+                INNER JOIN acquisition_runs ar ON sf.acquisition_run_id = ar.id
+                WHERE ar.effective_query_text LIKE '%content:%'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM rule_matches rm WHERE rm.sample_sha256 = s.sha256
+                  )
+                ORDER BY s.detections DESC
+            """).fetchall()
+
+            # --- T1-only breakdown by rule ---
+            t1_only_by_rule = conn.execute("""
+                SELECT rm.rule_name, COUNT(DISTINCT rm.sample_sha256) AS samples,
+                       AVG(s.detections) AS avg_det, MAX(s.detections) AS max_det
+                FROM rule_matches rm
+                INNER JOIN samples s ON rm.sample_sha256 = s.sha256
+                WHERE rm.tier = 'T1'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM rule_matches rm2
+                      WHERE rm2.sample_sha256 = rm.sample_sha256 AND rm2.tier IN ('T2', 'T3')
+                  )
+                GROUP BY rm.rule_name
+                ORDER BY samples DESC
+            """).fetchall()
+
+        return {
+            "t1_only": {
+                "total": len(t1_only_rows),
+                "by_rule": [dict(r) for r in t1_only_by_rule],
+                "top_20": [
+                    {"sha256": r["sha256"], "name": r["name"], "detections": r["detections"],
+                     "file_type": r["file_type"], "t1_rules": r["t1_rules"]}
+                    for r in t1_only_rows[:20]
+                ],
+            },
+            "no_rules_high_det": {
+                "total": len(no_rules_rows),
+                "top_20": [
+                    {"sha256": r["sha256"], "name": r["name"], "detections": r["detections"],
+                     "file_type": r["file_type"]}
+                    for r in no_rules_rows[:20]
+                ],
+            },
+            "content_filter_no_rules": {
+                "total": len(content_filter_rows),
+                "top_20": [
+                    {"sha256": r["sha256"], "name": r["name"], "detections": r["detections"],
+                     "filter_slug": r["filter_slug"]}
+                    for r in content_filter_rows[:20]
+                ],
+            },
+            "metadata_stats": {
+                "total_samples": total,
+                "with_relationships": has_rels,
+                "with_behaviours": has_behaviours,
+                "pct_relationships": round(has_rels * 100 / total, 1) if total else 0,
+                "pct_behaviours": round(has_behaviours * 100 / total, 1) if total else 0,
+            },
+        }
 
 
 def _now() -> str:

@@ -195,12 +195,14 @@ async def refresh_samples(
     database_path: Path | None = None,
     rules_path: Path | None = None,
     fetch_behaviours: bool = False,
+    fetch_telemetry: bool = False,
 ) -> list[dict]:
     """Deep-lookup a list of known sha256s, update raw_json, and re-run YARA.
 
     Each sha256 must already exist in the corpus. Returns one result dict per hash.
     Pass fetch_behaviours=True to also pull sandbox behavioural data (costs one extra
-    API call per hash).
+    API call per hash). Pass fetch_telemetry=True to fetch Google Insights telemetry
+    (one extra API call per hash).
     """
     app_settings = settings()
     corpus = Corpus(database_path or app_settings.database_path)
@@ -225,9 +227,13 @@ async def refresh_samples(
                 behaviours = await client.lookup_behaviours(sha256)
                 if behaviours:
                     vt_row.raw["behaviours"] = behaviours
-            # Preserve snippet data from the existing DB record — snippets are only
-            # fetched during cairn pull --snippets and are not returned by the plain
-            # file lookup endpoint. Without this, a refresh would silently discard them.
+            if fetch_telemetry:
+                telemetry = await client.lookup_telemetry(sha256)
+                if telemetry:
+                    vt_row.raw.setdefault("cairn", {})["telemetry"] = telemetry
+            # Preserve snippet and behaviour data from the existing DB record — neither is
+            # returned by the plain file lookup endpoint. Without this, a refresh would
+            # silently discard them.
             with corpus.connect() as _conn:
                 _old = _conn.execute("SELECT raw_json FROM samples WHERE sha256 = ?", (sha256,)).fetchone()
             if _old:
@@ -235,6 +241,11 @@ async def refresh_samples(
                 _old_raw = _json.loads(_old[0])
                 if _old_raw.get("snippets"):
                     vt_row.raw.setdefault("snippets", _old_raw["snippets"])
+                if _old_raw.get("behaviours"):
+                    vt_row.raw.setdefault("behaviours", _old_raw["behaviours"])
+                old_cairn = _old_raw.get("cairn") or {}
+                if old_cairn.get("telemetry"):
+                    vt_row.raw.setdefault("cairn", {}).setdefault("telemetry", old_cairn["telemetry"])
             sub_keys = await client.fetch_submissions(sha256)
             vt_row.raw.setdefault("cairn", {})["submitter_keys"] = sub_keys
             scan_text = scan_text_from_vt_row(vt_row)

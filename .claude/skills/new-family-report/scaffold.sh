@@ -19,13 +19,12 @@ if [[ -f "$OUT" ]]; then
 fi
 
 TODAY="$(date +%Y-%m-%d)"
-AUTHOR="Ryan Fetterman (rfetterman@cisco.com)"
 
 cat > "$OUT" << TEMPLATE
 # ${FAMILY} — Research Report
 
 **Family designation:** ${FAMILY} (CAIRN research name; no public attribution at time of writing)
-**Author:** ${AUTHOR}
+**Author:** <!-- analyst name -->
 **First seen:** <!-- YYYY-MM-DD -->
 **Last seen:** <!-- YYYY-MM-DD (campaign active / inactive) -->
 **Variants:** <!-- N binaries (language/toolchain) -->
@@ -295,7 +294,7 @@ rule T3-${FAMILY}_<!-- descriptor -->
 
 ---
 
-*Discovered using CAIRN v0.1.0. Report last updated ${TODAY}. Author: ${AUTHOR}*
+*Discovered using CAIRN v0.1.0. Report last updated ${TODAY}.*
 TEMPLATE
 
 echo "Created: $OUT"

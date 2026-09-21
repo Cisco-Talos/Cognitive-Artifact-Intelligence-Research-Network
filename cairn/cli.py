@@ -123,6 +123,16 @@ def main() -> None:
                            metavar="SHA256", help="SHA256 to refresh (repeatable)")
     refresh_p.add_argument("--behaviours", action="store_true",
                            help="Also fetch sandbox behavioural data (one extra API call per hash)")
+    refresh_p.add_argument("--telemetry", action="store_true",
+                           help="Also fetch Google Insights telemetry (one extra API call per hash)")
+
+    telemetry_p = subparsers.add_parser(
+        "telemetry",
+        help="Fetch or display Google Insights telemetry for a sample",
+    )
+    telemetry_p.add_argument("sha256", nargs="?", help="SHA256 to fetch telemetry for")
+    telemetry_p.add_argument("--corpus", action="store_true",
+                             help="Summarize telemetry across all samples that have it stored")
 
     embed_p = subparsers.add_parser("embed", help="Encode sample scan_text into embeddings and store them")
     embed_p.add_argument("--model", default="all-MiniLM-L6-v2", help="Sentence-transformers model name")
@@ -180,6 +190,39 @@ def main() -> None:
         "--t3-only", action="store_true",
         help="Only process samples with at least one T3 rule match",
     )
+
+    audit_prov = subparsers.add_parser(
+        "audit-provenance",
+        help="Flag rule hits that rest only on VT sandbox-memory evidence (no API calls)",
+    )
+    audit_prov.add_argument(
+        "--min-tier", default="T1", choices=["T1", "T2", "T3"],
+        help="Only report hits at this tier or above (default T1)",
+    )
+    audit_prov.add_argument(
+        "--summary-only", action="store_true",
+        help="Print counts without the per-finding list",
+    )
+
+    subparsers.add_parser(
+        "triage-gap",
+        help="Surface high-detection samples with no or weak rule signal — the triage blind spot",
+    )
+
+    refresh_batch_p = subparsers.add_parser(
+        "refresh-batch",
+        help="Refresh a targeted batch of samples by SQL-driven criteria (T1-only, high-det, etc.)",
+    )
+    refresh_batch_p.add_argument(
+        "--category",
+        required=True,
+        choices=["t1-only-high-det", "no-rules-high-det", "content-filter-no-rules",
+                 "seeds-missing-behaviours", "go-no-rules", "go-t1-only"],
+        help="Which triage-gap category to refresh",
+    )
+    refresh_batch_p.add_argument("--limit", type=int, default=50, help="Max samples to refresh (default 50)")
+    refresh_batch_p.add_argument("--behaviours", action="store_true", help="Also fetch sandbox behavioural data")
+    refresh_batch_p.add_argument("--dry-run", action="store_true", help="Show which samples would be refreshed without making API calls")
 
     sync_pi = subparsers.add_parser(
         "sync-promptintel",
@@ -255,7 +298,9 @@ def main() -> None:
     elif args.command == "pivot-urls":
         _print_json(asyncio.run(pivot_embedded_urls(args.sha256)))
     elif args.command == "refresh":
-        _print_json(asyncio.run(refresh_samples(args.sha256_list, fetch_behaviours=args.behaviours)))
+        _print_json(asyncio.run(refresh_samples(args.sha256_list, fetch_behaviours=args.behaviours, fetch_telemetry=args.telemetry)))
+    elif args.command == "telemetry":
+        _cmd_telemetry(args)
     elif args.command == "embed":
         _cmd_embed(args)
     elif args.command == "cluster":
@@ -279,6 +324,17 @@ def main() -> None:
             _print_threads(threads)
     elif args.command == "fetch-submitters":
         _print_json(asyncio.run(fetch_submitters(limit=args.limit, t3_only=args.t3_only)))
+    elif args.command == "audit-provenance":
+        corpus = Corpus(settings().database_path)
+        payload = corpus.audit_provenance(load_rules_text(), min_tier=args.min_tier)
+        if args.summary_only:
+            payload.pop("findings", None)
+        _print_json(payload)
+    elif args.command == "triage-gap":
+        corpus = Corpus(settings().database_path)
+        _print_json(corpus.triage_gap())
+    elif args.command == "refresh-batch":
+        _cmd_refresh_batch(args)
     elif args.command == "sync-promptintel":
         _cmd_sync_promptintel(args)
 
@@ -497,6 +553,171 @@ def _cmd_prune(args: argparse.Namespace) -> None:
             "pruned": result["pruned"],
             "seed_conflicts": result["seed_conflicts"],
         })
+
+
+def _cmd_telemetry(args: argparse.Namespace) -> None:
+    if args.corpus:
+        corpus = Corpus(settings().database_path)
+        with corpus.connect() as conn:
+            rows = conn.execute("SELECT sha256, raw_json FROM samples").fetchall()
+        results = []
+        for row in rows:
+            raw = json.loads(row["raw_json"] or "{}")
+            tel = (raw.get("cairn") or {}).get("telemetry")
+            if tel:
+                results.append({"sha256": row["sha256"], "telemetry": tel})
+        _print_json({"total_with_telemetry": len(results), "samples": results})
+        return
+
+    if not args.sha256:
+        _print_json({"error": "Provide a SHA256 or use --corpus"})
+        return
+
+    sha256 = args.sha256.lower().strip()
+    corpus = Corpus(settings().database_path)
+
+    # Check if already stored
+    with corpus.connect() as conn:
+        row = conn.execute("SELECT raw_json FROM samples WHERE sha256 = ?", (sha256,)).fetchone()
+    if not row:
+        _print_json({"error": f"SHA256 not found in corpus: {sha256}"})
+        return
+
+    raw = json.loads(row["raw_json"] or "{}")
+    cached = (raw.get("cairn") or {}).get("telemetry")
+    if cached:
+        _print_json({"sha256": sha256, "source": "cached", "telemetry": cached})
+        return
+
+    # Fetch from VT
+    from cairn.vt import VirusTotalClient, VirusTotalError
+    app_settings = settings()
+    client = VirusTotalClient(
+        api_key=app_settings.vt_api_key,
+        rate_limit_per_minute=app_settings.rate_limit_per_minute,
+        daily_limit=app_settings.daily_limit,
+    )
+    telemetry = asyncio.run(client.lookup_telemetry(sha256))
+    if telemetry is None:
+        _print_json({"sha256": sha256, "telemetry": None, "message": "No telemetry available (404/403)"})
+        return
+
+    # Store it
+    raw.setdefault("cairn", {})["telemetry"] = telemetry
+    with corpus.connect() as conn:
+        conn.execute("UPDATE samples SET raw_json = ? WHERE sha256 = ?", (json.dumps(raw), sha256))
+    _print_json({"sha256": sha256, "source": "fetched", "telemetry": telemetry})
+
+
+def _cmd_refresh_batch(args: argparse.Namespace) -> None:
+    """Refresh a targeted batch of samples identified by triage-gap category."""
+    import sys
+
+    corpus = Corpus(settings().database_path)
+
+    with corpus.connect() as conn:
+        if args.category == "t1-only-high-det":
+            rows = conn.execute("""
+                SELECT DISTINCT s.sha256
+                FROM samples s
+                INNER JOIN rule_matches rm ON s.sha256 = rm.sample_sha256
+                WHERE rm.tier = 'T1' AND s.detections >= 10
+                  AND NOT EXISTS (
+                      SELECT 1 FROM rule_matches rm2
+                      WHERE rm2.sample_sha256 = s.sha256 AND rm2.tier IN ('T2', 'T3')
+                  )
+                ORDER BY s.detections DESC
+                LIMIT ?
+            """, (args.limit,)).fetchall()
+        elif args.category == "no-rules-high-det":
+            rows = conn.execute("""
+                SELECT s.sha256
+                FROM samples s
+                WHERE s.detections >= 15
+                  AND NOT EXISTS (
+                      SELECT 1 FROM rule_matches rm WHERE rm.sample_sha256 = s.sha256
+                  )
+                ORDER BY s.detections DESC
+                LIMIT ?
+            """, (args.limit,)).fetchall()
+        elif args.category == "content-filter-no-rules":
+            rows = conn.execute("""
+                SELECT DISTINCT s.sha256
+                FROM sample_filters sf
+                INNER JOIN samples s ON sf.sample_sha256 = s.sha256
+                INNER JOIN acquisition_runs ar ON sf.acquisition_run_id = ar.id
+                WHERE ar.effective_query_text LIKE '%content:%'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM rule_matches rm WHERE rm.sample_sha256 = s.sha256
+                  )
+                ORDER BY s.detections DESC
+                LIMIT ?
+            """, (args.limit,)).fetchall()
+        elif args.category == "seeds-missing-behaviours":
+            rows = conn.execute("""
+                SELECT ks.sha256
+                FROM known_seeds ks
+                JOIN samples s ON ks.sha256 = s.sha256
+                WHERE json_extract(s.raw_json, '$.behaviours') IS NULL
+                   OR json_extract(s.raw_json, '$.behaviours') = '{}'
+                ORDER BY s.detections DESC
+                LIMIT ?
+            """, (args.limit,)).fetchall()
+        elif args.category == "go-no-rules":
+            rows = conn.execute("""
+                SELECT s.sha256
+                FROM samples s
+                WHERE json_extract(s.raw_json, '$.attributes.goresym') IS NOT NULL
+                  AND s.detections >= 10
+                  AND NOT EXISTS (
+                      SELECT 1 FROM rule_matches rm WHERE rm.sample_sha256 = s.sha256
+                  )
+                ORDER BY s.detections DESC
+                LIMIT ?
+            """, (args.limit,)).fetchall()
+        elif args.category == "go-t1-only":
+            rows = conn.execute("""
+                SELECT DISTINCT s.sha256
+                FROM samples s
+                INNER JOIN rule_matches rm ON s.sha256 = rm.sample_sha256
+                WHERE json_extract(s.raw_json, '$.attributes.goresym') IS NOT NULL
+                  AND rm.tier = 'T1'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM rule_matches rm2
+                      WHERE rm2.sample_sha256 = s.sha256 AND rm2.tier IN ('T2', 'T3')
+                  )
+                ORDER BY s.detections DESC
+                LIMIT ?
+            """, (args.limit,)).fetchall()
+        else:
+            _print_json({"error": f"Unknown category: {args.category}"})
+            return
+
+    sha256_list = [r["sha256"] for r in rows]
+
+    if args.dry_run:
+        _print_json({
+            "dry_run": True,
+            "category": args.category,
+            "count": len(sha256_list),
+            "sha256s": sha256_list,
+        })
+        return
+
+    if not sha256_list:
+        _print_json({"category": args.category, "count": 0, "message": "No samples match this category"})
+        return
+
+    print(f"Refreshing {len(sha256_list)} samples ({args.category})...", file=sys.stderr)
+    results = asyncio.run(refresh_samples(sha256_list, fetch_behaviours=args.behaviours))
+
+    gained_rules = sum(1 for r in results if r.get("rule_hits", 0) > 0)
+    _print_json({
+        "category": args.category,
+        "refreshed": len(results),
+        "gained_rule_hits": gained_rules,
+        "results": results,
+    })
 
 
 def _cmd_sync_promptintel(args: argparse.Namespace) -> None:

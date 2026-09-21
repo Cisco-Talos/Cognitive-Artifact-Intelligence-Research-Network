@@ -978,3 +978,1429 @@ exclusions:
     reclassified_as: Unknown low-detection MSIL binary, no analytical value
     date: "2026-06-17"
     analyst: Ryan
+  # SCRIBESIPHON cluster — legitimate open-source software, reclassified 2026-07-31
+  # Static RE of 56801c80 on an isolated REMnux guest confirmed all six samples are the
+  # Apache-2.0 "Novel Writing & AI Programming Assistant" (github.com/jiqi136/Ai-Assistant,
+  # V26.1/V27.1/V28.1), built on the same author's PC-Gui framework. The remote MySQL
+  # writes carry %d-typed token counts for subscription billing, not conversation text;
+  # conversation content stays in a local SQLCipher DB. Both Alibaba hosts are absent from
+  # the binary — they came from VT sandbox DNS. T3-SCRIBESIPHON rule removed.
+  # Reclassification documented in investigation record.
+  56801c802119f8d9f0bfced86d193b027afd80089052ee92941514cac22d22fb:
+    reason: Legitimate open-source AI assistant (RE seed, V27.1 build) — remote MySQL is token billing, not conversation exfil
+    reclassified_as: Novel Writing & AI Programming Assistant (github.com/jiqi136/Ai-Assistant, Apache-2.0)
+    date: "2026-07-31"
+    analyst: Ryan
+  20fe9d247fad7a615a6f26f983d1d3d384abb69db81b89fd63d652ec0ffc5c6b:
+    reason: Legitimate open-source AI assistant — earliest cluster build (Dec 2025); same product
+    reclassified_as: Novel Writing & AI Programming Assistant (github.com/jiqi136/Ai-Assistant, Apache-2.0)
+    date: "2026-07-31"
+    analyst: Ryan
+  a83896645d084a85219e537979d25a87c947bd46c23af9d70a07cca8e5d5ed78:
+    reason: Legitimate open-source AI assistant — V26.1 release build
+    reclassified_as: Novel Writing & AI Programming Assistant V26.1 (github.com/jiqi136/Ai-Assistant, Apache-2.0)
+    date: "2026-07-31"
+    analyst: Ryan
+  4997de512cf9c53c20539f1583652789ee8172afbccf47c9a0cad7ee142345b8:
+    reason: Legitimate open-source AI assistant — V27.1 release build
+    reclassified_as: Novel Writing & AI Programming Assistant V27.1 (github.com/jiqi136/Ai-Assistant, Apache-2.0)
+    date: "2026-07-31"
+    analyst: Ryan
+  dd32dbd7c8f88c3d687da2a9d3294fecb3b205e69daa387f8840ab86ef4dec69:
+    reason: Legitimate open-source AI assistant — V28.1 release build, matches upstream repo version
+    reclassified_as: Novel Writing & AI Programming Assistant V28.1 (github.com/jiqi136/Ai-Assistant, Apache-2.0)
+    date: "2026-07-31"
+    analyst: Ryan
+  af4a3cc2786d20acd78c169cd2f02813010e04f941662ed8842842ee0c42ee10:
+    reason: Legitimate open-source AI assistant — BibiGPT-labelled variant of the same PC-Gui product
+    reclassified_as: Novel Writing & AI Programming Assistant / PC-Gui build (github.com/jiqi136/Ai-Assistant, Apache-2.0)
+    date: "2026-07-31"
+    analyst: Ryan
+  # runtimehost.exe — commodity malware, not ACELOADER/LLMGATE
+  # Closed 2026-08-01 as coincidence. Surfaced by a content:"TechSoft Solutions Ltd" pivot
+  # as a candidate 9th LLMGATE sample. Every link failed: PE32/i386 vs AMD64 for all 27
+  # campaign samples (so import overlap cannot reflect shared object code); import Jaccard
+  # 0.404 is the 100th percentile but only ~4% above the max unrelated MinGW<->MinGW score
+  # (0.388, p95 0.364, median 0.225) with zero crypto/net/injection imports in the overlap;
+  # C2 14.103.181.103 absent; no campaign member in any file relationship; RU distribution
+  # host 89.208.33.243 with empty communicating/referrer sets. Only surviving link is the
+  # vendor token, in the ACELOADER copyright template (7.6% corpus base rate) rather than
+  # LLMGATE's. Excluded to stop it re-entering on future TechSoft content pivots — it is
+  # genuinely malicious (20 detections), just unrelated to this campaign.
+  aae7b3bcc491cfc01ef6ab7a174dd1b7270b76094759a408c43108540dc3e508:
+    reason: Unrelated commodity malware — TechSoft vendor string collision only, no code/infra link to LLMGATE or ACELOADER
+    reclassified_as: Commodity malware, family unattributed (32-bit, outside campaign toolchain and window)
+    date: "2026-08-01"
+    analyst: Ryan
+
+  # ZAPRETCORE — "Zapret Core" legitimate Russian DPI-bypass / anti-censorship GUI tool
+  # Retracted 2026-08-03 after static RE of all 3 June-27 builds. Self-branded tool
+  # (site zapretcore.ru, author @dysonbehind, donation/account system) that bundles
+  # bol-van's real winws.exe zapret engine + Telegram MTProto proxy + HTTP proxy. The
+  # "AI provider redirect to actor C2" thesis is false: the 220-entry table is a
+  # Russia-blocked-services hosts list, AI endpoints are a minority, 51 entries point to
+  # REAL service IPs (DNS un-poisoning), and there is NO TLS-MitM capability (zero
+  # Cert*/root-CA/-addstore imports, zero Authorization/Bearer/api_key strings) so header
+  # harvesting is impossible. 33-38 detections = same heuristic FP that flags
+  # GoodbyeDPI/zapret. T3-ZAPRETCORE rule removed.
+  e533522c642b6313482059f3fba96bdedc4c257df7e73606a81eb1c386c57e21:
+    reason: Legitimate anti-censorship software — Zapret Core v2.7.0 DPI-bypass GUI (zapretcore.ru)
+    reclassified_as: Zapret Core DPI-bypass tool (bundles bol-van winws.exe zapret engine; self-signed Pauselock Inc)
+    date: "2026-08-03"
+    analyst: Ryan
+  d90e43d8aef8cba94ae2a1ba2ef5b6c94afeb130e1cae55b4ca2645aa38bdf2e:
+    reason: Legitimate anti-censorship software — Zapret Core v2.7.0 DPI-bypass GUI (sibling build, functionally identical to e533522c)
+    reclassified_as: Zapret Core DPI-bypass tool
+    date: "2026-08-03"
+    analyst: Ryan
+  b901311e98ab25d675b87a240ad51fbbb168b01d62b70ba91c2d5c72c41923ce:
+    reason: Legitimate anti-censorship software — Zapret Core v2.7.0 DPI-bypass GUI (sibling build; differs only in config region)
+    reclassified_as: Zapret Core DPI-bypass tool
+    date: "2026-08-03"
+    analyst: Ryan
+  11c40ac5997e784702967b87ff6b750ac863cb1f40d28f995dd7b730eebb8d69:
+    reason: Legitimate anti-censorship software — "GeoHide DNS.exe", earlier unsigned build of the same zapret-family DPI-bypass tool
+    reclassified_as: Zapret-family DPI-bypass tool (earlier variant; Yogi FP class = hosts-file modifier heuristic)
+    date: "2026-08-03"
+    analyst: Ryan
+  34bcbe7a44f2c95d96153ab31caa507d33325b567cc114968081fa049cbdc827:
+    reason: Config generator for the zapret-family DPI-bypass tool (dns-sni-proxy-hosts-generator-v2.zip)
+    reclassified_as: Hosts-redirect config generator for the Zapret Core anti-censorship toolchain (Hosts2.gen = hosts-modifier heuristic)
+    date: "2026-08-03"
+    analyst: Ryan
+
+  # JACKALCLIENT — "Jackal Client", publicly-branded Minecraft/Windows game-cheat +
+  # desktop-utility client ("A Powerful Windows Hacktool"). Retracted 2026-08-03 after
+  # static RE of both samples. The five Chinese LLM endpoint domains are ABSENT from the
+  # binary in every tested encoding (XOR single/multi-byte, add/sub, base64, reverse,
+  # UTF-16, zlib) — they came only from Zenbox runtime memory patterns, i.e. URLs are
+  # assembled at runtime for a bring-your-own-key user chat feature (no `sk-` keys
+  # embedded; key comes from a UI field or `_API_KEY` env var; local `ollama list` is an
+  # option). No C2 and no dead-drop: the Bilibili BV list backs a `/rickroll` slash-command
+  # (`space/notice` string absent entirely) and textdb.online is config backup + the
+  # `lanzouurls` updater mirror list. No Meterpreter payload — no `metsrv`, no MSF/CS
+  # stager prologue; YARA replay showed HKTL_Meterpreter_inMemory fired only on its generic
+  # ReflectiveLoader + WS2_32.dll branch. Netease_* exports are NeteaseHookSDK entry points,
+  # not an export masquerade. Genuinely dual-use (DLL injection, Detours, driver module,
+  # token elevation, user-toggled keylogger) but with no operator-victim relationship:
+  # 485 local slash-commands, raylib/ImGui GUI, credited OSS deps, activation-code licensing.
+  # A7 withdrawn; T3-JACKALCLIENT rule removed.
+  630610c7ba2dd89fb18eeedcb9698e66ffc366025ceafc2612a59626eca7e5d8:
+    reason: Publicly-branded game-cheat/utility client — Jackal Client v1.1.3 Free (Wormwake); no C2, no exfil, bring-your-own-key user AI chat only
+    reclassified_as: Minecraft/Windows game-cheat + desktop-utility client (dual-use hacktool; generic injection/Detours/driver heuristic FP class)
+    date: "2026-08-03"
+    analyst: Ryan
+  116c1e8c862c63409eeb6931b68c68b7904ef2d20a0dd9f57e2481addb983430:
+    reason: Publicly-branded game-cheat/utility client — Jackal Client sibling build; same brand, banner and command surface as 630610c7
+    reclassified_as: Minecraft/Windows game-cheat + desktop-utility client (dual-use hacktool)
+    date: "2026-08-03"
+    analyst: Ryan
+
+  # CONVAGENT retraction — 2026-08-04. Static RE (GoReSym + r2, re box) of every available
+  # cluster member showed the family was three unrelated benign things joined by a Go-builder
+  # vhash and a heuristic AV token.
+  #
+  # autobg.exe — Baldur's Gate 2 Turkish fan-translation tool. Source path
+  # C:/dev/baldurbot/autobg/autobg.go; 8 main.* functions only (sendToChatGPT, sendToDeepseek,
+  # sendToDeepL, ilgiliTerim = "relevant term", fixMetin = "fix text", getNewJob, getAll,
+  # saveAll, doAll); main.main -> doAll -> getAll -> {3 LLM calls} -> saveAll with no other
+  # branch. Recovered system prompt: "You are a master translator. Try to translate the
+  # following text from the dungeons and dragons computer game Baldur's Gate 2 to Turkish."
+  # The "C2" terim.baldurgecidi.com is the author's own glossary/job server (baldurgecidi =
+  # "Baldur's Gate" in Turkish, terim = "term", matching main.ilgiliTerim and
+  # /findtermsintextbytes); ?email=%s&password=%s is the developer authenticating to it with
+  # drkaan@gmail.com. Hardcoded personal OpenAI/DeepL keys, CGO_ENABLED=1, git VCS stamp,
+  # zero capability surface for theft (no os/exec, no x/sys/windows, no registry, no browser
+  # or credential paths, 0 of 4806 corpus samples within TLSH d<=30). A7 retracted.
+  1c3c4552d32ab857f63ebd3b0c6e3871350e798fbb6088f791a2809bd0899910:
+    reason: Hobbyist Baldur's Gate 2 Turkish fan-translation tool; LLM calls are its stated purpose and the "C2" is the author's own glossary server
+    reclassified_as: Benign personal translation-automation utility (Turkish BG2 fan project, C:/dev/baldurbot/)
+    date: "2026-08-04"
+    analyst: Ryan
+
+  # evastep.exe / moonwalk.exe / eva.exe / liedropPATCH.exe — game macro / autoclicker with
+  # HWID license activation, private Go module "macro": macro/utils.{sendScanCode,
+  # sendMouseInput,SendDown,SendUp,findWindow} + macro/keyutils.{getHardwareHash,
+  # getMachineGUID,ActivateApp,IsActivated,saveActivation}. main.main -> getIniSettings ->
+  # precompileKeys -> IsActivated -> RunApp (SendInput loop) | ActivateApp (POST HWID to
+  # 144.31.91.168:8080/activate, "Activation successed , restart app"). Settings stored under
+  # Software\0xDayz\<product> — a vendor key, not a Run key; no persistence, no os/exec, no
+  # credential or browser access anywhere. Russian-language error strings; source path
+  # C:/Users/Friend/Desktop/eva ishodnik/ (ishodnik = "source code"). The Kaspersky
+  # VHO:Trojan-PSW.Win32.Convagent.gen / Trellix Stealer.Convagent labels are heuristic FPs on
+  # input-injection + MachineGuid code, which is exactly what a licensed macro tool contains.
+  e4daad358ab779da5181f62d8c451d49e31cc0364c5dded1fca672b6abed16fb:
+    reason: Game macro/autoclicker with HWID license activation (module "macro"); Trojan-PSW label is a heuristic FP on SendInput + MachineGuid
+    reclassified_as: Commercial game macro tool (0xDayz / evastep)
+    date: "2026-08-04"
+    analyst: Ryan
+  3502fe5525edd049a78fc15177ff1ae27bba18b62979c310eda9ef108a08b163:
+    reason: Game macro/autoclicker with HWID license activation; second evastep build
+    reclassified_as: Commercial game macro tool (0xDayz / evastep)
+    date: "2026-08-04"
+    analyst: Ryan
+  c7ae2e6bd29eecda55e6a5cddf91f27e720febf22c5c69682430b45a6cca9633:
+    reason: Game macro/autoclicker with HWID license activation; adds macro/utils.moveMouseRelative
+    reclassified_as: Commercial game macro tool (0xDayz / moonwalk)
+    date: "2026-08-04"
+    analyst: Ryan
+  afee7207633fa873bbd98f8b8c0f1cb8a13a511c2f5a37906b211d0312659d1e:
+    reason: Game macro/autoclicker with HWID license activation; /keyindb is the license-key lookup
+    reclassified_as: Commercial game macro tool (0xDayz)
+    date: "2026-08-04"
+    analyst: Ryan
+  5ddd4f81489de1ccf773f177f65af1096d44f9263416998553e28c9b951a9be5:
+    reason: Game macro/autoclicker with HWID license activation; same "macro" module as evastep
+    reclassified_as: Commercial game macro tool (0xDayz / liedrop)
+    date: "2026-08-04"
+    analyst: Ryan
+
+  # efficio_updater.exe x2 / ClusterEyeAgentUpdater.exe — CI-built auto-updaters for real
+  # products, not "branded MaaS product lines". efficio: module
+  # github.com/DentaMate/efficio/tools/updater, built on a GitHub Actions Windows runner
+  # (D:/a/efficio/efficio/tools/updater/windows/main.go), VCS-stamped, 34 main.* functions that
+  # are all download/verify/unzip/relaunch-elevated logic. clustereye: module
+  # github.com/cloudnativeworks/clustereye-agent-updater, VCS-stamped, /tmp/updater/internal/
+  # updater/{download,verify,validate,healthcheck}.go. Detections are generic Go-updater
+  # heuristics (self-update + elevation).
+  9c609ddccce85e7ffb71133b2c15887d4a05f6a48c42c695ed5be7d44bbeae83:
+    reason: CI-built auto-updater for github.com/DentaMate/efficio; VCS-stamped GitHub Actions build
+    reclassified_as: Legitimate product auto-updater (Efficio, DentaMate)
+    date: "2026-08-04"
+    analyst: Ryan
+  621cc8a6c2302933d59e385b899311690bd7a6f296702dcfb9d2a63808193665:
+    reason: CI-built auto-updater for github.com/DentaMate/efficio; sibling build (go1.25.7)
+    reclassified_as: Legitimate product auto-updater (Efficio, DentaMate)
+    date: "2026-08-04"
+    analyst: Ryan
+  dc223caef93b1c87a4650ee9c33141e0a9ed710c9726f709bedcb8bf8f915567:
+    reason: Auto-updater for github.com/cloudnativeworks/clustereye-agent-updater; VCS-stamped
+    reclassified_as: Legitimate product auto-updater (ClusterEye, cloudnativeworks)
+    date: "2026-08-04"
+    analyst: Ryan
+
+
+  # ---------------------------------------------------------------------------
+  # DYNOVA (RETRACTED 2026-08-05) — a real IT helpdesk dashboard built by a South
+  # African managed-service provider for its own retail clients, PS2EXE-packaged.
+  # Static RE extracted the embedded PowerShell from both components
+  # (monodis --mresources -> SpiceworksDashboard.ps1 6049 lines /
+  # DynovaDashboardSetup.ps1 143 lines) and read it end to end. The Claude system
+  # prompt names the MSP's actual client towns (Gansbaai, Bredasdorp, Napier),
+  # their POS product (IQ Retail) and an Afrikaans keyword glossary — "Dynova" is
+  # the company's own name, not an invented lure brand. The AI feature classifies
+  # ticket priority into a forced json_schema at max_tokens=250, SUGGEST mode only
+  # ("Never auto-applies"); the API key is USER-supplied and DPAPI-encrypted per
+  # Windows user. No C2 (all 8 URLs are Spiceworks / Anthropic / Google /
+  # Microsoft / Level.io RMM), no spreader (zero ADMIN$/IPC$/net use/PSSession/
+  # PsExec/UNC-copy code), no persistence beyond a normal Uninstall key +
+  # Uninstall.ps1. "Donut" was an AV label on the installer only; its base64 blob
+  # is a bundled WebView2 dependency zip, not shellcode. All detections are
+  # generic/ML heuristics on the PS2EXE pattern, no engine naming a family.
+  # The full build set is 25 PE files (the report saw 13), growing steadily
+  # 170KB -> 397KB over 11 days with unique_sources:1 each — a developer's build
+  # history, not a campaign.
+  085cd92b9aa39745ad802015e7bd2eee3162e51019a0845940fdb68f512bbd72:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-10, 170496 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  866c48e6e72d07fa99f2721f3df68a3905443b95418869cf37bf1bfada8b4946:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-10, 171008 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  9b5cf257d9f83dff0626cdee23efb2a0f5e629131ae4101ceb5ffa0e984b3397:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-13, 207360 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  ba2f9f2f4558857261886d5b4aed07b4fdb18853cea2d7126dd0c97996e68bef:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-13, 228864 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  d15b35cbda035b9081d533e25b3a0e6a627b8c797082c2b5ae9338e24d122050:
+    reason: PS2EXE installer for the Dynova helpdesk dashboard (bundles WebView2); build of 2026-07-13, 687104 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  0bd4f531f31909592a62a237f87edb6cc31fdae4fa6031f01934644eaaa80a17:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-13, 254464 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  213ceb00fffe50ef4b15a3ba014bee021b9a62927a969bd9cf31f3be24ae2f95:
+    reason: PS2EXE installer for the Dynova helpdesk dashboard (bundles WebView2); build of 2026-07-14, 710656 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  83d27830ed0f9082fdeb0e02efd38247d5b99c414c05d397e4f974ba20fc9548:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-14, 297472 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  512c5fd4e82f1839fa456bbb71b37bd59e8c3b738159d5ffc5c22ca11afaab50:
+    reason: PS2EXE installer for the Dynova helpdesk dashboard (bundles WebView2); build of 2026-07-14, 711168 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  17da3e33c61e5e88982d966019066d2135d46ebf12067398e6c80a98b92bbbf8:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-14, 299008 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  8429434cc9641a34c8dfce58c394ee1e32e2529de3835ca3117d4c61e9924755:
+    reason: PS2EXE installer for the Dynova helpdesk dashboard (bundles WebView2); build of 2026-07-14, 711168 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  44860a0acad9285f6a2f512d14e236c612b3ca06fc1c1e3d425c5dae4250c127:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-14, 299008 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  bff60a39f7a0933f25eedc2b9113dd122869ca9d695487ec171108277abfbb25:
+    reason: PS2EXE installer for the Dynova helpdesk dashboard (bundles WebView2); build of 2026-07-15, 713728 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  9ff97c8bd8ca26a821fee64ad2771b6661bfe90360fca0558d67ce97568f73de:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-15, 307200 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  ba20bfadde35904e7eafc363467e4fd96a75c137f2d8a7f15d51a35570493f83:
+    reason: PS2EXE installer for the Dynova helpdesk dashboard (bundles WebView2); build of 2026-07-15, 716800 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  07029aa4822a71fa019d3b3962680300c60e75e1b59373f16f721ddcbb542b0e:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-15, 314880 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  07bf84a4e746cf10f605011aadaa5ef44f2d437c6569c093d0f7a34a00bd0df2:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-17, 356352 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  41694a0d12027f3246281bc8321fa54675faf9b61505bdd98bdc61c640fdcb76:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-20, 367104 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  d9fbaf9ce49d92df8c701b9943e6143630e8b4fb360a836c01b4e76b2ed9e427:
+    reason: PS2EXE installer for the Dynova helpdesk dashboard (bundles WebView2); build of 2026-07-20, 736768 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  75456090f975c1f003db0714c4e9a8f4f7549b4ce6971e45e8e611deeda51e16:
+    reason: PS2EXE installer for the Dynova helpdesk dashboard (bundles WebView2); build of 2026-07-20, 744448 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  12486ba7e5d2870105599b0253f5be5a743c33e83edac3c52360e68235eacfa0:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-20, 388096 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  9d43f444d641b73d717bd6e69c9f8202ff6456e5c0143f8385a60073a670e25c:
+    reason: PS2EXE installer for the Dynova helpdesk dashboard (bundles WebView2); build of 2026-07-20, 747008 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  3eb60797f26f2fee93b5b4fc75c5600b042b127116d25273b89fd2e139f58f81:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-20, 395264 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  717623d5cb4e10a01dfc85026cae66e8c23095c507d490c8b5913cab60ff4222:
+    reason: PS2EXE installer for the Dynova helpdesk dashboard (bundles WebView2); build of 2026-07-21, 748032 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  25873d15b9c6e3a2bfbba964faccd37ba92ba8f52eb7149953278c00feda20b2:
+    reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-21, 396800 bytes
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  6b47212512a249f52295a38266b4d60a420ff988972cc413b874e8f34cd29a31:
+    reason: Distribution zip (dynova-dash-162fb261477140b2acaf300afc134b36.zip) for the same tool
+    reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
+    date: "2026-08-05"
+    analyst: Ryan
+  beb4f24f00d6ffe1131b35e0fd9c90b469c3ba8a559cf98a08392398c5bb7e11:
+    reason: "SuperAgent v2.0 — benign self-hosted personal LLM computer-use agent; Py/Keylog-ATZ is a pynput macro-recorder FP; operator-owned keys, no victim (static RE, both seeds read)"
+    reclassified_as: Legitimate personal PC-automation agent (SuperAgent / Z.IA — AXYNTRAX)
+    date: "2026-08-05"
+    analyst: Ryan
+  4644d853579e41f94c1a80eb215cf9c8a78831574a1dc3f4c2b657859fe4d801:
+    reason: "Z.IA — AXYNTRAX Automation Suite; operator-named build (Miguel Montero) of the same benign personal agent; developed 'por y para' its author, self-use quick-actions, no persistence/exfil"
+    reclassified_as: Legitimate personal PC-automation agent (SuperAgent / Z.IA — AXYNTRAX)
+    date: "2026-08-05"
+    analyst: Ryan
+
+  # Nexomia.exe / Astra.exe — STARLOCK FP seeds; retracted 2026-07-30
+  # PyInstaller imphash FP: both share imphash cf72283b with Python/Filecoder.BQU ransomware
+  # due to identical PyInstaller version, not shared operator. RE confirmed: PYZ archives
+  # contain only legitimate application code (PocketAI / Russian Ollama GUI). Seeds removed
+  # from known_seeds on hunt box 2026-08-05 (STARLOCK retraction predated the DB ledger).
+  f8a2212c692543fc3628571e85ee105d4946493d27c12944d0d11f4184c18a14:
+    reason: Legitimate software — PocketAI by Vector Dynamics (vectordynamics.xyz); PyInstaller imphash FP cf72283b
+    reclassified_as: Legitimate PyWebView AI chat application (local llama-server + cloud APIs)
+    date: "2026-07-30"
+    analyst: Ryan
+  8dea3ee2365e949d10f7eab347fb4de2bee4fa95b701f3f680120b364d5aaf01:
+    reason: Legitimate software — Russian Ollama GUI (Astra.exe); PyInstaller imphash FP cf72283b
+    reclassified_as: Legitimate Ollama front-end GUI (OllamaChatApp / OllamaClient)
+    date: "2026-07-30"
+    analyst: Ryan
+
+  # VIBEAROUND (RETRACTED 2026-08-05) — VibeAround, a Tauri/Rust coding-agent orchestration
+  # desktop app by `jazzenchen`: launches and manages third-party AI coding CLIs (Codex, Claude
+  # Code, opencode, Kiro, qwen-code), serves a React dashboard, optionally exposes it via
+  # ngrok/cloudflared, bridges to IM platforms via first-party plugins. Static RE of the NSIS
+  # installer and both desktop builds found no Galirus payload, no overlay, no injection
+  # primitives, and no keylogger — the raw-input APIs belong to tao-0.35.2 (Tauri's windowing
+  # crate) and the "suspended process for injection" is WebView2 spawning Chromium children.
+  # Provider keys are user-supplied (`secret: true`, `sk-...`); `xiaomimimo.com` is Xiaomi MiMo.
+  # The CYBERPORTAL X "same actor" link was the NSIS 3.11 exehead stub timestamp, which 20/20
+  # NSIS 3.11 samples in the corpus share (incl. Jellyfin). Every build is unique_sources: 1,
+  # times_submitted: 1 — a developer AV-checking their own release; Zenbox rated all staged
+  # samples harmless at 98–100.
+  91111569e4eac2b21719b2a74295215e4983c056011affa378710037646df23c:
+    reason: "VibeAround v0.5.3 desktop build — benign coding-agent orchestrator; Galirus is a heuristic on an unsigned ~30 MB CI-built Rust/WebView2 binary"
+    reclassified_as: Legitimate AI coding-agent orchestration desktop app (VibeAround, Tauri/Rust)
+    date: "2026-08-05"
+    analyst: Ryan
+  3dccd92965ac1449649b43b9033366f8be4b360217c80e868a8398b25c73b8b6:
+    reason: "VibeAround v0.5.14 desktop build — same benign application, next release in the version series"
+    reclassified_as: Legitimate AI coding-agent orchestration desktop app (VibeAround, Tauri/Rust)
+    date: "2026-08-05"
+    analyst: Ryan
+  be22856aaff11c28033eecb3ba2b831b7d70f78ae4d16dfe533041aaeb8627cb:
+    reason: "VibeAround v0.5.10 desktop build — same benign application"
+    reclassified_as: Legitimate AI coding-agent orchestration desktop app (VibeAround, Tauri/Rust)
+    date: "2026-08-05"
+    analyst: Ryan
+  d840394eded45bf16b10520fbc71f9b9d07ca1fad9637b59407decb8277ca2e8:
+    reason: "VibeAround v0.5.16 desktop build (VibeAround.exe) — same benign application"
+    reclassified_as: Legitimate AI coding-agent orchestration desktop app (VibeAround, Tauri/Rust)
+    date: "2026-08-05"
+    analyst: Ryan
+  d5916b256a23f25c703f4658fcd584c4c0b11071d386ebf0f3cbfb58cbe8689f:
+    reason: "VibeAround v0.5.16 desktop build, 28-det variant — highest detection count in the series and still entirely Galirus heuristic + generic; Zenbox harmless at 100"
+    reclassified_as: Legitimate AI coding-agent orchestration desktop app (VibeAround, Tauri/Rust)
+    date: "2026-08-05"
+    analyst: Ryan
+  6e8e0e20f73b19a9152dbddb5e109cf34bfa8e47bc0ea21868ecb524c2992a41:
+    reason: "VibeAround v0.6.2 desktop build — staged and analysed on the re box; identical to the vibearound-desktop.exe carried inside the v0.6.2 NSIS installer"
+    reclassified_as: Legitimate AI coding-agent orchestration desktop app (VibeAround, Tauri/Rust)
+    date: "2026-08-05"
+    analyst: Ryan
+  58b3ec4cc7ca11701795869f142fc3cef0b11f4ba33ffdba52a5c340bbbbd1b9:
+    reason: "VibeAround v0.6.2 NSIS installer — 335 files, all Tauri app + Monaco language packs + stock NSIS plugin DLLs; no overlay (flat H=8.000 LZMA solid stream), no second payload"
+    reclassified_as: Legitimate application installer (NSIS 3.11, VibeAround v0.6.2)
+    date: "2026-08-05"
+    analyst: Ryan
+  2484a8d3f3776c0ef6757ea4e0231400b639750ce04b307476f87b609dda1ffc:
+    reason: "VibeAround v0.7.4 desktop build — staged and analysed on the re box; provider registry with user-supplied keys read verbatim, incl. the Xiaomi MiMo entry"
+    reclassified_as: Legitimate AI coding-agent orchestration desktop app (VibeAround, Tauri/Rust)
+    date: "2026-08-05"
+    analyst: Ryan
+
+  # CAGDASGPT (RETRACTED 2026-08-06) — ÇağdaşGpt, a benign Turkish DeepSeek chat application.
+  # Static RE (PyInstaller extraction + pycdc decompilation) found a straightforward Tkinter GUI
+  # using the OpenAI SDK to call DeepSeek. No date gate, no geofencing, no VEH, no payload, no
+  # malicious functionality. The "evasion stack" was a metadata narrative built on heuristic tags.
+  # Zenbox: harmless at 97%.
+  3280e28279735fdc1dd55769bda817da17d21a6446a3fc95a385ba373f85caa2:
+    reason: "Legitimate Turkish DeepSeek chat application (ÇağdaşGpt V2); no evasion, no payload, operator-owned API key"
+    reclassified_as: Legitimate AI chat application (Turkish developer, DeepSeek API, Tkinter GUI)
+    date: "2026-08-06"
+    analyst: Ryan
+
+  # JOBRADAR (RETRACTED 2026-08-06) — Job Radar, a legitimate AI-powered job search application.
+  # Static RE found: Apify integration (santamaria-automations/stellenanzeigen-de-scraper,
+  # santamaria-automations/arbeit-swiss-scraper), multi-provider LLM (OpenRouter, DeepInfra, Cerebras,
+  # LM Studio with user-supplied OPENROUTER_API_KEY), proper job-scraping data model. No credential
+  # theft code, no geofencing APIs, NSIS installer clean. Gen:Variant.Ser.Midie.2826 is a heuristic FP.
+  # A7c is retired — both instances (VIBEAROUND, JOBRADAR) were benign software.
+  # Reclassification documented in investigation record.
+  7bdcb86b79d03e00655b30538a913888f40a077f5150ce046c2826fdd8e1fcb3:
+    reason: "Legitimate AI job search app (Job Radar); Apify scrapers, multi-provider LLM, no stealer"
+    reclassified_as: Legitimate AI job search application (Go/Wails, Apify, OpenRouter)
+    date: "2026-08-06"
+    analyst: Ryan
+  e840b0e81e3e2bc4301814cd3bfe0368f11de3ced77ac7003596f76943387dee:
+    reason: "Job Radar NSIS installer; contains only the legitimate Wails app"
+    reclassified_as: Legitimate application installer (NSIS 3.12, Job Radar)
+    date: "2026-08-06"
+    analyst: Ryan
+  c1323b6e038f506b62c1a06e029f76044cf7a96352e6c41a16e76c86ff0f0636:
+    reason: "Job Radar NSIS installer variant; contains only the legitimate Wails app"
+    reclassified_as: Legitimate application installer (NSIS, Job Radar)
+    date: "2026-08-06"
+    analyst: Ryan
+  f1f2b4b7ac509ebcc76ffeaa43903d57a9566459819d73f6728c28fc5e09683f:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  8fe0e722d47c330fbf3309f98482e3f04016c936b5a63df880c408d27b8d8f00:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  7574c72bc36bea836c920fc6b6b79d0587ba10ffefc1c6f11236b440db3af000:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  127ad7d74717f243b69f57056db4f688404ba53258e454c5c521ae21e579dc86:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  741f62d28e8825e4d53b8ebc73c674a6cf86f168757abed4af258791c940efde:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  38446ce64cd1d5912652aee82f0fdd9a3dfdf10d67b5ecb89b015a9e4212f183:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  bb1fa31972cede23ff89eab6ccc5bb18b5ac9bc2060bcd6a0190e4505d5aa662:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  7cdf5616ac2c900c2f10c990219c56130b86fdae1bb708db897a98baaac375fe:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  830756d485b0f5be8f3ba5f803978d6c55499458b098b3697a7daff96bb698ed:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  4a21e57672f5f70ee0ca66fb8dfecc647a433da3bf2384916b038d1ce9509b3a:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  2ff3fa925369473a5fcdd16dacc08f8451a03ca12b9b2efc5d482df1a08902fe:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  01b2453d78753c5700e038b90bc5873d3a6cacf8d1811def0be690025df65441:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  d876fa66b00afbca5faaec1dd64c9add2f41fce25ce9a089adbab262854ec539:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  86cc0f56bd7b791684be5e34504228e09a691ff455b52a266f52def056911d9e:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  a7a1d0c853f06b400d573422cd4ccb4de333bef1519d826b3cfe42a923a2f9c6:
+    reason: "Job Radar-21cb9f8-yesterday.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  1f20475e81a36b1ee440f586709a0adeb5d09b36991b043869e71afcf15dd241:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+  0566143ee1c01ce87dddd15b608501839e93a40418117198a5b3f7186900f80a:
+    reason: "Job Radar.exe build — legitimate AI job search application"
+    reclassified_as: Legitimate AI job search application (Go/Wails)
+    date: "2026-08-06"
+    analyst: Ryan
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SISTEMATIZADOR (retracted 2026-08-06)
+  #
+  # Brazilian RPA tool with AI-powered workflow generation. Static RE confirmed
+  # the UI solicits user-supplied API keys (not credential theft), Telegram is a
+  # user-configured notification channel (not C2), and the product has commercial
+  # infrastructure (login, purchase, support, docs at sistematizador.com).
+  # Malwarebytes RiskWare.Sistematizador is accurate: PUA-grade commercial
+  # software with anti-piracy mechanisms, not malware.
+  # Reclassification documented in investigation record.
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  # Gen 1 seeds (Sep 2025 unsigned)
+  043c92f023c8b4acbe9a8b08dfa1ae613df779c0ca274ebfb91eb2b1a9c6fd3e:
+    reason: "SISTEMATIZADOR — legitimate Brazilian RPA tool"
+    reclassified_as: "Commercial RPA software (not malware)"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  e1526c6c7c2352bb2b3252ec9b54d58d5a6db938b5c4d4baa0a504e7fc32d676:
+    reason: "SISTEMATIZADOR — legitimate Brazilian RPA tool"
+    reclassified_as: "Commercial RPA software (not malware)"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  # Gen 1 signed build (Oct 2025, Davidson Rodrigues Tavares cert)
+  4a102b55e09784571ae896008c6fff6665a9d520ae0349d14f57800dc0e95739:
+    reason: "SISTEMATIZADOR — legitimate Brazilian RPA tool"
+    reclassified_as: "Commercial RPA software (not malware)"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  # Gen 2 installer (May 2026, Tauri/NSIS)
+  5c0f54f74c9745edfebbaac00554c557e05c88501ff87a283830a7ce32f87c6d:
+    reason: "SISTEMATIZADOR — legitimate Brazilian RPA tool"
+    reclassified_as: "Commercial RPA software (not malware)"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  # Additional SISTEMATIZADOR corpus samples (vhash cluster + communicating_files)
+  7dbad11999040134257569a4f05a6343049a9b56a32b3d0855d3615c14dc85ef:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  a41f95e3144a4ed6c754f9c48ed0c505265d6abe58d2b10947d2543aba5c8ee2:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  bc2b7959efb0b42a8d8f1f128807dd019b28d11800f0fe1fc999901446a1896d:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  66d3248afdb356197ca8734a63b27056c5a3f68b4da746b45ce846ec5a04ae48:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  dcbd71196694c716eb609690940d5f0c97c27bfcb2acc8bd391163b1d92101f0:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  36f8408dda2d0c61c3eb584bf01c07816700375b54e778b38a81aa3b3ff2b6c9:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  e495c924ad4969fa25c92d15a6f0b9bfc70e199514527ecb228d277164e28ad9:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  ef76331f57fa1bcefb264ae649fde3b23d8d52267449f29c430a42de8bac3a3e:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  6eeee5345a73b34fa4675af50c4de96b35e40001c02b0fdb62316defc08c2852:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  0889b577cd6aa149427b2b46ba6c7a4f4c731873e2116566d9a4e9b8b8c3ee87:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  21a2827d3f76ce7c073a84b83caa690c673ec1a95286debaebd45b9d15bb99d6:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  fb95587a49ded718dd86fe2756007f1797512fb8fd71cede0ddd2d99228bd63b:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  3f28b2db61b4d3b3e533a02fca70982f83fc4457526d9dda2e4124e1b0df69aa:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  3ba0f7ab966df1f9c834401165208d1115d4b31598a3bdcae5206f621e2b1234:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  9e0f4ecb4fb4ef6773da06d0b642d203d2293bb7a53edebef2d3c0917ab85a08:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  9db021b912ae4ea018e6484984b8abef3889825ab59635bad69147af48fbb8c8:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  cfd653e6f7000ff8a74004d1b432e34951b90dd2ead4428db919d9e9497f6c8a:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  1706c3eb30880ecacecee773e6e2e9aae145296aaf881fcda18f52bb4c8e0383:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  13f04fd3bc3105a5d99b322a6b9531b1fb06d0077ea1334734b3a0640b990b5b:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  6e5fae843b1119ce86f99314f81deeccef8beed113611b466a51a84ff33e4ae5:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  bb3529cf44a86661aaab6ae5e063507d54122cad2922a94a1bf20835c6ecac24:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  93a30c61b3cc8585a914f0c6479aa839a029a659632429440cf6fc03039b3f0c:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  860574542641623dcfccd917784f148deb000fefe71719b2ded0def3f1ff2009:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  6044b442ecae2e369f9efc6455b09251a0daaf89eaacdc501b63cf9f7341f25c:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  f1746fb036c219e50edb1978308f90337237b0ca6a2130040fbd0b3fba3de68a:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  48d4e62273411086cc66ac8280d0831c3ccf6ef60af363de3a73e78335da299f:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  122ee8afd16e1b1df8341c9ddb7573d9a8f8d0fb469925bbdcfe6d0c5f261d05:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  8b4edf3eb74609d4b0bb833a05924d69b9aaa2e078e91d443eedac6c13cf0e99:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  318cae6ccd1b7a3203a0827a10ec11208cf141af738a95498ec6d32a82ac6561:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  1815bce013da4fd707806f1318fcd39a9485e62c710a437b764b70f322cc5cbf:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  2b80e363cc751a0b63a6bb2c5fa56bf4bb9350e244d9707a15690d837845fa96:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  35c22783c433be7c5c03cbffe0f282e9821be9fcf51b48f6fd016d5226d9a0b4:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  1f45046b677060f43ac4021926beec13bc7648d69449ace0c8aaeb436b6d662a:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  2ad3ef677156094f9e175fad2e60660afa059228d52bab68a2b05f34a31575b7:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  261a1aeb795e48c85626d22b48fd0dea3b398f7e3db5c1e6fc774e207995cafb:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  eccd964455ef10b7ac07af4b56c2b21947a74d90c9bafad25c3401e544d8cf8a:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  daac3a51f15e9675fe6cfdbe5d4eb5048484cd63ccb1b657544e339e4aa03968:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  0cf0f734bc56eaf880a271bce4d3746256b3c24187797d443820f90b74656137:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  8413aaa64c7f34e08c23bc5b21ff276db4f2235021d248872c7377ec4a0d6b07:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  16619016c041bf151640fd14cadd8fd47dfc9fe6280cb17af2708b0ce5225953:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  186345320a0cbf5d5dd708e290030a136b56a8a2683d6fec0918edf125185a83:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  1d2d802075fd3eed96604d16e5e35902eafff5c51b94f1c0806c3d54e83b09a2:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  1ef4a06df8bafd1415f5996ec2829531f0b8fa9131bc8add89e2d8cb8d714a72:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  330498f755e446263f4d0ebb8af6642398522122ded545a9ffe0e1f1912cd524:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  41696348f0ea3bdb6f09c11758180d9f28f92caffeb0bdc39e75646959239050:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  63241099d8707e6b83cfb8d32cf63ba9023d40196e84c3f8253e4329c955f342:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  7cc14ea8edae9879575709a5ebd23d32e408253bbdee7ea6a27ab553d39f29fb:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  9df7328526f0def532a03c732d0b130c9670462b1bbc4323243de921234c0da9:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  b66089f94baae3d3da310de40a1fe92a2eda5d1473e100c6dc87b528b0569d02:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  bba956798d71c8dbaa4c603f44626596a51920500ad3f73e2f18c9992cb9ff9a:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  bf736cb82372efcb3fd80262dcdd3ad4a8c1c7c670e3f8cba5b420cde60127c9:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  d421509d466bba3940f5232800c61f01f7ab862a7d754d6489779340abecda41:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  d89035da74df45e3f19fa81cf7a01a9587401387315557365ec288755d4871a3:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  e624c5855db0bf1fdd7bf6ab7160d1ae3fd0f09bf4f7537870c6da17d5f12862:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  f4a92fadc53de1929e719d88062fb50241b14e44de2a1757210745a30c01fe5f:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  f7f0d3083173f7fd632459e8ef892628fadc9c130f8029ddfc89de56f02bf0ba:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  603729658b2726b47b1796777734d87b6bccbe0604881c366a4d3724a08b4cfd:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  af7f3d5c58fce490f2dc1f90c9167ada83049a3f9b12a7fd2c81e44b850d5bbb:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  ed417cfeab6b009e50523ee987967bf629323c0483f7d1ef15cea954f06f4152:
+    reason: "SISTEMATIZADOR cluster"
+    date: "2026-08-06"
+    analyst: Ryan
+
+  # clientagent.exe — Kitecyber enterprise endpoint security agent
+  # Reclassified 2026-08-06: 4 builds across Jul 14-18 2025, signed PE, installed to
+  # C:\Program Files (x86)\Kitecyber\Clientagent\. T1-LLM_API_Endpoint +
+  # T2-Multi_Model_Provider_Cooccurrence hits are functional AI-assisted security features.
+  # Low detections (6-8) consistent with security tool generic FP pattern. No malicious indicators.
+  4cfe7f74fe2b7f8f469def75a66114de5f1da7ba4b7612cc0ade0ef52996cfce:
+    reason: Legitimate enterprise security agent — Kitecyber Clientagent (signed, Program Files install path)
+    reclassified_as: Kitecyber endpoint agent with multi-provider LLM integration
+    date: "2026-08-06"
+    analyst: Ryan
+  826ab4b135ce856fb00c0ee4550e00ad91ef2f75e3df83d663d65105c236c719:
+    reason: Legitimate enterprise security agent — Kitecyber Clientagent (signed, Program Files install path)
+    reclassified_as: Kitecyber endpoint agent with multi-provider LLM integration
+    date: "2026-08-06"
+    analyst: Ryan
+  b656d17209f5c91ae0e3bd32cd270dfb5730742af0bef5ba4873118bb4bde7be:
+    reason: Legitimate enterprise security agent — Kitecyber Clientagent (signed, Program Files install path)
+    reclassified_as: Kitecyber endpoint agent with multi-provider LLM integration
+    date: "2026-08-06"
+    analyst: Ryan
+  ea379af53f85dcebd8dc91790caa5399c2b4872e250b85408048564dea48e957:
+    reason: Legitimate enterprise security agent — Kitecyber Clientagent (signed, Program Files install path)
+    reclassified_as: Kitecyber endpoint agent with multi-provider LLM integration
+    date: "2026-08-06"
+    analyst: Ryan
+
+  # clientagent.exe — Kitecyber additional builds (Jul 20-22 2025), same family as above
+  # Surfaced by provider-api-integration fs:30d- run 2026-08-06
+  2ddc4169ff2239fa5847d82aa7c0d3a60774b785c363327f8dad3c8dede5b89d:
+    reason: Legitimate enterprise security agent — Kitecyber Clientagent (signed, Program Files install path)
+    reclassified_as: Kitecyber endpoint agent with multi-provider LLM integration
+    date: "2026-08-06"
+    analyst: Ryan
+  76c53b57d938941e231c15d52b0ebe5186b29c892402ad5b4cdf7c218e4aeeaa:
+    reason: Legitimate enterprise security agent — Kitecyber Clientagent (signed, Program Files install path)
+    reclassified_as: Kitecyber endpoint agent with multi-provider LLM integration
+    date: "2026-08-06"
+    analyst: Ryan
+  7dc382a755b77e4581a8e2c6111ef72093b675cb5ef410872aef5f061157e055:
+    reason: Legitimate enterprise security agent — Kitecyber Clientagent (signed, Program Files install path)
+    reclassified_as: Kitecyber endpoint agent with multi-provider LLM integration
+    date: "2026-08-06"
+    analyst: Ryan
+  cc143d22c4b33a6492ab402412da18dbcd12436b61d20611f28695ba9360d4ae:
+    reason: Legitimate enterprise security agent — Kitecyber Clientagent (signed, Program Files install path)
+    reclassified_as: Kitecyber endpoint agent with multi-provider LLM integration
+    date: "2026-08-06"
+    analyst: Ryan
+
+  # CYBERPORTAL X — legitimate Russian VLESS/WARP anti-censorship VPN installer
+  # GitHub: said3828368163/Cyberportal-VPN — publishes VLESS configs for 15+ countries.
+  # NSIS 3.11 installer, 792 unique sources, SourceForge distribution. Dorifel/Tedy labels
+  # are heuristic FPs on unsigned NSIS-packed binary. Zenbox=harmless (99%). Same closure
+  # pattern as ZAPRETCORE. No AI content.
+  626fc30ca60fea3d8f243f4a371ee434ac48dae4dda72985738c1c10ae16c9e8:
+    reason: Legitimate Russian VLESS/WARP anti-censorship VPN tool (CYBERPORTAL X / КиберПортал)
+    reclassified_as: NSIS installer for VLESS proxy configs — same pattern as ZAPRETCORE
+    date: "2026-08-17"
+    analyst: Ryan
+
+  # VBA_P-code.txt — VBA macro P-code extraction outputs, not malware
+  # 24 samples, all 3 det, all named "VBA_P-code.txt", via powershell-ai-scripts filter.
+  # These are analysis artifacts from VBA P-code extraction tools, not executable malware.
+  # AI content match is from codegen phrases in extracted macro source ("As an AI", etc.)
+  a14ee0f2c8690ea778612b109555ecfe09f8e129394bc5ddf82ab0513a8a39ea:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  60032a52a36ead062766c361944610e631843c837f7941da95eed73d1166e67e:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  effd0850b2c372c9c43655a73fee57e6eb37774e4a6ae539eed258ead16a016d:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  c40ff5d9b2e6468f99386a6ed906d19d028fc5892effe80d8bf2e61503e34f32:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  e943fc5ef37c1e003249ca9aec1ce9de7a750ecd8470381a240b56880f60bffa:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  da6e8fbba019513919dcd5671090bb8b1b69d8d0dc25269a7016cb1f79ba7cae:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  bd91594fd357451e7822e82f50b55fc006557e9c4bf451b49d5dd5826e92a9ca:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  e697b1e40160cb8703cb4182dc54e67d5fffa329bb3a4cb49c81d182e9fb76e1:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  e57becd9a77921945b3cae7b3512ca540915ad9dee6c82b08ae28f4b971e18f8:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  ec08053babb8cbd9f1c952b38d3b2c0e7e774842f30c69dce032838378d909ac:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  d45dc41369a79b34dea94a991ad898e6a2410c57286ea21438c47d7cc01116f2:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  dee0d99af707c2564216693da93d0e71fecda1f9ac6ab8abb2fd912a2423e987:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  ce20ec9ff945dbb66baf9ce448385cef0295702cb8084b45ad6000f799bb9532:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  e3f19db2003f425d5d8a151b3c1a14b37f569f86ab9fe2bf33980b89f116783a:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  661b8fa82233fcd74ac2a5ac2a1a007eb7b8582b46716c88829a784c28e98c2a:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  d6eb74a4eadd73c51fe5b732802e61f7aa758692ad2f0e81aec3e88a555f6f05:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  64fcaa270b64eeb6212e53b12a35989fd0d71b0f833802052c96a87fa42bfa56:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  4aeb2751e6ae585f91ecd75d297ba3be044caa0d065417eafc647eef2cd45c26:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  36f4073589eeac0b333897119101dbaa5c25a011e197276cc2a774dfd86921c5:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  baedfaeb1d12c97b9535db4bf9caa742b6ab3b78f8929518ef6ae45de56c40b3:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  f40e0806b76708e2cbb2b025276030f99f0996e4d9219a89b4d6d1d88df666fe:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  cd76170afd4ffd40bbf05f4f029485fcb9766cc70f67073a084f29d6741f6cb2:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  5788df12aa73fb3266f79b7a1c053548430c9f37e208b6f1caee219685b5a95e:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+  7017485664d9ebdaf9ec5e2b8728e5e946690f886662401e92e3223dafdb6dd5:
+    reason: VBA P-code extraction artifact, not malware
+    date: "2026-09-01"
+    analyst: Ryan
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Backfill 2026-09-14 — RE-gate closes of 2026-09-01/02 that were never excluded.
+  # Each of these seven leads was adjudicated on the re box with the primary artifact
+  # read, and each RE plan's EXECUTED banner concluded "no family report, no rule,
+  # **no exclusion**". That last call was wrong: with no exclusions entry, no rule and
+  # no report, an adjudicated-benign sample leaves no machine-readable trace, so the
+  # 2026-09-09 `no-rules-high-det` gap sweep re-discovered patientlistUI.exe and
+  # re-opened it as a brand-new thread seven days after it was closed. Excluding them
+  # now is what stops the third pass. See docs/DB_LEDGER.md (2026-09-14) and SOTA.
+  #
+  # Only RE-verified full hashes are listed. Sibling builds exist in the corpus under
+  # the same product names (this box: 6 Open Flow, 3 lmcp-tray, 9 `localfile~`) and are
+  # deliberately NOT excluded by name — `names[]` is environment-authored provenance,
+  # and `localfile~` in particular is a generic AutoHotkey artifact name that may cover
+  # unrelated malware. Excluding on filename would repeat the provenance error the
+  # ClaudeSetup close-out (SOTA lesson 32) was written to prevent.
+
+  # lmcp-tray.exe — legitimate local MCP server tray-management tool (RE 2026-09-02)
+  # GoReSym symbol table clean: detectAIClients/writeAIConfig auto-configure Claude
+  # Desktop/Windsurf/Cursor against a locally-run MCP server; railway.app is a
+  # version-check endpoint, not C2. No anti-debug, no exfil, no offensive primitives.
+  b85595ff7ae0350479da4bd39d394c473a74a675589134cafcc7c5e39edd31fb:
+    reason: Legitimate local MCP server tray-management tool — no offensive primitives
+    reclassified_as: Benign developer tooling (lmcp-tray / local-mcp.com)
+    date: "2026-09-14"
+    analyst: Ryan
+
+  # patientlistUI.exe / OrderFilterLogicTests.exe — legitimate Korean hospital
+  # nursing/patient-management .NET app (RE 2026-09-02). ilspycmd decompiled cleanly:
+  # the prompt is genuinely clinical (Korean, summarize patient data + suggest one
+  # action), key custody is pure BYOK (EffectiveApiKey() reads config/env/the user's
+  # own ~/.claude/.credentials.json). The "GitHub-staged encrypted payload" from
+  # 2seunghee/rpack-8c6e2f1a is a signed, hash-verified, filename-allowlisted
+  # self-updater, not a dropper. `spreader` VT tag uncorroborated — zero propagation
+  # code. OrderFilterLogicTests.exe is a unit-test build of the same app.
+  1757563bedb7d71454bc8cd84fae2d607d6b0fba97013c78dd25fb91e1573d6a:
+    reason: Legitimate Korean hospital nursing app w/ BYOK clinical-summary LLM feature
+    reclassified_as: Benign clinical software (patientlistUI.exe)
+    date: "2026-09-14"
+    analyst: Ryan
+  5a7aed1f571c949365c9a5edd66037f2dcd3ae71624722270b8057de14dbcfe1:
+    reason: Legitimate Korean hospital nursing app w/ BYOK clinical-summary LLM feature
+    reclassified_as: Benign clinical software (patientlistUI.exe)
+    date: "2026-09-14"
+    analyst: Ryan
+  cf03cafb064bfda551acd0e44fe853bef8dd201873c7e1caac32fc447f94f831:
+    reason: Legitimate Korean hospital nursing app — `spreader` tag uncorroborated at binary level
+    reclassified_as: Benign clinical software (patientlistUI.exe)
+    date: "2026-09-14"
+    analyst: Ryan
+  331ab6f053e14bc571d204cf63edd72c120693bfc0e4bdcfcbe0956b9d530316:
+    reason: Unit-test build of the legitimate patientlistUI hospital app
+    reclassified_as: Benign clinical software (OrderFilterLogicTests.exe)
+    date: "2026-09-14"
+    analyst: Ryan
+  5aa1b6a61f665dd23c2c009426741c3661b7230ddd53777997659be58ce1950b:
+    reason: Unit-test build of the legitimate patientlistUI hospital app — GitHub staging is a signed self-updater
+    reclassified_as: Benign clinical software (OrderFilterLogicTests.exe)
+    date: "2026-09-14"
+    analyst: Ryan
+
+  # localfile~ ("AZproc") — benign Brazilian court-employee workplace tool
+  # (RE 2026-09-02). Byte-offset search recovered the plaintext AHK source: clock-in
+  # reminder against the real Santa Catarina court time-clock portal (unrelated to AI)
+  # plus a BYOK AI chat assistant — "get API key" buttons open the official
+  # OpenAI/Anthropic/Google consoles, curl uses a user-entered key. No keylogger APIs,
+  # no exfil webhook. AHK-compiled binaries are a known generic-FP class.
+  8894274ae7135e7d4ed72c92a0e932c6e2462ad57f6f3146dcaa4e667d8a2970:
+    reason: Benign Brazilian court clock-in reminder + BYOK AI chat assistant (AutoHotkey FP class)
+    reclassified_as: Benign workplace tool (AZproc)
+    date: "2026-09-14"
+    analyst: Ryan
+
+  # dgf_bot/1.exe — benign MTA:SA trivia-answer bot (RE 2026-09-01). Plaintext prompt
+  # is a terse-answer quiz instruction; answers are pasted into the game via
+  # clipboard+hotkey. CAPA `keylog` signature and Sigma LSASS hit both uncorroborated;
+  # DPAPI protects the user's own local config; OpenProcess is
+  # PROCESS_QUERY_LIMITED_INFORMATION against the game window. BYOK.
+  460d3b339a7f47846396604cae5d556321f229106baf6803bb9c26431c6604c1:
+    reason: Benign MTA:SA trivia-answer bot (BYOK) — keylogger/LSASS labels uncorroborated
+    reclassified_as: Benign game bot (dgf_bot)
+    date: "2026-09-14"
+    analyst: Ryan
+
+  # Open Flow — legitimate AI voice-dictation software (RE 2026-09-01). NOT A11:
+  # SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE) confirmed at the call site but it
+  # hides the app's own recording-status widget, a UX feature of this app category, not
+  # proctoring evasion. System prompt cleans up <raw_dictation> transcripts and carries
+  # explicit prompt-injection defenses. Key custody user-supplied (OS keychain).
+  0cf7029b53ac1dbd71400c3e680c7710871cfaae8ef73e8d99141d3e960ab09e:
+    reason: Legitimate AI voice-dictation app — WDA_EXCLUDEFROMCAPTURE hides its own widget, not proctoring evasion
+    reclassified_as: Benign dictation software (Open Flow)
+    date: "2026-09-14"
+    analyst: Ryan
+  29d349f75c41952fcf96f953041476e07ff5568add425206ddedda2ccb07c319:
+    reason: Legitimate AI voice-dictation app (earliest build) — not A11
+    reclassified_as: Benign dictation software (Open Flow)
+    date: "2026-09-14"
+    analyst: Ryan
+  2b7fb3adc5daa308a91ecb20ffa25c9a8c4a9eb0ea25a6dd6c964ea3fa015348:
+    reason: Legitimate AI voice-dictation app — NSIS installer (OpenFlow 0.15.7 x64)
+    reclassified_as: Benign dictation software (Open Flow)
+    date: "2026-09-14"
+    analyst: Ryan
+
+  # VSCodium.Rust.IDE / "CyberIfrit" — real commercial AI-IDE / security-research
+  # product (RE 2026-09-01). All three payloads were fetched and read; every one is a
+  # genuine self-consistent component with its own billing backend, not a credential
+  # harvester. The AI-provider login URLs pair with a "sign in with your own account"
+  # feature (the user's own subscription), not covert exfiltration; the pentest surface
+  # is scoped "authorized testing only" throughout. Only the outer NSIS installer
+  # carries the LummaStealer/Trojan-PSW label — a heuristic misattribution on its
+  # PyInstaller+Playwright shape. NOTE: the pre-RE plan called browser-agent.exe "the
+  # credential harvester"; that framing was refuted by the RE, hence its exclusion here.
+  58a4296212d066af675d87ad6b979f74d872ed58f1a1900d0e662f71025684de:
+    reason: Legitimate commercial AI-IDE (CyberIfrit) — 0 detections, session-riding on the user's own account
+    reclassified_as: Commercial AI-IDE / security-research product (CyberIfrit)
+    date: "2026-09-14"
+    analyst: Ryan
+  ce8b3bf6013e7e873b045fdcd57965b51018d024403832a29446234d7871fdd4:
+    reason: CyberIfrit component — RE refuted the credential-harvester hypothesis; reads clean
+    reclassified_as: Commercial AI-IDE / security-research product (CyberIfrit)
+    date: "2026-09-14"
+    analyst: Ryan
+  12a7856692d702cac99feccb78e93f2c8496b39e5292c79ba4cc23e339d2bdeb:
+    reason: CyberIfrit Rust CLI helper — reads clean
+    reclassified_as: Commercial AI-IDE / security-research product (CyberIfrit)
+    date: "2026-09-14"
+    analyst: Ryan
+  ba8aa424f8c1f872d4da2ed6ab01c26c4b7fb38b73cc605a3354f9c5eae1d74f:
+    reason: CyberIfrit outer NSIS installer — sole carrier of the LummaStealer label, every payload reads clean
+    reclassified_as: Commercial AI-IDE / security-research product (CyberIfrit)
+    date: "2026-09-14"
+    analyst: Ryan
+
+  # Hurricane.exe — legitimate enterprise AI "digital employee" agent platform
+  # (RapidAI) (RE 2026-09-01). The sidecar's Program.cs source is embedded verbatim in
+  # the Go binary and implements only ping/enum/find via System.Windows.Automation —
+  # no process-creation or injection APIs. CAPE's injection tags are best explained as
+  # .NET CLR/JIT hosting of on-the-fly-compiled managed code. `open-claw.bot` is the
+  # product's own agent-type identifier; the "CoinMiner" strings are a defensive
+  # risk-scanner wordlist, not an embedded miner. Not WinosStager.
+  48318a9decf52a581ca1aab4e48af27cf1b5973d404016af48537385f4b1528c:
+    reason: Legitimate enterprise AI agent platform (RapidAI) — UIA sidecar is ping/enum/find only
+    reclassified_as: Commercial AI agent platform (Hurricane / RapidAI)
+    date: "2026-09-14"
+    analyst: Ryan
+
+  # Locally Uncensored (PurpleDoubleD, AGPL-3.0) — open-source local LLM management
+  # platform, versions 2.5.7–2.6.9. Stealer AV labels (Rising Spyware.Stealer!8.3090,
+  # huorong TrojanSpy/Stealer.cp, VBA32 TrojanSpy.Win32.Generic) are false positives:
+  # CredReadW/CredWriteW are Windows Credential Manager API (advapi32.dll) used for
+  # secure BYOK API key storage — the standard Rust `keyring` crate pattern. AcquireCredentialsHandleA
+  # is SSPI/TLS (secur32.dll), not credential theft. Zenbox 99% harmless on multiple builds.
+  # 119 unique sources on 2.6.6 setup. All AV hits are ML/heuristic; no specific signatures.
+  # Contacts only legitimate AI infrastructure (ollama.com, lmstudio.ai, anthropic, groq, huggingface).
+  # 4 setup installers + 6 extracted binaries, all hash-verified as genuine PurpleDoubleD builds.
+  # Closed 2026-09-15 without full RE — Zenbox 99% harmless + AGPL-3.0 + named developer +
+  # 119-source distribution + explained Cred* API usage satisfies the pre-RE gate.
+  e75560584697d630dd339eceb3f6e12a134ca4cc13f2766845df5cc183a35a85:
+    reason: Legitimate local LLM platform (PurpleDoubleD, AGPL-3.0) — Cred* API is BYOK key storage
+    reclassified_as: Benign open-source software (Locally Uncensored v2.5.7 setup)
+    date: "2026-09-15"
+    analyst: Ryan
+  f9fb2ebde2364b9032f280768fb2b65d64751f8659a4dec3b36913081f983055:
+    reason: Legitimate local LLM platform (PurpleDoubleD, AGPL-3.0) — Cred* API is BYOK key storage
+    reclassified_as: Benign open-source software (Locally Uncensored v2.5.7 binary)
+    date: "2026-09-15"
+    analyst: Ryan
+  e67d15e709bb6e2a0c508c65ff008252f386ca9018f0244d54731543177138bc:
+    reason: Legitimate local LLM platform (PurpleDoubleD, AGPL-3.0) — Cred* API is BYOK key storage
+    reclassified_as: Benign open-source software (Locally Uncensored v2.5.9 setup)
+    date: "2026-09-15"
+    analyst: Ryan
+  13e8fc3addc6763f01a8a14a14190eb4a92a1c03a6ae4ef7afafd7b73a799c27:
+    reason: Legitimate local LLM platform (PurpleDoubleD, AGPL-3.0) — Cred* API is BYOK key storage
+    reclassified_as: Benign open-source software (Locally Uncensored v2.5.9 binary)
+    date: "2026-09-15"
+    analyst: Ryan
+  3bd0b65fa8dd9751293f81cc52e760d79924a912057e8cc1d75edf764b58a429:
+    reason: Legitimate local LLM platform (PurpleDoubleD, AGPL-3.0) — Cred* API is BYOK key storage
+    reclassified_as: Benign open-source software (Locally Uncensored v2.5.10 setup)
+    date: "2026-09-15"
+    analyst: Ryan
+  ef20cdf52c857735ac72cdecc6e2bc91649ee9f680bd63119b6466168274340e:
+    reason: Legitimate local LLM platform (PurpleDoubleD, AGPL-3.0) — Cred* API is BYOK key storage
+    reclassified_as: Benign open-source software (Locally Uncensored v2.5.10 binary)
+    date: "2026-09-15"
+    analyst: Ryan
+  be9e6f5c0154d5a5642e27edc5946d9e4f2e88dfdf767225704a8bb5f583a8ff:
+    reason: Legitimate local LLM platform (PurpleDoubleD, AGPL-3.0) — Cred* API is BYOK key storage
+    reclassified_as: Benign open-source software (Locally Uncensored v2.6.6 setup)
+    date: "2026-09-15"
+    analyst: Ryan
+  91d4c7385e8230208ea783ea4acf4bf912726111723ba62d916fa37f14c0dd69:
+    reason: Legitimate local LLM platform (PurpleDoubleD, AGPL-3.0) — Cred* API is BYOK key storage
+    reclassified_as: Benign open-source software (Locally Uncensored v2.6.6 binary)
+    date: "2026-09-15"
+    analyst: Ryan
+  84a9e09e995fba2c55ae0b45b935e2ef8edfc1f77a82c17cc20af64fa88595b1:
+    reason: Legitimate local LLM platform (PurpleDoubleD, AGPL-3.0) — Cred* API is BYOK key storage
+    reclassified_as: Benign open-source software (Locally Uncensored v2.6.8 binary)
+    date: "2026-09-15"
+    analyst: Ryan
+  8af6bd3c93ef16450c4d89ba3e4fa03d945557f799152eba4dee100c17077e5e:
+    reason: Legitimate local LLM platform (PurpleDoubleD, AGPL-3.0) — Cred* API is BYOK key storage
+    reclassified_as: Benign open-source software (Locally Uncensored v2.6.9 binary)
+    date: "2026-09-15"
+    analyst: Ryan
+
+  # vinculum-runner.exe (whalefall / vinculum.run) — Go binary that bridges local
+  # inference backends (Ollama :11434, LM Studio :1234, ephemeral ports) to MCP
+  # (mcp.vinculum.run). Architecture is identical to lmcp-tray.exe (closed 2026-09-14).
+  # Zenbox 100% CLEAN across builds. All AV hits are generic ML — Malwarebytes
+  # Spyware.Stealer.GO is a documented FP on Go binaries that probe local API endpoints.
+  # No files dropped, no persistence, no C2 DNS in sandbox. 20 developer builds
+  # (Jul 27–Aug 20 2026), all unique_sources=1. Product site: vinculum.run.
+  # Closed pre-RE gate: Zenbox 100% CLEAN + all-generic/ML conjunction.
+  4c0a588658869901dabdc4fda36988452a4ba33c1d5bd61a6a02b3de88d41731:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  ec6f6cea826b7430bbaa12a65b463aa251739ecc2a6bbc5fcd8c8fbd468f1932:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  4129429344b170f54ad09db539248ec8525dcbd0470e2ac2fb1cd657cc2a0c09:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  ea3f8bcf90f8f9c7ff65d9dfe55885ee18bc40c5acb158771b895cce840a582b:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  85d78e636d0f07ff91a419dfc3159b354d95f56f15f1b54ff8ed0a09a752d9c9:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  910ebd402bb64d322be7d09d6e9793992914bac469e5a9edae1bdcf97c25487d:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  0d75cc9a81c7de62fa4d8f45f5fc625fec0de2b26911c28a5d13d9c626f6f1b7:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  e1e2fe6c62640a6af5f7e5b5ef177d1b199b7ca573d299c5e9bfc61fd688c203:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  51b8064b18040c2eccf758c137a153bf9b10c01f678cef19aaf86f58e0c96c7c:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  3e080104680393695c4eb868906312a8459bc0620d9a68f6c7c5c142a0e509f4:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  ebdb213a55fadf23c7eb67007b2fa7be7c5b7029493da9fcc29927d2a2a91b25:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner.exe.prev build)
+    date: "2026-09-15"
+    analyst: Ryan
+  e4b7e2fbfa3b66e0981adcf44d1054036d299b815ea1be65372ef6c8b33149fe:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  1adc44fd0a5f3dfb39145a2907df46a346f0755a20e9f313d83d3c34003d1861:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  b2eed2879c5a34ad06d7af1bc9da5d0ecbca3f83f7369622691f3ff924fcee1e:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  aa0a22d5d2e0d155d0ab6e156789af2ed90bb9cb2f0fca6540d92d035772709d:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  bac911069b5ba8c2479edc356bdf1ced752f9f76d5240bc784cb524466f4d682:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  ba191b8f0c143d2487457e8ea27ea54350fee8d812a2c9c35dc5408305e29378:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  b6f3d6c7b9a921e520b9076475d7dc92779530e028421e7f3de47a46f787a1c3:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  22d8049afa8428b4a0bd2533e7b39667d102411eb2ad49b931cee9604c5bf7ee:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 99% harmless, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner.test.exe)
+    date: "2026-09-15"
+    analyst: Ryan
+  dd45a6cabd09bc70e5d3e11a3f59a8aa3b57de1ef7f2b0b19c6062eb2d5fd568:
+    reason: Legitimate local-model-to-MCP bridge (vinculum.run) — Zenbox 100% CLEAN, all AV generic ML
+    reclassified_as: Benign developer tooling (vinculum-runner)
+    date: "2026-09-15"
+    analyst: Ryan
+  697133eb2b809a5a59c5eadcb4c029716562e9c11abae4e56f49cc6f68c73602:
+    reason: "Legitimate consumer AI assistant (ForgeCry) — RE-confirmed benign 2026-09-15: no author-controlled endpoint, no keystroke hook (raw-input APIs are unreachable lxn/win name-table entries), no stealer/persistence/DPAPI; user-supplied keys throughout. Backdoor labels fire on local WS server + cloudflared + screen capture + input synthesis, all user-gated features"
+    reclassified_as: Benign consumer software (ForgeCry personal AI assistant)
+    date: "2026-09-15"
+    analyst: Ryan
+  2c2518e49048c6f946e97731ea9711bfb6cea63e922841579966fbfee3af3d94:
+    reason: 'Legitimate open-source Kubernetes IDE (github.com/dzcorp/FerrisScope, Apache-2.0) — RE-confirmed benign 2026-09-15: .deb Description is "Rust-native Kubernetes IDE", agent system prompt is "You are FerrisScope''s Kubernetes operator assistant", no author-controlled endpoint, no hardcoded keys, credentials.enc is a user-owned keyring store and is not shipped in the package. Debian package, v1.0.32, Zenbox Linux CLEAN 99%'
+    reclassified_as: Benign open-source developer tooling (FerrisScope Kubernetes IDE)
+    date: '2026-09-15'
+    analyst: Ryan
+  5d47fb15808b368b21c6d55cb4a8534cf7e5e6e90f89dea8ed44e78b45763d0e:
+    reason: 'Legitimate open-source Kubernetes IDE (github.com/dzcorp/FerrisScope, Apache-2.0) — RE-confirmed benign 2026-09-15: .deb Description is "Rust-native Kubernetes IDE", agent system prompt is "You are FerrisScope''s Kubernetes operator assistant", no author-controlled endpoint, no hardcoded keys, credentials.enc is a user-owned keyring store and is not shipped in the package. Truncated partial write (5,177,344 of 43,989,104 bytes) of usr/bin/ferrisscope, captured mid-dpkg as .dpkg-new'
+    reclassified_as: Benign open-source developer tooling (FerrisScope Kubernetes IDE)
+    date: '2026-09-15'
+    analyst: Ryan
+  8c328a713a9ac46bbcaa83c1f54d3606cda874f7c6b338d0fe20ebfb9780804a:
+    reason: 'Legitimate open-source Kubernetes IDE (github.com/dzcorp/FerrisScope, Apache-2.0) — RE-confirmed benign 2026-09-15: .deb Description is "Rust-native Kubernetes IDE", agent system prompt is "You are FerrisScope''s Kubernetes operator assistant", no author-controlled endpoint, no hardcoded keys, credentials.enc is a user-owned keyring store and is not shipped in the package. Truncated partial write (4,521,984 of 43,989,104 bytes) of the same binary'
+    reclassified_as: Benign open-source developer tooling (FerrisScope Kubernetes IDE)
+    date: '2026-09-15'
+    analyst: Ryan
+  5111f708d5feb160bf3c566071529864bb2f9ce49177fea3390da4d8c8673d74:
+    reason: 'ZeroClaw — clawrun-sh/clawrun, Apache-2.0 open-source agent sandbox runner by Afshin Mehrabani (clawrun.sh). Zenbox rated harmless 99% CLEAN. Benign third-party tooling in the OpenClaw open-source AI-agent ecosystem — RE-confirmed benign 2026-09-15. The "Chinese multi-provider LLM client suite" premise is refuted: OpenClaw is an open-source AI agent with 389,791 GitHub stars, openclaw.ai is the project''s own site, and the "claw" binaries are unrelated third-party products with per-product authors and certificates. Key custody is user-supplied via ~20 *_API_KEY environment variables; no hardcoded keys (positive control passed); no anti-debug primitive; 2e74b8a61539bd76… is a VT embedded_urls object ID, absent from the binary. Full record: docs/reversing/completed/RE_PLAN_OPENCLAW.md'
+    reclassified_as: Benign open-source AI agent tooling (ZeroClaw / clawrun)
+    date: '2026-09-15'
+    analyst: Ryan
+  e1c8b3f92431f723a303e2916b240eb9db1c6bcda659e4fa927647bca3828656:
+    reason: 'picoclaw — Sipeed open-source OpenClaw port (github.com/sipeed/picoclaw, docs.picoclaw.io). Benign third-party tooling in the OpenClaw open-source AI-agent ecosystem — RE-confirmed benign 2026-09-15. The "Chinese multi-provider LLM client suite" premise is refuted: OpenClaw is an open-source AI agent with 389,791 GitHub stars, openclaw.ai is the project''s own site, and the "claw" binaries are unrelated third-party products with per-product authors and certificates. Key custody is user-supplied via ~20 *_API_KEY environment variables; no hardcoded keys (positive control passed); no anti-debug primitive; 2e74b8a61539bd76… is a VT embedded_urls object ID, absent from the binary. Full record: docs/reversing/completed/RE_PLAN_OPENCLAW.md'
+    reclassified_as: Benign open-source AI agent tooling (Sipeed picoclaw)
+    date: '2026-09-15'
+    analyst: Ryan
+  b4746dae688b4d576c61ae08eba10420ee8d9a1d0b46bba13134d5a9ae04e0c9:
+    reason: 'picoclaw — Sipeed open-source OpenClaw port. This sample is the sole corpus hit for T2-Chinese_Router_Western_Access and it is a false positive: what matched was siliconflow.cn plus Western provider URLs inside a ~40-endpoint provider routing table. aihubmix.com, the arm the A6 hypothesis rested on, matches 0 of 2,815 corpus samples. Rule left in place, flagged for re-tuning. Benign third-party tooling in the OpenClaw open-source AI-agent ecosystem — RE-confirmed benign 2026-09-15. The "Chinese multi-provider LLM client suite" premise is refuted: OpenClaw is an open-source AI agent with 389,791 GitHub stars, openclaw.ai is the project''s own site, and the "claw" binaries are unrelated third-party products with per-product authors and certificates. Key custody is user-supplied via ~20 *_API_KEY environment variables; no hardcoded keys (positive control passed); no anti-debug primitive; 2e74b8a61539bd76… is a VT embedded_urls object ID, absent from the binary. Full record: docs/reversing/completed/RE_PLAN_OPENCLAW.md'
+    reclassified_as: Benign open-source AI agent tooling (Sipeed picoclaw)
+    date: '2026-09-15'
+    analyst: Ryan
+  6b8d6d2839e0c334e0f75c2370538ad211a20c0f27d7f7881b8ccef6c2a0673f:
+    reason: 'ClawBench — self-hosted web workbench driving third-party AI agent CLIs. Embeds github.com/fatedier/frp (2,095 hits) so the user can reach their own panel remotely, which is why Kaspersky says not-a-virus:HEUR:NetTool.Win64.FRP.gen — an accurate label, correctly prefixed. No author-controlled domain at all. Benign third-party tooling in the OpenClaw open-source AI-agent ecosystem — RE-confirmed benign 2026-09-15. The "Chinese multi-provider LLM client suite" premise is refuted: OpenClaw is an open-source AI agent with 389,791 GitHub stars, openclaw.ai is the project''s own site, and the "claw" binaries are unrelated third-party products with per-product authors and certificates. Key custody is user-supplied via ~20 *_API_KEY environment variables; no hardcoded keys (positive control passed); no anti-debug primitive; 2e74b8a61539bd76… is a VT embedded_urls object ID, absent from the binary. Full record: docs/reversing/completed/RE_PLAN_OPENCLAW.md'
+    reclassified_as: Benign self-hosted AI workbench bundling open-source frp (ClawBench)
+    date: '2026-09-15'
+    analyst: Ryan
+  63d465af9bb3b56c8fe69f46f771691151a865f4418c74d05cf2e2efb1f38f18:
+    reason: 'ClawBench — self-hosted web workbench driving third-party AI agent CLIs; bundles open-source frp. Benign third-party tooling in the OpenClaw open-source AI-agent ecosystem — RE-confirmed benign 2026-09-15. The "Chinese multi-provider LLM client suite" premise is refuted: OpenClaw is an open-source AI agent with 389,791 GitHub stars, openclaw.ai is the project''s own site, and the "claw" binaries are unrelated third-party products with per-product authors and certificates. Key custody is user-supplied via ~20 *_API_KEY environment variables; no hardcoded keys (positive control passed); no anti-debug primitive; 2e74b8a61539bd76… is a VT embedded_urls object ID, absent from the binary. Full record: docs/reversing/completed/RE_PLAN_OPENCLAW.md'
+    reclassified_as: Benign self-hosted AI workbench bundling open-source frp (ClawBench)
+    date: '2026-09-15'
+    analyst: Ryan
+  bbb84ed24b2511b2b496b2f586baa764bfd28cf9d7f48866bdf26dc7d72db97a:
+    reason: 'ClawBench — self-hosted web workbench driving third-party AI agent CLIs; bundles open-source frp. Benign third-party tooling in the OpenClaw open-source AI-agent ecosystem — RE-confirmed benign 2026-09-15. The "Chinese multi-provider LLM client suite" premise is refuted: OpenClaw is an open-source AI agent with 389,791 GitHub stars, openclaw.ai is the project''s own site, and the "claw" binaries are unrelated third-party products with per-product authors and certificates. Key custody is user-supplied via ~20 *_API_KEY environment variables; no hardcoded keys (positive control passed); no anti-debug primitive; 2e74b8a61539bd76… is a VT embedded_urls object ID, absent from the binary. Full record: docs/reversing/completed/RE_PLAN_OPENCLAW.md'
+    reclassified_as: Benign self-hosted AI workbench bundling open-source frp (ClawBench)
+    date: '2026-09-15'
+    analyst: Ryan
+
+  # claude.exe (Claude Code claude-agent-sdk) — Anthropic official binary
+  # Acquired 2026-09-16 via a11-interview-vocab-hunt — "coding interview" in bundled docs
+  # triggered the filter. This is the official claude-agent-sdk-win32-x64 native binary
+  # distributed inside Anthropic's npm package, extracted from an app.asar. CAPE Sandbox
+  # FP (malicious verdict). Product: "Claude Code". Not malware.
+  7daf74642706af355ace6f424f0d91d40eff66bd1e61a6f9a73d13f33c83e6ac:
+    reason: Official Anthropic claude-agent-sdk-win32-x64 native binary (Claude Code). Acquired via a11-interview-vocab-hunt FP on "coding interview" in bundled documentation.
+    reclassified_as: Legitimate Anthropic product binary (Claude Code / claude-agent-sdk)
+    date: "2026-09-16"
+    analyst: Ryan
