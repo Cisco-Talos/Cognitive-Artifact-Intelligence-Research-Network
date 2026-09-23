@@ -4,7 +4,8 @@
 # Add an entry whenever a thread closes as reclassified-legitimate or dead-end with
 # no analytical value — prevents the same FP from re-entering on future pulls.
 #
-# The investigation record lives in docs/families/<FAMILY>.md or SOA.md progression
+# The investigation record lives in docs/analysis/<FAMILY>.md (or docs/retracted/<FAMILY>.md
+# for confirmed FPs) or SOTA.md progression
 # notes, not here. This file is a blocklist, not an archive.
 #
 # Format:
@@ -760,11 +761,6 @@ exclusions:
     reclassified_as: TangoStealer (cover name wupdmgr.exe, no AI content)
     date: "2026-06-23"
     analyst: Ryan
-  0460f803b6db921f7974822f1ea9c2741967facd066e28f6a3aa3988a3c6cbec:
-    reason: Generic trojan using wupdmgr.exe cover name — llmgate-gen3-hunt FP
-    reclassified_as: Generic crypter/dropper (cover name wupdmgr.exe, no AI content)
-    date: "2026-06-23"
-    analyst: Ryan
   0253af86b11e604c177bf4134751346337ceba5361e2f264ac6533b1896eef31:
     reason: Generic trojan using wupdmgr.exe cover name — llmgate-gen3-hunt FP
     reclassified_as: Generic crypter/dropper (cover name wupdmgr.exe, no AI content)
@@ -785,11 +781,18 @@ exclusions:
     reclassified_as: Generic crypter/dropper (cover name wupdmgr.exe, no AI content)
     date: "2026-06-23"
     analyst: Ryan
-  abb9a17a39398025cb483d45730601306bc1f8bd9050a73f6f5154a05549eb13:
-    reason: Generic trojan using wupdmgr.exe cover name — llmgate-gen3-hunt FP
-    reclassified_as: Generic crypter/dropper (cover name wupdmgr.exe, no AI content)
-    date: "2026-06-23"
-    analyst: Ryan
+
+  # NOTE 2026-08-01: two hashes formerly excluded here as "llmgate-gen3-hunt FP /
+  # no AI content" were REINSTATED as confirmed ACELOADER samples —
+  # 0460f803b6db921f7974822f1ea9c2741967facd066e28f6a3aa3988a3c6cbec and
+  # abb9a17a39398025cb483d45730601306bc1f8bd9050a73f6f5154a05549eb13. Both beacon to
+  # the campaign C2 14.103.181.103 (ports 10081 and 10080), score 0.79-0.86 import
+  # Jaccard against the Synaptek loaders, carry the group C RT_MANIFEST 12dac421 and
+  # the .fptable section. "No AI content" was the correct exclusion test while the
+  # loaders were filed under LLMGATE (an AI archetype family), but ACELOADER is a
+  # no-archetype family, so campaign membership — not AI content — governs inclusion.
+  # The other 11 wupdmgr.exe cover-name FPs from that hunt were re-checked against the
+  # C2 and remain correctly excluded.
 
   # Cluster 14 — PulseBrowser adware, IPamor file infectors, ConnectWise lures, miscellaneous
   # Reclassified 2026-06-23: heterogeneous cluster with no AI integration evidence.
@@ -978,6 +981,7 @@ exclusions:
     reclassified_as: Unknown low-detection MSIL binary, no analytical value
     date: "2026-06-17"
     analyst: Ryan
+
   # SCRIBESIPHON cluster — legitimate open-source software, reclassified 2026-07-31
   # Static RE of 56801c80 on an isolated REMnux guest confirmed all six samples are the
   # Apache-2.0 "Novel Writing & AI Programming Assistant" (github.com/jiqi136/Ai-Assistant,
@@ -985,7 +989,7 @@ exclusions:
   # writes carry %d-typed token counts for subscription billing, not conversation text;
   # conversation content stays in a local SQLCipher DB. Both Alibaba hosts are absent from
   # the binary — they came from VT sandbox DNS. T3-SCRIBESIPHON rule removed.
-  # Reclassification documented in investigation record.
+  # See docs/retracted/SCRIBESIPHON.md → RE Findings (2026-07-31).
   56801c802119f8d9f0bfced86d193b027afd80089052ee92941514cac22d22fb:
     reason: Legitimate open-source AI assistant (RE seed, V27.1 build) — remote MySQL is token billing, not conversation exfil
     reclassified_as: Novel Writing & AI Programming Assistant (github.com/jiqi136/Ai-Assistant, Apache-2.0)
@@ -1042,7 +1046,7 @@ exclusions:
   # REAL service IPs (DNS un-poisoning), and there is NO TLS-MitM capability (zero
   # Cert*/root-CA/-addstore imports, zero Authorization/Bearer/api_key strings) so header
   # harvesting is impossible. 33-38 detections = same heuristic FP that flags
-  # GoodbyeDPI/zapret. T3-ZAPRETCORE rule removed.
+  # GoodbyeDPI/zapret. T3-ZAPRETCORE rule removed. See docs/retracted/ZAPRETCORE.md.
   e533522c642b6313482059f3fba96bdedc4c257df7e73606a81eb1c386c57e21:
     reason: Legitimate anti-censorship software — Zapret Core v2.7.0 DPI-bypass GUI (zapretcore.ru)
     reclassified_as: Zapret Core DPI-bypass tool (bundles bol-van winws.exe zapret engine; self-signed Pauselock Inc)
@@ -1084,7 +1088,7 @@ exclusions:
   # not an export masquerade. Genuinely dual-use (DLL injection, Detours, driver module,
   # token elevation, user-toggled keylogger) but with no operator-victim relationship:
   # 485 local slash-commands, raylib/ImGui GUI, credited OSS deps, activation-code licensing.
-  # A7 withdrawn; T3-JACKALCLIENT rule removed.
+  # A7 withdrawn; T3-JACKALCLIENT rule removed. See docs/retracted/JACKALCLIENT.md.
   630610c7ba2dd89fb18eeedcb9698e66ffc366025ceafc2612a59626eca7e5d8:
     reason: Publicly-branded game-cheat/utility client — Jackal Client v1.1.3 Free (Wormwake); no C2, no exfil, bring-your-own-key user AI chat only
     reclassified_as: Minecraft/Windows game-cheat + desktop-utility client (dual-use hacktool; generic injection/Detours/driver heuristic FP class)
@@ -1098,7 +1102,7 @@ exclusions:
 
   # CONVAGENT retraction — 2026-08-04. Static RE (GoReSym + r2, re box) of every available
   # cluster member showed the family was three unrelated benign things joined by a Go-builder
-  # vhash and a heuristic AV token.
+  # vhash and a heuristic AV token. See docs/retracted/CONVAGENT.md.
   #
   # autobg.exe — Baldur's Gate 2 Turkish fan-translation tool. Source path
   # C:/dev/baldurbot/autobg/autobg.go; 8 main.* functions only (sendToChatGPT, sendToDeepseek,
@@ -1109,7 +1113,7 @@ exclusions:
   # The "C2" terim.baldurgecidi.com is the author's own glossary/job server (baldurgecidi =
   # "Baldur's Gate" in Turkish, terim = "term", matching main.ilgiliTerim and
   # /findtermsintextbytes); ?email=%s&password=%s is the developer authenticating to it with
-  # drkaan@gmail.com. Hardcoded personal OpenAI/DeepL keys, CGO_ENABLED=1, git VCS stamp,
+  # their own credentials. Hardcoded personal OpenAI/DeepL keys, CGO_ENABLED=1, git VCS stamp,
   # zero capability surface for theft (no os/exec, no x/sys/windows, no registry, no browser
   # or credential paths, 0 of 4806 corpus samples within TLSH d<=30). A7 retracted.
   1c3c4552d32ab857f63ebd3b0c6e3871350e798fbb6088f791a2809bd0899910:
@@ -1186,9 +1190,8 @@ exclusions:
   # Static RE extracted the embedded PowerShell from both components
   # (monodis --mresources -> SpiceworksDashboard.ps1 6049 lines /
   # DynovaDashboardSetup.ps1 143 lines) and read it end to end. The Claude system
-  # prompt names the MSP's actual client towns (Gansbaai, Bredasdorp, Napier),
-  # their POS product (IQ Retail) and an Afrikaans keyword glossary — "Dynova" is
-  # the company's own name, not an invented lure brand. The AI feature classifies
+  # prompt names the MSP's actual client towns and their POS product — "Dynova" is
+  # the company's own name, not an invented lure brand. See docs/retracted/DYNOVA.md. The AI feature classifies
   # ticket priority into a forced json_schema at max_tokens=250, SUGGEST mode only
   # ("Never auto-applies"); the API key is USER-supplied and DPAPI-encrypted per
   # Windows user. No C2 (all 8 URLs are Spiceworks / Anthropic / Google /
@@ -1199,7 +1202,7 @@ exclusions:
   # generic/ML heuristics on the PS2EXE pattern, no engine naming a family.
   # The full build set is 25 PE files (the report saw 13), growing steadily
   # 170KB -> 397KB over 11 days with unique_sources:1 each — a developer's build
-  # history, not a campaign.
+  # history, not a campaign. See docs/retracted/DYNOVA.md.
   085cd92b9aa39745ad802015e7bd2eee3162e51019a0845940fdb68f512bbd72:
     reason: PS2EXE-wrapped Spiceworks helpdesk dashboard with AI ticket-triage; build of 2026-07-10, 170496 bytes
     reclassified_as: Legitimate MSP helpdesk tool (Dynova Helpdesk Dashboard)
@@ -1336,7 +1339,7 @@ exclusions:
     date: "2026-08-05"
     analyst: Ryan
   4644d853579e41f94c1a80eb215cf9c8a78831574a1dc3f4c2b657859fe4d801:
-    reason: "Z.IA — AXYNTRAX Automation Suite; operator-named build (Miguel Montero) of the same benign personal agent; developed 'por y para' its author, self-use quick-actions, no persistence/exfil"
+    reason: "Z.IA — AXYNTRAX Automation Suite; operator-named build of the same benign personal agent; developed 'por y para' its author, self-use quick-actions, no persistence/exfil"
     reclassified_as: Legitimate personal PC-automation agent (SuperAgent / Z.IA — AXYNTRAX)
     date: "2026-08-05"
     analyst: Ryan
@@ -1368,7 +1371,7 @@ exclusions:
   # The CYBERPORTAL X "same actor" link was the NSIS 3.11 exehead stub timestamp, which 20/20
   # NSIS 3.11 samples in the corpus share (incl. Jellyfin). Every build is unique_sources: 1,
   # times_submitted: 1 — a developer AV-checking their own release; Zenbox rated all staged
-  # samples harmless at 98–100.
+  # samples harmless at 98–100. See docs/retracted/VIBEAROUND.md.
   91111569e4eac2b21719b2a74295215e4983c056011affa378710037646df23c:
     reason: "VibeAround v0.5.3 desktop build — benign coding-agent orchestrator; Galirus is a heuristic on an unsigned ~30 MB CI-built Rust/WebView2 binary"
     reclassified_as: Legitimate AI coding-agent orchestration desktop app (VibeAround, Tauri/Rust)
@@ -1414,7 +1417,7 @@ exclusions:
   # Static RE (PyInstaller extraction + pycdc decompilation) found a straightforward Tkinter GUI
   # using the OpenAI SDK to call DeepSeek. No date gate, no geofencing, no VEH, no payload, no
   # malicious functionality. The "evasion stack" was a metadata narrative built on heuristic tags.
-  # Zenbox: harmless at 97%.
+  # Zenbox: harmless at 97%. See docs/retracted/CAGDASGPT.md.
   3280e28279735fdc1dd55769bda817da17d21a6446a3fc95a385ba373f85caa2:
     reason: "Legitimate Turkish DeepSeek chat application (ÇağdaşGpt V2); no evasion, no payload, operator-owned API key"
     reclassified_as: Legitimate AI chat application (Turkish developer, DeepSeek API, Tkinter GUI)
@@ -1427,7 +1430,7 @@ exclusions:
   # LM Studio with user-supplied OPENROUTER_API_KEY), proper job-scraping data model. No credential
   # theft code, no geofencing APIs, NSIS installer clean. Gen:Variant.Ser.Midie.2826 is a heuristic FP.
   # A7c is retired — both instances (VIBEAROUND, JOBRADAR) were benign software.
-  # Reclassification documented in investigation record.
+  # See docs/retracted/JOBRADAR.md.
   7bdcb86b79d03e00655b30538a913888f40a077f5150ce046c2826fdd8e1fcb3:
     reason: "Legitimate AI job search app (Job Radar); Apify scrapers, multi-provider LLM, no stealer"
     reclassified_as: Legitimate AI job search application (Go/Wails, Apify, OpenRouter)
@@ -1538,7 +1541,7 @@ exclusions:
   # infrastructure (login, purchase, support, docs at sistematizador.com).
   # Malwarebytes RiskWare.Sistematizador is accurate: PUA-grade commercial
   # software with anti-piracy mechanisms, not malware.
-  # Reclassification documented in investigation record.
+  # See docs/retracted/SISTEMATIZADOR.md → Open Questions (RE Findings).
   # ═══════════════════════════════════════════════════════════════════════════
 
   # Gen 1 seeds (Sep 2025 unsigned)

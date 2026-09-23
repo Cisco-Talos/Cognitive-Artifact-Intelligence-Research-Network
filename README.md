@@ -429,6 +429,31 @@ CAIRN/
 
 ---
 
+## False Positive Exclusions
+
+`config/exclusions.yaml` is a corpus blocklist: hashes that entered the corpus through acquisition filters but were cleared through investigation are recorded here and silently skipped on future pulls and removed by `cairn prune`. The file is git-tracked so that cleared samples do not re-enter on subsequent sweeps.
+
+Every entry records the SHA256, a one-line reason, what the sample was reclassified as, the investigation date, and analyst initials. Comment blocks above each cluster document the full reasoning — the same FP patterns that would otherwise need to be re-investigated by anyone running the same filters.
+
+The exclusion list covers approximately 350 distinct samples across roughly 25 product clusters. Common FP classes documented include:
+
+| Pattern | Example products | Root cause |
+|---|---|---|
+| Commercial EDR with built-in LLM calls | KiteCyber kcsensor | OpenAI/Anthropic API calls are a product feature, not malware |
+| C2PA content-authenticity cert chains | KVA Project Minecraft launcher | OpenAI TSA Root CA embedded as PE signature data triggers provider reference FP |
+| Electron apps using Whisper endpoints | WeChat video downloader | `api.openai.com/audio` is transcription, not LLM chat |
+| Bring-your-own-AI desktop runners | PurpleDoubleD Locally Uncensored, VibeAround | Broad provider surface + stealer heuristics on Tauri/NSIS binaries |
+| PyInstaller imphash clustering | PocketAI, Ollama GUI frontends | Identical PyInstaller version produces matching imphash across unrelated apps |
+| Open-source anti-censorship tools | Zapret Core, CYBERPORTAL X | Hosts-redirect capability triggers AI-provider MitM hypothesis |
+| Benign Go auto-updaters | Efficio, ClusterEye | Self-update + elevation → generic stealer heuristic |
+| AHK-compiled workplace tools | Brazilian court clock-in reminder | AutoHotkey FP class; `keylogger` and LSASS labels uncorroborated at binary level |
+| Local MCP bridge tooling | lmcp-tray, vinculum-runner | Probing local AI client configs triggers Go stealer heuristic |
+| VBA macro P-code extraction outputs | `VBA_P-code.txt` | Analysis artifacts, not executables; AI strings from extracted macro source |
+
+Maintaining a public exclusion list serves two purposes: researchers running CAIRN against the same filters get the same results without re-investigating known-clean software, and the documented FP patterns inform ongoing rule tuning.
+
+---
+
 ## Tests
 
 ```bash
