@@ -824,3 +824,50 @@ rule T3-MANTLEMAZE_BYOVD_AI_Evasion_Loader
     condition:
         $imp_d3d and $imp_fltlib and 1 of ($av_malcert, $av_vulndriver)
 }
+
+rule T2-MCP_Client_Endpoint_PE
+{
+    meta:
+        description = "PE/ELF with a hardcoded public MCP server endpoint — indicates an embedded MCP client. Three anchors confirmed in suspicious corpus samples (21-27 detections, no legitimate-app explanation): Firecrawl (C2AGENT, Unit42 confirmed), Context7 (two clusters Aug + Oct 2026, Telegram C2 in Oct cluster), Exa (Aug-Sep cluster co-occurring with Context7). Legitimate MCP clients (Claude Desktop, Cursor) are 0-detection and filtered by positives:1+ at acquisition."
+        artifact_class = "mcp_client_implant"
+        artifact_type = "network_indicator"
+        tier = "T2"
+        confidence = "medium"
+        reference = "C2AGENT aaea5809...; context7 cluster 97e9784c + 96c8e5f9 (Telegram C2); exa cluster 4787bca2 + 488e52a1"
+
+    strings:
+        // Firecrawl MCP — C2AGENT default; surfaces via embedded_urls in all 19 agent builds
+        $firecrawl = "mcp.firecrawl.dev"   nocase
+        // Context7 documentation MCP — Aug cluster (/mcpsession path) + Oct cluster (/mcp path);
+        // Oct builds have Telegram C2 confirmed by VT config extraction
+        $context7  = "mcp.context7.com"    nocase
+        // Exa search MCP — co-occurs with context7 in the Aug cluster (4787bca2, 488e52a1)
+        $exa       = "mcp.exa.ai"          nocase
+
+    condition:
+        any of them
+}
+
+rule T3-C2AGENT_Go_LLM_Operated_Agentic_Implant
+{
+    meta:
+        description = "C2AGENT (Unit42/Palo Alto) — Go-based Windows LLM-operated agentic implant with a closed goal->prompt->model->execution->feedback loop (40-step cap); built-in MCP client (default Firecrawl); operator-assigned skills/playbooks; Cobalt Strike BOF loader from v2.4; active development v0-v2.4+ (2026-09-10 onward). LLM traffic proxied through C2 server (/llm/<id>/v1/chat/completions), not sent directly to a provider -- hence no T1-LLM_API_Endpoint hit. Anchors: actor C2 domain in contacted_domains (all 20 corpus variants, 0 FP) and hardcoded default MCP server URL in embedded_urls (17/17 agent builds, 0 FP)"
+        author = "CAIRN"
+        artifact_class = "agentic_c2_implant"
+        artifact_type = "network_indicator"
+        tier = "T3"
+        confidence = "high"
+        family = "C2AGENT"
+        archetypes = "A7"
+        reference = "Discovered by Unit42 (Palo Alto Networks), 2026-10-09. Representative CAIRN sample: aaea58096313c877495ab0c07de3217cefdf1bc9bd9d08df06b44881fe9b90a9 (v2.1). Report: docs/families/C2AGENT.md. Anchors measured 2026-10-13, corpus n=5580: agent.x90.dev -> 20 hits (all C2AGENT, 0 FP), mcp.firecrawl.dev/v2/mcp -> 19 hits (all C2AGENT agent builds, 0 FP)"
+
+    strings:
+        // Actor-controlled C2 domain -- in contacted_domains for all variants incl. stagers
+        // (stager downloads agent from agent.x90[.]dev/data/copilot.txt)
+        $c2  = "agent.x90.dev"             nocase
+        // Hardcoded default MCP server embedded in agent builds; absent from stagers
+        $mcp = "mcp.firecrawl.dev/v2/mcp"  nocase
+
+    condition:
+        $c2 or $mcp
+}
