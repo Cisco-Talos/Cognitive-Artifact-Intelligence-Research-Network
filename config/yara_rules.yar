@@ -871,3 +871,25 @@ rule T3-C2AGENT_Go_LLM_Operated_Agentic_Implant
     condition:
         $c2 or $mcp
 }
+
+rule T3-CARBONATO_Hermes_Agent_AI_Key_Loot_Implant
+{
+    meta:
+        description = "CARBONATO (ThreatDown, 2026-09-23) — Linux Docker botnet implant; weaponizes the open-source Hermes Agent AI framework by overwriting its SOUL.md persona file with a 39-line malicious prompt that (1) routes operator Telegram tasks through the operator's own LLM gateway as a live C2 brain (A4) and (2) directs the agent to exfiltrate victim AI API keys as explicit #1 loot priority, naming 14 providers (A6). Primary artifacts are shell scripts and text files inside gzip-compressed Docker image layers — not indexed by VT content search. NOTE: rule is unvalidated against VT corpus samples (known hash not on VT); intended for container image forensics and host-based detection, not VT hunting."
+        author = "CAIRN"
+        artifact_class = "ai_c2_implant"
+        artifact_type = "config_string"
+        tier = "T3"
+        confidence = "medium"
+        family = "CARBONATO"
+        archetypes = "A4+A6"
+        reference = "Discovered by ThreatDown (Malwarebytes), 2026-09-23. Hash 88005097b0b60f340f8267707ebf8ef813fffe32ba1fe73a6485255d31eb5de8 not on VT. Report: docs/families/CARBONATO.md. Strings sourced from verbatim ThreatDown quotes of SOUL.md content."
+
+    strings:
+        $loot_path   = "/root/.hermes/loot"
+        $ai_priority = "AI API keys are the absolute priority"
+        $hermes_soul = ".hermes/SOUL.md"
+
+    condition:
+        $loot_path or ($hermes_soul and $ai_priority)
+}
