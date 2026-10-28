@@ -893,3 +893,119 @@ rule T3-CARBONATO_Hermes_Agent_AI_Key_Loot_Implant
     condition:
         $loot_path or ($hermes_soul and $ai_priority)
 }
+
+rule T3-PANDORA_Defacement_OpenAI_Tool
+{
+    meta:
+        description = "Detects PANDORA web defacement and OSINT tool with OpenAI integration — actor MrSanZz; kosred.com multimedia CDN; thatsthem.com OSINT scraping with typo variable {victm_mails}; both GPT-3.5 legacy and chat/completions endpoints"
+        author = "CAIRN"
+        artifact_class = "llm_api_backdoor"
+        artifact_type = "api_key_pattern"
+        tier = "T3"
+        confidence = "high"
+        family = "PANDORA"
+        reference = "VT SHA256 8f90ed037479cb110e0a57063f93f1d172a62dc0bdf2392aa0cb0ba7b8305e24; actor MrSanZz (github.com/MrSanZz, t.me/MrSanZzXe); kosred.com CDN; 3 near-identical variants submitted 2025-07-08"
+
+    strings:
+        $cdn         = "kosred.com"              nocase
+        $typo_var    = "{victm_mails}"
+        $actor_gh    = "github.com/MrSanZz"      nocase
+        $actor_tg    = "t.me/MrSanZzXe"          nocase
+        $defacement  = "fuck.you/index.php"       nocase
+
+        // AV label fallback — Avast/AVG HTML:Defacement-AH fires on pandora.py
+        // when Python source strings are not surfaced in VT metadata
+        $av_label    = "Defacement-AH"            nocase
+
+    condition:
+        $cdn or $typo_var or $actor_gh or $actor_tg or $defacement or $av_label
+}
+
+
+rule T3-WURM_Python_Impacket_LLM_Worm
+{
+    meta:
+        description = "Detects WURM Python worm — Impacket-based network propagation with OpenAI LLM tasking, Slack webhook C2, and Ethereum/Infura blockchain component; template config vars (C2, your-webhook) suggest deploy-time substitution"
+        author = "CAIRN"
+        artifact_class = "llm_api_backdoor"
+        artifact_type = "orchestration_logic"
+        tier = "T3"
+        confidence = "high"
+        family = "WURM"
+        reference = "VT SHA256 ed6660a9029d54c335bc574ee6cc3dbdda85eb9840c0f1c04dd77ddb37277432; Microsoft: Trojan:Python/Reldein.A; legit-cdn.com payload CDN; obfuscated variant e51cf070...; Impacket+LLM+Slack+Infura operational architecture"
+
+    strings:
+        $ms_label    = "Trojan:Python/Reldein.A"              nocase
+        $cdn_payload = "legit-cdn.com/payload.bin"            nocase
+        $slack_c2    = "hooks.slack.com"                      nocase
+        $infura      = "mainnet.infura.io"                    nocase
+        $c2_template = "http://C2/payload.bin"                nocase
+
+    condition:
+        $ms_label or $cdn_payload or $c2_template or
+        ($slack_c2 and $infura)
+}
+
+
+rule T3-LUNAV2_Glide_Linked_Telegram_RAT {
+    meta:
+        // A0 - the RAT is real; the LLM gateway it links is NOT reachable.
+        // This rule exists to CATCH THE TRANSITION: EinStack Glide v1.0.0 is statically
+        // linked into the Go RAT but cannot execute (glide.Run's --config is marked
+        // required via cobra.MarkPersistentFlagRequired and --config is byte-absent;
+        // 0 of 282 Glide funcs reachable from 88 RAT funcs; no keys, no routers: YAML).
+        // A sibling build that ships a config turns this into a genuine A2 with NO code
+        // change, so the family is tracked rather than closed. A hit here is NOT by
+        // itself evidence of AI capability — confirm reachability before assigning any
+        // archetype above A0. See docs/families/LUNAV2.md.
+        description = "LUNAV2 - Go/garble Telegram-C2 RAT dropped by a VB.NET GZip dropper, statically linking EinStack Glide v1.0.0 as an UNREACHABLE library. Tracks the family so a future build that activates the linked gateway (--config + routers: YAML) is caught. A0 in all builds seen to date"
+        author = "CAIRN"
+        artifact_class = "rat"
+        artifact_type = "no_ai_content"
+        tier = "T3"
+        confidence = "high"
+        family = "LUNAV2"
+        archetypes = "A0"
+        reference = "CAIRN investigation 2026-08-06; static RE 2026-08-07 (dropper 6302d6b8, Go RAT 28d47ea0, .NET stage b5675f9f); trojan.msil/cassiopeia; 3-binary family, single 2025-08-06 submission burst"
+
+    strings:
+        // --- Glide-linked fingerprint: the merged Go string-table artifacts. These are
+        // the load-bearing anchors and they are what a NEW build will still carry.
+        // Corpus specificity measured 2026-08-07 over n=4786: v1azure 2 (both LUNAV2),
+        // octoai 1, einstack 1, cohere 1. Deliberately anchored on the MERGED forms -
+        // a bare provider URL is a T1/T2 concern, not an identification.
+        $glide_azure   = "api.openai.com/v1azure" nocase
+        $glide_octoml  = "text.octoai.run/v1octoml" nocase
+        $glide_repo    = "github.com/EinStack/glide" nocase
+        $glide_cohere  = "api.cohere.ai/v1" nocase
+        // --- Operator/build identity reachable in VT scan text (names[], dot_net_assembly)
+        $name_luna     = "LunaV2" ascii
+        $name_lunaalt  = "LunaV2alt.exe" ascii
+        $name_myproj   = "myproject.exe" ascii
+        $res_dropper   = "kungvzfgscr" ascii
+        // --- Telegram C2 (merged-table form, as it appears in embedded_urls)
+        $tg_send       = "api.telegram.org/bot%25s/sendMessage" nocase
+        $tg_send2      = "api.telegram.org/bot%s/sendMessage" nocase
+        // --- Dropper behaviour: Defender exclusion on the %Temp% second stage
+        $wd_excl       = "Add-MpPreference -ExclusionPath" nocase
+        $wd_temp_svc   = "AppData\\Local\\Temp\\svchost.exe" nocase
+        // --- ACTIVATION CANARY. Byte-absent from every build seen to date. A hit on
+        // $act_config or $act_routers together with the Glide fingerprint means the
+        // gateway may no longer be dormant -> re-run the primary-artifact gate
+        // immediately and reconsider A2. This is the reason the rule exists.
+        $act_config    = "glide.yaml" nocase
+        $act_routers   = "routers:" ascii
+        $act_strategy  = "weighted-round-robin" nocase
+
+    condition:
+        // NB: "1 of (...)" not "any of (...)" — cairn/rules.py's condition evaluator
+        // only implements "<N> of (...)" and "any of them".
+        $res_dropper or
+        (1 of ($name_lunaalt, $name_myproj)) or
+        ($glide_repo and 1 of ($name_luna, $tg_send, $tg_send2)) or
+        (2 of ($glide_azure, $glide_octoml, $glide_repo, $glide_cohere)) or
+        ($glide_azure and 1 of ($name_luna, $tg_send, $tg_send2)) or
+        ($name_luna and 1 of ($tg_send, $tg_send2)) or
+        ($name_luna and $wd_excl and $wd_temp_svc) or
+        (1 of ($act_config, $act_routers, $act_strategy) and 2 of ($glide_azure, $glide_octoml, $glide_repo, $glide_cohere))
+}

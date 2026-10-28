@@ -349,16 +349,16 @@ Each archetype represents a distinct way an adversary uses AI in the attack chai
 
 | ID | Archetype | Description | Published Families |
 |---|---|---|---|
-| A0 | **No AI Content** | Family discovered by CAIRN that carries no AI or LLM component; retained for campaign-level attribution with an AI-bearing family. | — |
+| A0 | **No AI Content** | Family discovered by CAIRN that carries no AI or LLM component; retained for campaign-level attribution with an AI-bearing family. | LUNAV2 |
 | A1 | **LLM-Directed Payload Generation** | Malware sends a hard-coded prompt to a hosted LLM at runtime to generate executable code, scripts, or encryption logic. | PROMPTLOCK, HONESTCUE, PROMPTFLUX |
 | A2 | **LLM API Routing / Proxying Backdoor** | A service silently routes LLM API traffic through the victim, exfiltrating keys and billing inference to the host. | — |
 | A3 | **AI-Analysis Evasion** | Malware embeds natural-language instructions addressed to AI analysis systems to suppress classification or redirect analyst attention. | FRUITSHELL, GUARDBREAKER |
 | A4 | **LLM-Tasked C2** | An implant uses a hosted LLM as a live tasking channel, receiving operator instructions or autonomous attack orchestration via model responses. | CLOSEDQUORUM |
 | A5 | **LLM Infrastructure Supply Chain** | The actor backdoors a component of the victim's LLM infrastructure layer (proxy, SDK, gateway) to harvest all provider API keys. | TEAMPCP |
 | A6 | **AI Credential Harvester** | Malware specifically targets LLM API keys, HuggingFace tokens, or AI service credentials belonging to the victim. | PROMPTSTEAL, QUIETVAULT, LAMEHUG |
-| A7 | **LLM-Augmented Offensive Tool** | A conventional offensive tool augments its workflow with an LLM API call for content generation, OSINT, or recon tasking. | LAMEHUG |
+| A7 | **LLM-Augmented Offensive Tool** | A conventional offensive tool augments its workflow with an LLM API call for content generation, OSINT, or recon tasking. | LAMEHUG, PANDORA, WURM |
 | A8 | **Malicious AI SDK / Package** | A fake or backdoored package on npm/PyPI presents itself as an AI service SDK; activates on install. | QUIETVAULT |
-| A9 | **LLM-Assisted Worm** | Combines classical network worm propagation with LLM-directed tasking and asynchronous C2 exfiltration. | — |
+| A9 | **LLM-Assisted Worm** | Combines classical network worm propagation with LLM-directed tasking and asynchronous C2 exfiltration. | WURM (developmental) |
 | A10 | **AI-Domain Decoy Traffic** | Malware issues unauthenticated requests to AI provider endpoints as decoy traffic to misdirect sandbox analysis. | — |
 | A11 | **Agentic AI Abuse Tool** | The LLM-driven autonomous agent loop is the product's core capability, and the product exists for an abusive purpose. | — |
 
@@ -374,8 +374,11 @@ Individual technical reports for published families are in `docs/families/`. Add
 | CLOSEDQUORUM | A4 | Go | [CLOSEDQUORUM.md](docs/families/CLOSEDQUORUM.md) |
 | TEAMPCP | A5 | Python / npm | [TEAMPCP.md](docs/families/TEAMPCP.md) |
 | LAMEHUG | A6 / A7 | Python | [LAMEHUG.md](docs/families/LAMEHUG.md) |
+| PANDORA | A7 | Python | [PANDORA.md](docs/families/PANDORA.md) |
+| WURM | A7 + A9 | Python | [WURM.md](docs/families/WURM.md) |
 | PROMPTSTEAL | A6 | Python (PyInstaller) | [PROMPTSTEAL.md](docs/families/PROMPTSTEAL.md) |
 | QUIETVAULT | A6 + A8 | JavaScript / npm | [QUIETVAULT.md](docs/families/QUIETVAULT.md) |
+| LUNAV2 | A0 | Go / VB.NET | [LUNAV2.md](docs/families/LUNAV2.md) |
 
 
 ---
@@ -389,7 +392,7 @@ CAIRN/
 │
 ├── config/
 │   ├── acquisition_filters.yaml   27 named VT acquisition channels
-│   ├── yara_rules.yar             26 tiered cognitive artifact rules (T1/T2/T3)
+│   ├── yara_rules.yar             37 tiered cognitive artifact rules (T1/T2/T3)
 │   ├── exclusions.yaml            Corpus blocklist — hashes silently skipped on pull and removed by prune
 │   └── dead_end_hashes.txt        Cluster noise filter — known FP cluster members; suppressed by cluster-summary
 │
@@ -419,8 +422,11 @@ CAIRN/
 │       ├── CLOSEDQUORUM.md     Family report — Go autonomous AI agent (A4)
 │       ├── TEAMPCP.md          Family report — backdoored LiteLLM proxy (A5)
 │       ├── LAMEHUG.md          Family report — HuggingFace token abuser (A6/A7)
+│       ├── PANDORA.md          Family report — Python defacement/OSINT tool with OpenAI integration (A7)
+│       ├── WURM.md             Family report — Python worm with developmental LLM tasking (A7+A9)
 │       ├── PROMPTSTEAL.md      Family report — PyInstaller AI credential stealer (A6)
-│       └── QUIETVAULT.md       Family report — npm telemetry spy / malicious SDK (A6+A8)
+│       ├── QUIETVAULT.md       Family report — npm telemetry spy / malicious SDK (A6+A8)
+│       └── LUNAV2.md           Family report — Go/VB.NET Telegram RAT with inactive Glide LLM gateway (A0)
 │
 ├── data/                       SQLite corpus (gitignored)
 ├── outputs/                    Graph and report exports (gitignored)
