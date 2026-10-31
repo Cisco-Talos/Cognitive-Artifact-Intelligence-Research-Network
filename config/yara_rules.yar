@@ -1009,3 +1009,22 @@ rule T3-LUNAV2_Glide_Linked_Telegram_RAT {
         ($name_luna and $wd_excl and $wd_temp_svc) or
         (1 of ($act_config, $act_routers, $act_strategy) and 2 of ($glide_azure, $glide_octoml, $glide_repo, $glide_cohere))
 }
+
+rule T3-VOLTA_Autodoxer_Stealer_LLM_Target_Assessment
+{
+    meta:
+        description = "Detects VOLTA ('VOLTA AUTODOXER') — an x64 MSVC infostealer (browsers incl. Chromium app-bound-encryption via headless Chrome, wallets/seed phrases, cards, Discord/Telegram/Steam/Roblox sessions, Wi-Fi, Microsoft OAuth tokens) with a doxing stage: it builds an 'evidence bundle' about the victim (home GPS, employer, address, live Gmail receipt search, food-delivery orders, Roblox account value) and POSTs it to OpenRouter with a hardcoded 'forensic intelligence analyst ... target assessment' system prompt that ranks the victim by monetization value, falling back to the next model on refusal. Operator-held key; exfil via Telegram sendDocument. RE-confirmed 2026-10-12: A7. Anchors are the program's own debug-log filename and headless-Chrome profile prefix (both format strings in the binary, observed in sandbox behaviour) — the prompt and [dox] strings never reach VT metadata"
+        author = "CAIRN"
+        artifact_class = "infostealer"
+        artifact_type = "sandbox_behaviour"
+        tier = "T3"
+        confidence = "high"
+        family = "VOLTA"
+        reference = "VT SHA256 57ef4242666d78c50df145b34023df564f0fad38812d6a580e66433d427e2279; report docs/families/VOLTA.md; base rates measured 2026-10-12 over 2819 corpus rows, 0 scan-text errors"
+    strings:
+        $dbg      = "volta_debug.txt"   nocase
+        $udd      = "vt_udd_"           nocase
+        $headless = "--headless=new"    nocase
+    condition:
+        $dbg or ($udd and $headless)
+}

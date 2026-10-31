@@ -356,7 +356,7 @@ Each archetype represents a distinct way an adversary uses AI in the attack chai
 | A4 | **LLM-Tasked C2** | An implant uses a hosted LLM as a live tasking channel, receiving operator instructions or autonomous attack orchestration via model responses. | CLOSEDQUORUM |
 | A5 | **LLM Infrastructure Supply Chain** | The actor backdoors a component of the victim's LLM infrastructure layer (proxy, SDK, gateway) to harvest all provider API keys. | TEAMPCP |
 | A6 | **AI Credential Harvester** | Malware specifically targets LLM API keys, HuggingFace tokens, or AI service credentials belonging to the victim. | PROMPTSTEAL, QUIETVAULT, LAMEHUG |
-| A7 | **LLM-Augmented Offensive Tool** | A conventional offensive tool augments its workflow with an LLM API call for content generation, OSINT, or recon tasking. | LAMEHUG, PANDORA, WURM |
+| A7 | **LLM-Augmented Offensive Tool** | A conventional offensive tool augments its workflow with an LLM API call for content generation, OSINT, or recon tasking. | LAMEHUG, PANDORA, VOLTA, WURM |
 | A8 | **Malicious AI SDK / Package** | A fake or backdoored package on npm/PyPI presents itself as an AI service SDK; activates on install. | QUIETVAULT |
 | A9 | **LLM-Assisted Worm** | Combines classical network worm propagation with LLM-directed tasking and asynchronous C2 exfiltration. | WURM (developmental) |
 | A10 | **AI-Domain Decoy Traffic** | Malware issues unauthenticated requests to AI provider endpoints as decoy traffic to misdirect sandbox analysis. | — |
@@ -375,6 +375,7 @@ Individual technical reports for published families are in `docs/families/`. Add
 | TEAMPCP | A5 | Python / npm | [TEAMPCP.md](docs/families/TEAMPCP.md) |
 | LAMEHUG | A6 / A7 | Python | [LAMEHUG.md](docs/families/LAMEHUG.md) |
 | PANDORA | A7 | Python | [PANDORA.md](docs/families/PANDORA.md) |
+| VOLTA | A7 | C++ (MSVC x64) | [VOLTA.md](docs/families/VOLTA.md) |
 | WURM | A7 + A9 | Python | [WURM.md](docs/families/WURM.md) |
 | PROMPTSTEAL | A6 | Python (PyInstaller) | [PROMPTSTEAL.md](docs/families/PROMPTSTEAL.md) |
 | QUIETVAULT | A6 + A8 | JavaScript / npm | [QUIETVAULT.md](docs/families/QUIETVAULT.md) |
@@ -392,7 +393,7 @@ CAIRN/
 │
 ├── config/
 │   ├── acquisition_filters.yaml   27 named VT acquisition channels
-│   ├── yara_rules.yar             37 tiered cognitive artifact rules (T1/T2/T3)
+│   ├── yara_rules.yar             38 tiered cognitive artifact rules (T1/T2/T3)
 │   ├── exclusions.yaml            Corpus blocklist — hashes silently skipped on pull and removed by prune
 │   └── dead_end_hashes.txt        Cluster noise filter — known FP cluster members; suppressed by cluster-summary
 │
@@ -423,6 +424,7 @@ CAIRN/
 │       ├── TEAMPCP.md          Family report — backdoored LiteLLM proxy (A5)
 │       ├── LAMEHUG.md          Family report — HuggingFace token abuser (A6/A7)
 │       ├── PANDORA.md          Family report — Python defacement/OSINT tool with OpenAI integration (A7)
+│       ├── VOLTA.md            Family report — x64 infostealer with LLM-powered victim profiling/doxing stage (A7)
 │       ├── WURM.md             Family report — Python worm with developmental LLM tasking (A7+A9)
 │       ├── PROMPTSTEAL.md      Family report — PyInstaller AI credential stealer (A6)
 │       ├── QUIETVAULT.md       Family report — npm telemetry spy / malicious SDK (A6+A8)
